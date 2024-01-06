@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,8 +7,70 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-//Example model
-model Test {
-  id Int @default(autoincrement()) @id
-  value String
+model User {
+  id        Int     @id @default(autoincrement())
+  discordId String  @unique
+  posts     Post[]
+  name      String?
+  bio       String?
+  avatar    String?
+}
+
+model Post {
+  id           Int            @id @default(autoincrement())
+  content      String
+  title        String?
+  createdAt    DateTime       @default(now())
+  authorId     String
+  author       User           @relation(fields: [authorId], references: [discordId])
+  published    Boolean        @default(false)
+  PostHashtag  PostHashtag[]
+  PostCategory PostCategory[]
+}
+
+model Category {
+  id           Int            @id @default(autoincrement())
+  name         String         @unique
+  emojiName    String         @unique
+  emoji        Emoji          @relation(fields: [emojiName], references: [name])
+  PostCategory PostCategory[]
+}
+
+model PostCategory {
+  postId     Int
+  categoryId Int
+  post       Post     @relation(fields: [postId], references: [id])
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  @@id([postId, categoryId])
+}
+
+model Hashtag {
+  id          Int           @id @default(autoincrement())
+  name        String        @unique
+  PostHashtag PostHashtag[]
+}
+
+model PostHashtag {
+  postId    Int
+  hashtagId Int
+  post      Post    @relation(fields: [postId], references: [id])
+  hashtag   Hashtag @relation(fields: [hashtagId], references: [id])
+
+  @@id([postId, hashtagId])
+}
+
+model Emoji {
+  id          Int           @id @default(autoincrement())
+  name        String        @unique
+  categoryId  Int
+  category    Category?
+  EmojiAction EmojiAction[]
+}
+
+model EmojiAction {
+  id      Int    @id @default(autoincrement())
+  name    String @unique
+  emojiId Int
+  emoji   Emoji  @relation(fields: [emojiId], references: [id])
 }
