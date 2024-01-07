@@ -13,18 +13,6 @@ export enum EmojiAction {
 // which channels the bot should monitor on the server
 export const CHANNELS_TO_MONITOR = ["1191869922930868315"]; //#bot];
 
-export const EMOJI_ACTION_MAP: { [key in string]: EmojiAction } = {
-  WMDEFI: EmojiAction.addCategory,
-  WMDUB: EmojiAction.addCategory,
-  WMNAO: EmojiAction.addCategory,
-  WMNFT: EmojiAction.addCategory,
-  WMOG: EmojiAction.addCategory,
-  WMPARA: EmojiAction.addCategory,
-  WMTA: EmojiAction.addCategory,
-  WMTRS: EmojiAction.addCategory,
-  WMTUT: EmojiAction.addCategory,
-};
-
 // the emojis that trigger the add category action.
 
 // 🚨 The following values are only used for
@@ -34,14 +22,14 @@ export const categoryEmojiMap: {
   [key in string]: string;
 } = {
   DeFi: "WMDEFI",
-  Dub: "WMDUB",
-  NAO: "WMNAO",
+  Dubbing: "WMDUB",
+  "Non Anglo": "WMNAO",
   NFT: "WMNFT",
-  OG: "WMOG",
-  Para: "WMPARA",
-  TA: "WMTA",
-  TRS: "WMTRS",
-  TUT: "WMTUT",
+  OpenGov: "WMOG",
+  Parachains: "WMPARA",
+  "Technical Analysis": "WMTA",
+  Translations: "WMTRS",
+  Tutorials: "WMTUT",
 };
 
 // the emojis that trigger payment actions, that in turn publish a post.
