@@ -9,6 +9,7 @@ import { findOrCreateUser } from "./data/user.js";
 import { findOrCreateEmoji } from "./data/emoji.js";
 import { findOrCreatePost } from "./data/post.js";
 import { handleReaction } from "./handlers/handleReaction.js";
+import { userHasRole } from "./utils/userHasRole.js";
 
 //store your token in environment variable or put it here
 const token = process.env["TOKEN"];
@@ -72,7 +73,13 @@ client.on(
     // Check if the reaction is in the channel we are interested in
     if (config.CHANNELS_TO_MONITOR.includes(reaction.message.channel.id)) {
       if (user.bot) return; // Ignore bot reactions
+      if (!reaction.message.guild) return; // Ignore DMs
 
+      console.log(
+        `✅ new emoji: ${JSON.stringify(reaction.emoji)} by ${user.displayName}`
+      );
+
+      // make sure the message, reaction and user are cached
       if (reaction.partial) {
         try {
           await reaction.fetch();
@@ -97,29 +104,11 @@ client.on(
         }
       }
 
-      await handleReaction(reaction, user);
-
-      // Check if the emoji is the one you're looking for
-      if (true) {
-        //   if (reaction.emoji.name === "SPECIFIC_EMOJI_NAME") {
-        // Check if the user who reacted has the specific role
-        const member = await reaction.message.guild?.members.fetch(user.id);
-        console.log(`✅ new emoji: ${JSON.stringify(reaction.emoji)}`);
-        console.log(
-          `  ↪ member ${
-            member?.displayName
-          } has director role: ${member?.roles.cache.some(
-            (role) => role.name === "Director"
-          )}`
-        );
-        console.log(`  ↪ member ${JSON.stringify(member)}`);
-        if (
-          member?.roles.cache.some((role) => role.name === "SPECIFIC_ROLE_NAME")
-        ) {
-          console.log(`User with specific role reacted with specific emoji`);
-          // Add your logic to insert the post into the database
-        }
+      if (!userHasRole(reaction.message.guild, user, config.rolesWithPower)) {
+        return;
       }
+
+      await handleReaction(reaction, user);
     }
   }
 );
