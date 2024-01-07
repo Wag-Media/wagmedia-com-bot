@@ -1,12 +1,16 @@
+import { EmojiAction } from "@/config.js";
 import { findOrCreateEmoji } from "@/data/emoji.js";
 import { findOrCreatePost } from "@/data/post.js";
 import { findOrCreateUser } from "@/data/user.js";
-import { PrismaClient } from "@prisma/client";
-import { MessageReaction, User } from "discord.js";
+import { PrismaClient, User } from "@prisma/client";
+import { Emoji, MessageReaction, User as DiscordUser } from "discord.js";
 
 const prisma = new PrismaClient();
 
-export async function handleReaction(reaction: MessageReaction, user: User) {
+export async function handleReaction(
+  reaction: MessageReaction,
+  user: DiscordUser
+) {
   // Ensure related records exist
   console.log("reaction.emoji", reaction.emoji);
   let emojiIdentifier = reaction.emoji.id || reaction.emoji.name; // Handle both custom and Unicode emojis
@@ -19,11 +23,9 @@ export async function handleReaction(reaction: MessageReaction, user: User) {
   try {
     // ensure User exists
     const user = await findOrCreateUser(reaction.message);
-    console.log("user found", user);
 
     // ensure Post exists
     const post = await findOrCreatePost(reaction.message);
-    console.log("post found", post);
 
     // ensure Emoji exists
     const emoji = await findOrCreateEmoji(reaction.emoji);
@@ -32,21 +34,30 @@ export async function handleReaction(reaction: MessageReaction, user: User) {
     await prisma.reaction.upsert({
       where: {
         postId_userDiscordId_emojiId: {
-          postId: reaction.message.id,
-          emojiId: emojiIdentifier,
+          postId: post.id,
+          emojiId: emoji.id,
           userDiscordId: user.discordId,
         },
       },
       update: {},
       create: {
-        postId: reaction.message.id,
-        emojiId: emojiIdentifier,
+        postId: post.id,
+        emojiId: emoji.id,
         userDiscordId: user.discordId,
       },
     });
+
+    const emojiAction = emoji.action;
+    if (emojiAction) {
+      performEmojiAction(emojiAction, reaction, user);
+    }
   } catch (error) {
     console.error("Error processing reaction:", error);
   }
+}
+
+function isValidAction(action: string): action is EmojiAction {
+  return Object.values(action).includes(action as EmojiAction);
 }
 
 function performEmojiAction(
@@ -54,9 +65,19 @@ function performEmojiAction(
   reaction: MessageReaction,
   user: User
 ) {
-  // Define your logic here based on the action string
-  console.log(
-    `Performing action: ${action} for user ${user.id} on message ${reaction.message.id}`
-  );
-  // Example: if (action === 'like') { /* ... */ }
+  if (!isValidAction(action)) {
+    console.error(`Invalid action: ${action}`);
+    return;
+  }
+
+  switch (action) {
+    case EmojiAction.publish:
+      console.log("post published");
+      break;
+    case EmojiAction.addCategory:
+      console.log("added category");
+      break;
+    default:
+      console.error(`Invalid action: ${action}`);
+  }
 }

@@ -24,7 +24,7 @@ export const findOrCreateEmoji = async (emoji: GuildEmoji | ReactionEmoji) => {
   });
 
   const dbEmoji = await prisma.emoji.upsert({
-    where: { discordId: discordEmojiId ?? emojiChar },
+    where: { id: discordEmojiId ?? emojiChar },
     update: {
       name: emojiName,
       emojiChar: emojiChar,
