@@ -23,6 +23,15 @@ client.on("ready", () => {
   });
 });
 
+client.on("error", console.error);
+client.on("warn", console.warn);
+client.on("disconnect", () => {
+  console.info("Disconnected from discord.");
+});
+client.on("reconnecting", () => {
+  console.info("Reconnecting to discord.");
+});
+
 client.on("messageCreate", async (message) => {
   if (config.CHANNELS_TO_MONITOR.includes(message.channel.id)) {
     console.log(`✉️  New message in the channel`);

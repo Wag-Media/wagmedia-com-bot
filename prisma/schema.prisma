@@ -32,7 +32,7 @@ model User {
 
 model Reaction {
   id            Int      @id @default(autoincrement())
-  emojiId       String   @unique
+  emojiId       String
   emoji         Emoji    @relation(fields: [emojiId], references: [id])
   userDiscordId String
   user          User     @relation(fields: [userDiscordId], references: [discordId])
@@ -61,8 +61,8 @@ model Emoji {
 
   action String?
 
-  reaction Reaction?
-  category Category?
+  reactions Reaction[]
+  category  Category?
 
   reactionId Int?
   categoryId Int?
