@@ -1,5 +1,8 @@
 export type Role = "Director" | "Admin" | "Moderator" | "Member";
 
+// Define the discord roles that have the power to trigger actions from EmojiActions
+export const rolesWithPower = ["Director"];
+
 // Define your valid emoji actions here
 // we are not using a db enum because sqlite does not support it
 export enum EmojiAction {

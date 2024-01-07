@@ -12,10 +12,7 @@ export async function handleReaction(
   user: DiscordUser
 ) {
   // Ensure related records exist
-  console.log("reaction.emoji", reaction.emoji);
   let emojiIdentifier = reaction.emoji.id || reaction.emoji.name; // Handle both custom and Unicode emojis
-  console.log("emojiIdentifier", emojiIdentifier);
-
   if (!emojiIdentifier) {
     throw new Error("No emoji found in the reaction");
   }
@@ -86,6 +83,7 @@ async function performEmojiAction(
 
       break;
     case EmojiAction.addCategory:
+      console.log("added category to", reaction.message.id);
       await prisma.post.update({
         where: {
           id: reaction.message.id,
