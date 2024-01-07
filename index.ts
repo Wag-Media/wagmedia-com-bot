@@ -59,8 +59,6 @@ client.on("messageCreate", async (message) => {
           title,
           content: message.content,
           userId: user.id, // use the discordId from the upserted user
-          published: false,
-          // Include logic to add categories and hashtags if applicable
         },
       });
     }
@@ -104,12 +102,24 @@ client.on(
         }
       }
 
-      if (!userHasRole(reaction.message.guild, user, config.rolesWithPower)) {
+      // Check if the user has the power to react with WM emojis
+      if (
+        !userHasRole(reaction.message.guild, user, config.rolesWithPower) &&
+        reaction.emoji.name?.startsWith("WM")
+      ) {
+        const messageLink = `https://discord.com/channels/${reaction.message.guild.id}/${reaction.message.channel.id}/${reaction.message.id}`;
+        await user.send(
+          `You do not have permission to add WagMedia emojis in ${messageLink}`
+        );
+        console.log(
+          `Informed ${user.tag} about not having permission to use the emoji.`
+        );
+        await reaction.users.remove(user.id);
         return;
       }
-
-      await handleReaction(reaction, user);
     }
+
+    await handleReaction(reaction, user);
   }
 );
 

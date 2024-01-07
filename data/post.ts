@@ -27,8 +27,6 @@ export const findOrCreatePost = async (
       title,
       content: description,
       userId: user.id, // use the discordId from the upserted user
-      published: false,
-      // TODO Include logic to add categories and hashtags if applicable
     },
   });
 

@@ -2,6 +2,7 @@ import { EmojiAction } from "@/config.js";
 import { findOrCreateEmoji } from "@/data/emoji.js";
 import { findOrCreatePost } from "@/data/post.js";
 import { findOrCreateUser } from "@/data/user.js";
+import { userHasRole } from "@/utils/userHasRole.js";
 import { PrismaClient, User } from "@prisma/client";
 import { Emoji, MessageReaction, User as DiscordUser } from "discord.js";
 
@@ -77,7 +78,7 @@ async function performEmojiAction(
           id: reaction.message.id,
         },
         data: {
-          published: true,
+          isPublished: true,
         },
       });
 

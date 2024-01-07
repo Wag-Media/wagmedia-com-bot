@@ -8,16 +8,18 @@ datasource db {
 }
 
 model Post {
-  id         String     @id
-  title      String
-  content    String?
-  userId     Int
-  user       User       @relation(fields: [userId], references: [id])
-  reactions  Reaction[]
-  categories Category[]
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  published  Boolean    @default(false)
+  id          String     @id
+  title       String
+  content     String?
+  userId      Int
+  user        User       @relation(fields: [userId], references: [id])
+  reactions   Reaction[]
+  categories  Category[]
+  tags        Tag[] // One-to-many relationship with Tag
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  isPublished Boolean    @default(false)
+  isFeatured  Boolean    @default(false)
 }
 
 model User {
@@ -66,4 +68,11 @@ model Emoji {
 
   reactionId Int?
   categoryId Int?
+}
+
+model Tag {
+  id     Int    @id @default(autoincrement())
+  name   String @unique
+  postId String
+  post   Post   @relation(fields: [postId], references: [id])
 }
