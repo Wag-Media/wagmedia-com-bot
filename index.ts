@@ -47,11 +47,9 @@ client.on("messageCreate", async (message) => {
     );
 
     // Check if the message contains necessary information
-    if (title && description && tags.length > 0) {
+    if (title && description) {
       // Upsert the user (create if not exists, else skip creation)
       const user = await findOrCreateUser(message);
-
-      console.log("all title tags description", title, tags, description);
 
       // Create a new post
       await prisma.post.create({

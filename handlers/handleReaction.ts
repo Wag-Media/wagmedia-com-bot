@@ -49,18 +49,18 @@ export async function handleReaction(
 
     const emojiAction = emoji.action;
     if (emojiAction) {
-      performEmojiAction(emojiAction, reaction, user);
+      await performEmojiAction(emojiAction, reaction, user);
     }
   } catch (error) {
     console.error("Error processing reaction:", error);
   }
 }
 
-function isValidAction(action: string): action is EmojiAction {
-  return Object.values(action).includes(action as EmojiAction);
+function isValidAction(action: string): boolean {
+  return Object.values(EmojiAction).includes(action as EmojiAction);
 }
 
-function performEmojiAction(
+async function performEmojiAction(
   action: string,
   reaction: MessageReaction,
   user: User
@@ -70,12 +70,34 @@ function performEmojiAction(
     return;
   }
 
+  const emoji = reaction.emoji;
+
   switch (action) {
     case EmojiAction.publish:
-      console.log("post published");
+      console.log("post published", reaction.message.id);
+      await prisma.post.update({
+        where: {
+          id: reaction.message.id,
+        },
+        data: {
+          published: true,
+        },
+      });
+
       break;
     case EmojiAction.addCategory:
-      console.log("added category");
+      await prisma.post.update({
+        where: {
+          id: reaction.message.id,
+        },
+        data: {
+          categories: {
+            connect: {
+              emojiId: emoji.name || emoji.id!,
+            },
+          },
+        },
+      });
       break;
     default:
       console.error(`Invalid action: ${action}`);
