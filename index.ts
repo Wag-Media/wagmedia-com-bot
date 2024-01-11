@@ -8,8 +8,12 @@ import { PrismaClient } from "@prisma/client";
 import { findOrCreateUser } from "./data/user.js";
 import { findOrCreateEmoji } from "./data/emoji.js";
 import { findOrCreatePost } from "./data/post.js";
-import { handleReaction } from "./handlers/handleReaction.js";
+import {
+  handleMessageReactionAdd,
+  handleReaction,
+} from "./handlers/handleMessageReactionAdd.js";
 import { userHasRole } from "./utils/userHasRole.js";
+import { handleMessageCreate } from "./handlers/handleMessageCreate.js";
 
 //store your token in environment variable or put it here
 const token = process.env["TOKEN"];
@@ -33,95 +37,9 @@ client.on("reconnecting", () => {
   console.info("Reconnecting to discord.");
 });
 
-client.on("messageCreate", async (message) => {
-  if (config.CHANNELS_TO_MONITOR.includes(message.channel.id)) {
-    console.log(`✉️  New message in the channel`);
-    console.log(`  ↪ user: ${JSON.stringify(message.member)}`);
-    const { title, description, tags } = parseMessage(message.content);
-    console.log(`  ↪ title: ${title}`);
-    console.log(`  ↪ description: ${description}`);
-    console.log(`  ↪ tags: ${tags}`);
-    console.log(`  ↪ avatar: ${message.member?.displayAvatarURL()}`);
+client.on("messageCreate", handleMessageCreate);
 
-    console.log(
-      `checking if all good, ${title}, ${description}, ${tags.length}`
-    );
-
-    // Check if the message contains necessary information
-    if (title && description) {
-      // Upsert the user (create if not exists, else skip creation)
-      const user = await findOrCreateUser(message);
-
-      // Create a new post
-      await prisma.post.create({
-        data: {
-          id: message.id,
-          title,
-          content: message.content,
-          userId: user.id, // use the discordId from the upserted user
-        },
-      });
-    }
-  }
-});
-
-client.on(
-  "messageReactionAdd",
-  async (reaction: MessageReaction, user: User) => {
-    // Check if the reaction is in the channel we are interested in
-    if (config.CHANNELS_TO_MONITOR.includes(reaction.message.channel.id)) {
-      if (user.bot) return; // Ignore bot reactions
-      if (!reaction.message.guild) return; // Ignore DMs
-
-      console.log(
-        `✅ new emoji: ${JSON.stringify(reaction.emoji)} by ${user.displayName}`
-      );
-
-      // make sure the message, reaction and user are cached
-      if (reaction.partial) {
-        try {
-          await reaction.fetch();
-        } catch (error) {
-          console.error(
-            "Something went wrong when fetching the reaction:",
-            error
-          );
-          return;
-        }
-      }
-
-      if (reaction.message.partial) {
-        try {
-          await reaction.message.fetch();
-        } catch (error) {
-          console.error(
-            "Something went wrong when fetching the message:",
-            error
-          );
-          return;
-        }
-      }
-
-      // Check if the user has the power to react with WM emojis
-      if (
-        !userHasRole(reaction.message.guild, user, config.rolesWithPower) &&
-        reaction.emoji.name?.startsWith("WM")
-      ) {
-        const messageLink = `https://discord.com/channels/${reaction.message.guild.id}/${reaction.message.channel.id}/${reaction.message.id}`;
-        await user.send(
-          `You do not have permission to add WagMedia emojis in ${messageLink}`
-        );
-        console.log(
-          `Informed ${user.tag} about not having permission to use the emoji.`
-        );
-        await reaction.users.remove(user.id);
-        return;
-      }
-    }
-
-    await handleReaction(reaction, user);
-  }
-);
+client.on("messageReactionAdd", handleMessageReactionAdd);
 
 client.on(
   "messageReactionRemove",
