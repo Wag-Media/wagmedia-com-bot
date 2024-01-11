@@ -8,6 +8,7 @@ export const rolesWithPower = ["Director"];
 export enum EmojiAction {
   publish = "publish",
   addCategory = "addCategory",
+  feature = "feature",
 }
 
 // which channels the bot should monitor on the server

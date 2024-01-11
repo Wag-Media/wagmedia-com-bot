@@ -8,18 +8,20 @@ datasource db {
 }
 
 model Post {
-  id          String     @id
-  title       String
-  content     String?
-  userId      Int
-  user        User       @relation(fields: [userId], references: [id])
-  reactions   Reaction[]
-  categories  Category[]
-  tags        Tag[] // One-to-many relationship with Tag
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  isPublished Boolean    @default(false)
-  isFeatured  Boolean    @default(false)
+  id            String     @id
+  title         String
+  content       String?
+  userId        Int
+  user          User       @relation(fields: [userId], references: [id])
+  reactions     Reaction[]
+  categories    Category[]
+  tags          Tag[] // One-to-many relationship with Tag
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  isPublished   Boolean    @default(false)
+  isFeatured    Boolean    @default(false)
+  totalEarnings Float?     @default(0)
+  Payment       Payment[]
 }
 
 model User {
@@ -30,27 +32,30 @@ model User {
   avatar    String?
   bio       String?
   name      String?
+  Payment   Payment[]
 }
 
 model Reaction {
-  id            Int      @id @default(autoincrement())
-  emojiId       String
-  emoji         Emoji    @relation(fields: [emojiId], references: [id])
-  userDiscordId String
-  user          User     @relation(fields: [userDiscordId], references: [discordId])
-  postId        String
-  post          Post     @relation(fields: [postId], references: [id])
-  createdAt     DateTime @default(now())
+  id               Int      @id @default(autoincrement())
+  emojiId          String
+  emoji            Emoji    @relation(fields: [emojiId], references: [id])
+  userDiscordId    String
+  user             User     @relation(fields: [userDiscordId], references: [discordId])
+  postId           String
+  post             Post     @relation(fields: [postId], references: [id])
+  createdAt        DateTime @default(now())
+  initiatesPayment Boolean  @default(false)
 
   @@unique([postId, userDiscordId, emojiId])
 }
 
 model Category {
-  id      Int    @id @default(autoincrement())
-  name    String @unique
-  posts   Post[]
-  emojiId String @unique
-  emoji   Emoji  @relation(fields: [emojiId], references: [id])
+  id           Int            @id @default(autoincrement())
+  name         String         @unique
+  posts        Post[]
+  emojiId      String         @unique
+  emoji        Emoji          @relation(fields: [emojiId], references: [id])
+  CategoryRule CategoryRule[]
 }
 
 model Emoji {
@@ -61,13 +66,13 @@ model Emoji {
   discordId  String?  @unique // Unique ID for custom Discord emojis
   isAnimated Boolean? // Whether the custom emoji is animated
 
-  action String?
-
   reactions Reaction[]
   category  Category?
 
-  reactionId Int?
-  categoryId Int?
+  reactionId   Int?
+  categoryId   Int?
+  PaymentRule  PaymentRule[]
+  CategoryRule CategoryRule[]
 }
 
 model Tag {
@@ -75,4 +80,37 @@ model Tag {
   name   String @unique
   postId String
   post   Post   @relation(fields: [postId], references: [id])
+}
+
+model LastProcessedPost {
+  channelId String   @id
+  postId    String
+  updatedAt DateTime @updatedAt
+}
+
+model Payment {
+  id        Int      @id @default(autoincrement())
+  amount    Float
+  status    String // e.g., "pending", "completed"
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id])
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PaymentRule {
+  id            Int    @id @default(autoincrement())
+  emojiId       String
+  emoji         Emoji  @relation(fields: [emojiId], references: [id])
+  paymentAmount Float
+}
+
+model CategoryRule {
+  id         Int      @id @default(autoincrement())
+  emojiId    String
+  emoji      Emoji    @relation(fields: [emojiId], references: [id])
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
 }

@@ -8,5 +8,5 @@
         "strictNullChecks": true,
         "noImplicitThis": true,
         "paths": { "@/*": ["./*"] }
-    }
+    },
 }
