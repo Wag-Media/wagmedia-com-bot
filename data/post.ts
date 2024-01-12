@@ -1,4 +1,4 @@
-import { Post, PrismaClient } from "@prisma/client";
+import { Category, Post, PrismaClient } from "@prisma/client";
 import { Message, MessageReaction, PartialMessage } from "discord.js";
 import { findOrCreateUser } from "./user.js";
 import { parseMessage } from "@/utils/parse-message.js";
@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 
 export const findOrCreatePost = async (
   message: Message<boolean> | PartialMessage
-): Promise<Post> => {
+): Promise<Post & { categories: Category[] }> => {
   if (!message.id) {
     throw new Error("Message must have an id");
   }
@@ -20,6 +20,9 @@ export const findOrCreatePost = async (
   const post = await prisma.post.upsert({
     where: {
       id: message.id,
+    },
+    include: {
+      categories: true, // Include the categories in the result
     },
     update: {},
     create: {
