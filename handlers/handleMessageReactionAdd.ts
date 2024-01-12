@@ -1,9 +1,14 @@
-import { EmojiAction } from "@/config.js";
 import { findOrCreateEmoji } from "@/data/emoji.js";
 import { findOrCreatePost } from "@/data/post.js";
 import { findOrCreateUser } from "@/data/user.js";
 import { userHasRole } from "@/utils/userHasRole.js";
-import { PrismaClient, Reaction, User } from "@prisma/client";
+import {
+  PaymentRule,
+  Post,
+  PrismaClient,
+  Reaction,
+  User,
+} from "@prisma/client";
 import { Emoji, MessageReaction, User as DiscordUser } from "discord.js";
 import * as config from "../config.js";
 
@@ -25,7 +30,9 @@ export async function handleMessageReactionAdd(
     if (!reaction.message.guild) return; // Ignore DMs
 
     console.log(
-      `✅ new emoji: ${JSON.stringify(reaction.emoji)} by ${user.displayName}`
+      `✅ new emoji: ${JSON.stringify(reaction.emoji.name)} by ${
+        user.displayName
+      }`
     );
 
     // make sure the message, reaction and user are cached
@@ -52,7 +59,7 @@ export async function handleMessageReactionAdd(
 
     // Check if the user has the power to react with WM emojis
     if (
-      !userHasRole(reaction.message.guild, user, config.rolesWithPower) &&
+      !userHasRole(reaction.message.guild, user, config.ROLES_WITH_POWER) &&
       reaction.emoji.name?.startsWith("WM")
     ) {
       const messageLink = `https://discord.com/channels/${reaction.message.guild.id}/${reaction.message.channel.id}/${reaction.message.id}`;
@@ -106,15 +113,9 @@ export async function handleReaction(
     const paymentRule = await prisma.paymentRule.findUnique({
       where: { emojiId: emoji.id },
     });
-    console.log("payment rule", paymentRule);
 
     if (paymentRule) {
-      await handlePaymentRule(
-        postId,
-        user.id,
-        paymentRule.paymentAmount,
-        dbReaction
-      );
+      await handlePaymentRule(post, user.id, paymentRule, dbReaction);
       return;
     }
 
@@ -128,72 +129,64 @@ export async function handleReaction(
       return;
     }
 
+    // Check for Feature Rule
+    if (emoji.name === config.FEATURE_EMOJI) {
+      await prisma.post.update({
+        where: {
+          id: reaction.message.id,
+        },
+        data: {
+          isFeatured: true,
+        },
+      });
+      return;
+    }
+
     console.log("No action rule found for this reaction.");
   } catch (error) {
     console.error("Error processing reaction:", error);
   }
-
-  // try {
-  //   // ensure User exists
-  //   const user = await findOrCreateUser(reaction.message);
-
-  //   // ensure Post exists
-  //   const post = await findOrCreatePost(reaction.message);
-
-  //   // ensure Emoji exists
-  //   const emoji = await findOrCreateEmoji(reaction.emoji);
-
-  //   // upsert PostReaction
-  //   await prisma.reaction.upsert({
-  //     where: {
-  //       postId_userDiscordId_emojiId: {
-  //         postId: post.id,
-  //         emojiId: emoji.id,
-  //         userDiscordId: user.discordId,
-  //       },
-  //     },
-  //     update: {},
-  //     create: {
-  //       postId: post.id,
-  //       emojiId: emoji.id,
-  //       userDiscordId: user.discordId,
-  //     },
-  //   });
-
-  // const emojiAction = emoji.action;
-  // if (emojiAction) {
-  //   await performEmojiAction(emojiAction, reaction, user);
-  // }
-  // } catch (error) {
-  //   console.error("Error processing reaction:", error);
-  // }
 }
 
 async function handlePaymentRule(
-  postId: string,
+  post: Post,
   userId: number,
-  amount: number,
+  paymentRule: PaymentRule,
   reaction: Reaction
 ) {
-  // Logic to handle payment rule
-  // For example, create or update a payment record
+  const amount = paymentRule.paymentAmount;
+
   await prisma.payment.upsert({
     where: {
       // Define unique identifier for payment, e.g., a combination of postId and userId
-      postId_userId_reactionId: { postId, userId, reactionId: reaction.id },
+      postId_userId_reactionId: {
+        postId: post.id,
+        userId,
+        reactionId: reaction.id,
+      },
     },
     update: {
       amount, // Update the payment amount or any other necessary fields
     },
     create: {
-      postId,
+      postId: post.id,
       userId,
       amount,
       status: "unknown", // initial payment status
       reactionId: reaction.id, // Assuming you're storing the emojiId in the reaction
     },
   });
-  console.log(`Payment rule processed for post ${postId}`);
+
+  // Update the post's total earnings
+  const updatedEarnings = (post.totalEarnings || 0) + amount;
+  await prisma.post.update({
+    where: { id: post.id },
+    data: { totalEarnings: updatedEarnings, isPublished: true },
+  });
+
+  console.log(
+    `Payment rule processed for post ${post.id}: new total earnings ${updatedEarnings}`
+  );
 }
 
 async function handleCategoryRule(postId: string, categoryId: number) {
@@ -208,67 +201,3 @@ async function handleCategoryRule(postId: string, categoryId: number) {
 
   console.log(`Category rule processed for post ${postId}`);
 }
-
-// import { PrismaClient } from '@prisma/client';
-
-// const prisma = new PrismaClient();
-
-// async function handleReaction(postId: string, emojiId: string, userId: number) {
-//   // Fetch the payment rule for the given emoji
-//   const paymentRule = await prisma.paymentRule.findUnique({
-//     where: { emojiId },
-//   });
-
-//   if (!paymentRule) {
-//     console.log("No payment rule for this emoji.");
-//     return;
-//   }
-
-//   // Check if the post is eligible for payment
-//   const post = await prisma.post.findUnique({
-//     where: { id: postId },
-//     include: { reactions: true },
-//   });
-
-//   if (!post || !post.isEligibleForPayment) {
-//     console.log("Post is not eligible for payment.");
-//     return;
-//   }
-
-//   // Check if the user has already reacted to this post with this emoji
-//   if (post.reactions.some(reaction => reaction.emojiId === emojiId && reaction.userId === userId)) {
-//     console.log("User has already reacted with this emoji.");
-//     return;
-//   }
-
-//   // Process the payment
-//   const paymentAmount = paymentRule.paymentAmount;
-//   await processPayment(postId, userId, paymentAmount);
-
-//   // Update the post's total earnings
-//   const updatedEarnings = (post.totalEarnings || 0) + paymentAmount;
-//   await prisma.post.update({
-//     where: { id: postId },
-//     data: { totalEarnings: updatedEarnings },
-//   });
-
-//   console.log(`Processed payment of ${paymentAmount} for post ${postId}`);
-// }
-
-// async function processPayment(postId: string, userId: number, amount: number) {
-//   // Implement the logic to process the payment
-//   // This could involve external payment services, internal accounting, etc.
-
-//   // For demonstration, let's create a Payment record
-//   await prisma.payment.create({
-//     data: {
-//       amount,
-//       status: 'completed', // or 'pending', based on your payment processing
-//       postId,
-//       userId,
-//     },
-//   });
-// }
-
-// // Example usage
-// handleReaction('some-post-id', 'emoji-id-for-payment', 123);

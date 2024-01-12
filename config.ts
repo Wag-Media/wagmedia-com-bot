@@ -1,15 +1,9 @@
 export type Role = "Director" | "Admin" | "Moderator" | "Member";
 
 // Define the discord roles that have the power to trigger actions from EmojiActions
-export const rolesWithPower = ["Director"];
+export const ROLES_WITH_POWER = ["Director"];
 
-// Define your valid emoji actions here
-// we are not using a db enum because sqlite does not support it
-export enum EmojiAction {
-  publish = "publish",
-  addCategory = "addCategory",
-  feature = "feature",
-}
+export const FEATURE_EMOJI = "WMFEATURED";
 
 // which channels the bot should monitor on the server
 export const CHANNELS_TO_MONITOR = ["1191869922930868315"]; //#bot];
@@ -31,6 +25,9 @@ export const categoryEmojiMap: {
   "Technical Analysis": "WMTA",
   Translations: "WMTRS",
   Tutorials: "WMTUT",
+  Bounty: "WMBOUNTY",
+  Video: "WMVIDEO",
+  Paraverse: "WMPARAVERSE",
 };
 
 // the emojis that trigger payment actions, that in turn publish a post.
@@ -60,9 +57,4 @@ export const paymentEmojiMap: {
   "200DOT": 200,
   "300DOT": 300,
   "500DOT": 500,
-};
-
-// define the roles and the emojis that trigger the action
-export const ROLE_RIGHTS: { [key in Role]?: EmojiAction[] } = {
-  Director: [EmojiAction.publish, EmojiAction.addCategory],
 };
