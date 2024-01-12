@@ -36,15 +36,16 @@ model User {
 }
 
 model Reaction {
-  id               Int      @id @default(autoincrement())
+  id               Int       @id @default(autoincrement())
   emojiId          String
-  emoji            Emoji    @relation(fields: [emojiId], references: [id])
+  emoji            Emoji     @relation(fields: [emojiId], references: [id])
   userDiscordId    String
-  user             User     @relation(fields: [userDiscordId], references: [discordId])
+  user             User      @relation(fields: [userDiscordId], references: [discordId])
   postId           String
-  post             Post     @relation(fields: [postId], references: [id])
-  createdAt        DateTime @default(now())
-  initiatesPayment Boolean  @default(false)
+  post             Post      @relation(fields: [postId], references: [id])
+  createdAt        DateTime  @default(now())
+  initiatesPayment Boolean   @default(false)
+  Payment          Payment[]
 
   @@unique([postId, userDiscordId, emojiId])
 }
@@ -88,28 +89,36 @@ model LastProcessedPost {
   updatedAt DateTime @updatedAt
 }
 
+// A payment is a record of a power user paying for a post they reacted to
 model Payment {
-  id        Int      @id @default(autoincrement())
-  amount    Float
-  status    String // e.g., "pending", "completed"
-  postId    String
-  post      Post     @relation(fields: [postId], references: [id])
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         Int      @id @default(autoincrement())
+  amount     Float
+  status     String // e.g., "pending", "completed"
+  postId     String
+  post       Post     @relation(fields: [postId], references: [id])
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
+  reactionId Int
+  reaction   Reaction @relation(fields: [reactionId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([postId, userId, reactionId])
 }
 
+// Rules for how much to pay for a given reaction
 model PaymentRule {
   id            Int    @id @default(autoincrement())
-  emojiId       String
+  emojiId       String @unique
   emoji         Emoji  @relation(fields: [emojiId], references: [id])
   paymentAmount Float
+  paymentUnit   String
 }
 
+// Rules for which category a post belongs to
 model CategoryRule {
   id         Int      @id @default(autoincrement())
-  emojiId    String
+  emojiId    String   @unique
   emoji      Emoji    @relation(fields: [emojiId], references: [id])
   categoryId Int
   category   Category @relation(fields: [categoryId], references: [id])

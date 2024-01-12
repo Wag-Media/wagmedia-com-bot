@@ -3,18 +3,12 @@ import { findOrCreateEmoji } from "@/data/emoji.js";
 import { findOrCreatePost } from "@/data/post.js";
 import { findOrCreateUser } from "@/data/user.js";
 import { userHasRole } from "@/utils/userHasRole.js";
-import { PrismaClient, Reaction, User } from "@prisma/client";
+import { PrismaClient, User } from "@prisma/client";
 import { Emoji, MessageReaction, User as DiscordUser } from "discord.js";
 import * as config from "../config.js";
 
 const prisma = new PrismaClient();
 
-/**
- * Handle a reaction being added to a message. Perform checks if the user is authorized and the reaction is valid.
- * @param reaction
- * @param user
- * @returns
- */
 export async function handleMessageReactionAdd(
   reaction: MessageReaction,
   user: DiscordUser
@@ -65,8 +59,9 @@ export async function handleMessageReactionAdd(
       await reaction.users.remove(user.id);
       return;
     }
-    await handleReaction(reaction, user);
   }
+
+  await handleReaction(reaction, user);
 }
 
 export async function handleReaction(
@@ -77,16 +72,6 @@ export async function handleReaction(
   let emojiIdentifier = reaction.emoji.id || reaction.emoji.name; // Handle both custom and Unicode emojis
   if (!emojiIdentifier) {
     throw new Error("No emoji found in the reaction");
-  }
-
-  // Extract necessary information from the reaction
-  let emojiId = reaction.emoji.id || reaction.emoji.name; // Adjust as per your emoji identification logic
-  const postId = reaction.message.id; // Assuming message ID is used as post ID
-
-  // Ensure emojiId is not null and is a string
-  if (!emojiId) {
-    console.log("Emoji ID is null, skipping processing.");
-    return;
   }
 
   try {
@@ -100,7 +85,7 @@ export async function handleReaction(
     const emoji = await findOrCreateEmoji(reaction.emoji);
 
     // upsert PostReaction
-    const dbReaction = await prisma.reaction.upsert({
+    await prisma.reaction.upsert({
       where: {
         postId_userDiscordId_emojiId: {
           postId: post.id,
@@ -116,110 +101,74 @@ export async function handleReaction(
       },
     });
 
-    // Check for Payment Rule
-    const paymentRule = await prisma.paymentRule.findUnique({
-      where: { emojiId },
-    });
-
-    if (paymentRule) {
-      await handlePaymentRule(
-        postId,
-        user.id,
-        paymentRule.paymentAmount,
-        dbReaction
-      );
-      return;
-    }
-
-    // Check for Category Rule
-    const categoryRule = await prisma.categoryRule.findUnique({
-      where: { emojiId },
-    });
-
-    if (categoryRule) {
-      await handleCategoryRule(postId, categoryRule.categoryId);
-      return;
-    }
-
-    console.log("No action rule found for this reaction.");
+    // const emojiAction = emoji.action;
+    // if (emojiAction) {
+    //   await performEmojiAction(emojiAction, reaction, user);
+    // }
   } catch (error) {
     console.error("Error processing reaction:", error);
   }
-
-  // try {
-  //   // ensure User exists
-  //   const user = await findOrCreateUser(reaction.message);
-
-  //   // ensure Post exists
-  //   const post = await findOrCreatePost(reaction.message);
-
-  //   // ensure Emoji exists
-  //   const emoji = await findOrCreateEmoji(reaction.emoji);
-
-  //   // upsert PostReaction
-  //   await prisma.reaction.upsert({
-  //     where: {
-  //       postId_userDiscordId_emojiId: {
-  //         postId: post.id,
-  //         emojiId: emoji.id,
-  //         userDiscordId: user.discordId,
-  //       },
-  //     },
-  //     update: {},
-  //     create: {
-  //       postId: post.id,
-  //       emojiId: emoji.id,
-  //       userDiscordId: user.discordId,
-  //     },
-  //   });
-
-  // const emojiAction = emoji.action;
-  // if (emojiAction) {
-  //   await performEmojiAction(emojiAction, reaction, user);
-  // }
-  // } catch (error) {
-  //   console.error("Error processing reaction:", error);
-  // }
 }
 
-async function handlePaymentRule(
-  postId: string,
-  userId: number,
-  amount: number,
-  reaction: Reaction
+function isValidAction(action: string): boolean {
+  return Object.values(EmojiAction).includes(action as EmojiAction);
+}
+
+async function performEmojiAction(
+  action: string,
+  reaction: MessageReaction,
+  user: User
 ) {
-  // Logic to handle payment rule
-  // For example, create or update a payment record
-  await prisma.payment.upsert({
-    where: {
-      // Define unique identifier for payment, e.g., a combination of postId and userId
-      postId_userId_reactionId: { postId, userId, reactionId: reaction.id },
-    },
-    update: {
-      amount, // Update the payment amount or any other necessary fields
-    },
-    create: {
-      postId,
-      userId,
-      amount,
-      status: "unknown", // initial payment status
-      reactionId: reaction.id, // Assuming you're storing the emojiId in the reaction
-    },
-  });
-  console.log(`Payment rule processed for post ${postId}`);
-}
+  if (!isValidAction(action)) {
+    console.error(`Invalid action: ${action}`);
+    return;
+  }
 
-async function handleCategoryRule(postId: string, categoryId: number) {
-  await prisma.post.update({
-    where: { id: postId },
-    data: {
-      categories: {
-        connect: { id: categoryId },
-      },
-    },
-  });
+  const emoji = reaction.emoji;
 
-  console.log(`Category rule processed for post ${postId}`);
+  switch (action) {
+    case EmojiAction.publish:
+      console.log("post published", reaction.message.id);
+      await prisma.post.update({
+        where: {
+          id: reaction.message.id,
+        },
+        data: {
+          isPublished: true,
+        },
+      });
+
+      break;
+    case EmojiAction.addCategory:
+      console.log("added category to", reaction.message.id);
+      await prisma.post.update({
+        where: {
+          id: reaction.message.id,
+        },
+        data: {
+          categories: {
+            connect: {
+              emojiId: emoji.name || emoji.id!,
+            },
+          },
+        },
+      });
+      break;
+
+    case EmojiAction.feature:
+      console.log("featured post", reaction.message.id);
+      await prisma.post.update({
+        where: {
+          id: reaction.message.id,
+        },
+        data: {
+          isFeatured: true,
+        },
+      });
+      break;
+    default:
+      console.error(`Invalid action: ${action}`);
+  }
 }
 
 // import { PrismaClient } from '@prisma/client';
