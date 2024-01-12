@@ -21,7 +21,7 @@ export const categoryEmojiMap: {
   "Non Anglo": "WMNAO",
   NFT: "WMNFT",
   OpenGov: "WMOG",
-  Parachains: "WMPARA",
+  Parachain: "WMPARA",
   "Technical Analysis": "WMTA",
   Translations: "WMTRS",
   Tutorials: "WMTUT",

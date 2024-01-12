@@ -3,17 +3,11 @@ import { dfp } from "./utils/dfp.js";
 import { client } from "./utils/discord.js";
 import * as config from "./config.js";
 import { Emoji, MessageReaction, User } from "discord.js";
-import { parseMessage } from "./utils/parse-message.js";
+
 import { PrismaClient } from "@prisma/client";
-import { findOrCreateUser } from "./data/user.js";
-import { findOrCreateEmoji } from "./data/emoji.js";
-import { findOrCreatePost } from "./data/post.js";
-import {
-  handleMessageReactionAdd,
-  handleReaction,
-} from "./handlers/handleMessageReactionAdd.js";
-import { userHasRole } from "./utils/userHasRole.js";
+
 import { handleMessageCreate } from "./handlers/handleMessageCreate.js";
+import { handleMessageReactionAdd } from "./handlers/handleMessageReactionAdd.js";
 
 //store your token in environment variable or put it here
 const token = process.env["TOKEN"];

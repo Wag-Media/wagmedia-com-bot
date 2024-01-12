@@ -3,6 +3,7 @@ import { findOrCreatePost } from "@/data/post.js";
 import { findOrCreateUser } from "@/data/user.js";
 import { userHasRole } from "@/utils/userHasRole.js";
 import {
+  Category,
   PaymentRule,
   Post,
   PrismaClient,
@@ -78,7 +79,7 @@ export async function handleMessageReactionAdd(
 
 export async function handleReaction(
   reaction: MessageReaction,
-  user: DiscordUser
+  discordUser: DiscordUser
 ) {
   const postId = reaction.message.id; // Assuming message ID is used as post ID
 
@@ -115,7 +116,22 @@ export async function handleReaction(
     });
 
     if (paymentRule) {
-      await handlePaymentRule(post, user.id, paymentRule, dbReaction);
+      // first check if the post is complete before publishing it by adding the payment emoji
+      const postCategories = post.categories;
+
+      if (postCategories.length === 0) {
+        const messageLink = `https://discord.com/channels/${reaction.message.guild?.id}/${reaction.message.channel.id}/${reaction.message.id}`;
+        await discordUser.send(
+          `Before you can publish the post ${messageLink}, make sure it has a category.`
+        );
+        console.log(
+          `Informed ${discordUser.tag} about the post not having a category.`
+        );
+        await reaction.users.remove(discordUser.id);
+      } else {
+        await handlePaymentRule(post, user.id, paymentRule, dbReaction);
+      }
+
       return;
     }
 
@@ -149,7 +165,7 @@ export async function handleReaction(
 }
 
 async function handlePaymentRule(
-  post: Post,
+  post: Post & { categories: Category[] },
   userId: number,
   paymentRule: PaymentRule,
   reaction: Reaction
