@@ -14,7 +14,7 @@ const token = process.env["DISCORD_BOT_TOKEN"];
 const prisma = new PrismaClient();
 
 client.on("ready", () => {
-  console.log(`Logged in as ${client.user?.tag}!`);
+  console.log(`Bot logged in as ${client.user?.tag}!`);
 
   dfp.start({
     client,
