@@ -10,7 +10,7 @@ import { handleMessageCreate } from "./handlers/handleMessageCreate.js";
 import { handleMessageReactionAdd } from "./handlers/handleMessageReactionAdd.js";
 
 //store your token in environment variable or put it here
-const token = process.env["TOKEN"];
+const token = process.env["DISCORD_BOT_TOKEN"];
 const prisma = new PrismaClient();
 
 client.on("ready", () => {
