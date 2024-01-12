@@ -15,10 +15,6 @@ export async function handleMessageCreate(message) {
     console.log(`  ↪ tags: ${tags}`);
     console.log(`  ↪ avatar: ${message.member?.displayAvatarURL()}`);
 
-    console.log(
-      `checking if all good, ${title}, ${description}, ${tags.length}`
-    );
-
     // Check if the message contains necessary information
     if (title && description) {
       // Upsert the user (create if not exists, else skip creation)
