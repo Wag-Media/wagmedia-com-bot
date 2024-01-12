@@ -73,21 +73,7 @@ export async function handleReaction(
   reaction: MessageReaction,
   user: DiscordUser
 ) {
-  // Ensure related records exist
-  let emojiIdentifier = reaction.emoji.id || reaction.emoji.name; // Handle both custom and Unicode emojis
-  if (!emojiIdentifier) {
-    throw new Error("No emoji found in the reaction");
-  }
-
-  // Extract necessary information from the reaction
-  let emojiId = reaction.emoji.id || reaction.emoji.name; // Adjust as per your emoji identification logic
   const postId = reaction.message.id; // Assuming message ID is used as post ID
-
-  // Ensure emojiId is not null and is a string
-  if (!emojiId) {
-    console.log("Emoji ID is null, skipping processing.");
-    return;
-  }
 
   try {
     // ensure User exists
@@ -118,8 +104,9 @@ export async function handleReaction(
 
     // Check for Payment Rule
     const paymentRule = await prisma.paymentRule.findUnique({
-      where: { emojiId },
+      where: { emojiId: emoji.id },
     });
+    console.log("payment rule", paymentRule);
 
     if (paymentRule) {
       await handlePaymentRule(
@@ -133,7 +120,7 @@ export async function handleReaction(
 
     // Check for Category Rule
     const categoryRule = await prisma.categoryRule.findUnique({
-      where: { emojiId },
+      where: { emojiId: emoji.id },
     });
 
     if (categoryRule) {

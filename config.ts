@@ -44,7 +44,7 @@ export const paymentEmojiMap: {
   [key in string]: number;
 } = {
   "005DOT": 0.05,
-  "010DOT": 0.1,
+  "01DOT": 0.1,
   "02DOT": 0.2,
   "03DOT": 0.3,
   "05DOT": 0.5,
