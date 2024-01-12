@@ -8,9 +8,14 @@ import {
   Post,
   PrismaClient,
   Reaction,
-  User,
 } from "@prisma/client";
-import { Emoji, MessageReaction, User as DiscordUser } from "discord.js";
+import {
+  Emoji,
+  MessageReaction,
+  User as DiscordUser,
+  User,
+  Message,
+} from "discord.js";
 import * as config from "../config.js";
 
 const prisma = new PrismaClient();
@@ -117,18 +122,15 @@ export async function handleReaction(
 
     if (paymentRule) {
       // first check if the post is complete before publishing it by adding the payment emoji
-      const postCategories = post.categories;
 
-      if (postCategories.length === 0) {
-        const messageLink = `https://discord.com/channels/${reaction.message.guild?.id}/${reaction.message.channel.id}/${reaction.message.id}`;
-        await discordUser.send(
-          `Before you can publish the post ${messageLink}, make sure it has a category.`
-        );
-        console.log(
-          `Informed ${discordUser.tag} about the post not having a category.`
-        );
-        await reaction.users.remove(discordUser.id);
-      } else {
+      const isPostIncomplete = await handlePostIncomplete(
+        post,
+        discordUser,
+        reaction
+      );
+
+      // if the post is complete, process the payment rule (=add payment and publish post)
+      if (!isPostIncomplete) {
         await handlePaymentRule(post, user.id, paymentRule, dbReaction);
       }
 
@@ -161,6 +163,32 @@ export async function handleReaction(
     console.log("No action rule found for this reaction.");
   } catch (error) {
     console.error("Error processing reaction:", error);
+  }
+}
+
+/**
+ * Check if the post is incomplete, inform the user if it is and remove their reaction.
+ * @param post
+ * @param discordUser
+ * @param reaction
+ * @returns true if the post is incomplete, false otherwise
+ */
+async function handlePostIncomplete(
+  post: Post & { categories: Category[] },
+  discordUser: User,
+  reaction: MessageReaction
+) {
+  const postCategories = post.categories;
+  if (postCategories.length === 0) {
+    const messageLink = `https://discord.com/channels/${reaction.message.guild?.id}/${reaction.message.channel.id}/${reaction.message.id}`;
+    await discordUser.send(
+      `Before you can publish the post ${messageLink}, make sure it has a category.`
+    );
+    console.log(
+      `Informed ${discordUser.tag} about the post not having a category.`
+    );
+    await reaction.users.remove(discordUser.id);
+    return true;
   }
 }
 
