@@ -21,11 +21,6 @@ export const findOrCreateEmoji = async (emoji: GuildEmoji | ReactionEmoji) => {
     emojiId = emoji.name || undefined;
   }
 
-  console.log("will create this emoji", {
-    id: emoji.id || emoji.name!,
-    name: emoji.name!,
-  });
-
   const dbEmoji = await prisma.emoji.upsert({
     where: { id: emojiId || "unknown" },
     update: {
