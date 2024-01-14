@@ -3,7 +3,11 @@ export type Role = "Director" | "Admin" | "Moderator" | "Member";
 // Define the discord roles that have the power to trigger actions from EmojiActions
 export const ROLES_WITH_POWER = ["Director"];
 
+// the emoji that marks a post as featured
 export const FEATURE_EMOJI = "WMFEATURED";
+
+// the channel where the bot logs its actions
+export const CHANNEL_LOG = "1195416315314323626";
 
 // which channels the bot should monitor on the server
 export const CHANNELS_TO_MONITOR = ["1191869922930868315"]; //#bot];
