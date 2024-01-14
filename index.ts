@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { dfp } from "./utils/dfp.js";
-import { client } from "./utils/discord.js";
+import { discordClient, logger } from "./client";
 import * as config from "./config.js";
 import { Emoji, MessageReaction, User } from "discord.js";
 
@@ -8,54 +8,55 @@ import { PrismaClient } from "@prisma/client";
 
 import { handleMessageCreate } from "./handlers/handleMessageCreate.js";
 import { handleMessageReactionAdd } from "./handlers/handleMessageReactionAdd.js";
+import { DiscordLogger } from "./utils/DiscordLogger.js";
 
 //store your token in environment variable or put it here
 const token = process.env["DISCORD_BOT_TOKEN"];
 const prisma = new PrismaClient();
 
-client.on("ready", () => {
-  console.log(`logged in as ${client.user?.tag}!`);
-
-  dfp.start({
-    client,
-    load: ["./commands"],
-  });
+discordClient.on("ready", () => {
+  logger.log(`logged in as ${discordClient.user?.tag}!`);
 });
 
-client.on("error", console.error);
-client.on("warn", console.warn);
-client.on("disconnect", () => {
+discordClient.on("error", console.error);
+discordClient.on("warn", console.warn);
+discordClient.on("disconnect", () => {
   console.info("Disconnected from discord.");
 });
-client.on("reconnecting", () => {
+discordClient.on("reconnecting", () => {
   console.info("Reconnecting to discord.");
 });
 
-client.on("messageCreate", handleMessageCreate);
+discordClient.on("messageCreate", async (message) => {
+  try {
+    await handleMessageCreate(message);
+  } catch (error) {
+    console.error("Error in messageCreate event handler:", error);
+  }
+});
 
-client.on("messageReactionAdd", handleMessageReactionAdd);
+discordClient.on("messageReactionAdd", async (reaction, user) => {
+  try {
+    await handleMessageReactionAdd(reaction, user);
+  } catch (error) {
+    console.error("Error in messageReactionAdd event handler:", error);
+  }
+});
 
-client.on(
+discordClient.on(
   "messageReactionRemove",
   async (reaction: MessageReaction, user: User) => {
-    if (reaction.message.partial) await reaction.message.fetch(); // If the message is not cached
-    if (reaction.partial) await reaction.fetch(); // If the reaction is not cached
-    if (user.bot) return; // Ignore bot reactions
+    try {
+      if (reaction.message.partial) await reaction.message.fetch(); // If the message is not cached
+      if (reaction.partial) await reaction.fetch(); // If the reaction is not cached
+      if (user.bot) return; // Ignore bot reactions
 
-    // try {
-    //   await prisma.postReaction.delete({
-    //     where: {
-    //       postId_emojiId_reactorId: {
-    //         postId: reaction.message.id,
-    //         emojiId: reaction.emoji.id || reaction.emoji.name!, // If custom emoji, use ID, otherwise use name
-    //         reactorId: user.id,
-    //       },
-    //     },
-    //   });
-    // } catch (error) {
-    //   console.error("Error removing post reaction:", error);
-    // }
+      // Uncomment and use your logic here
+      // Ensure this logic is also wrapped in try-catch if it can throw errors
+    } catch (error) {
+      console.error("Error in messageReactionRemove handler:", error);
+    }
   }
 );
 
-client.login(token);
+discordClient.login(token);

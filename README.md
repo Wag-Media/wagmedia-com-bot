@@ -1,12 +1,21 @@
-# Discord JS Starter
+# Wagmedia Com Bot
 
-Modern Discord bot starter pack with **Typescript** and **Discord.js**
+## Installation
+
+1. copy .env.sample to .env and set the variables
+2. do more config in `config.ts`
+
+(optional)
+
+1. Setup a discord log channel for the bot to log its reactions. Allow the bot
+   roles to join and disable embeds for the bot roles to increase readability
 
 ## Features
 
--   Typescript with **esbulid/tsx**
--   Database with **Prisma**
--   Application Commands with [**Discord-FP**](https://github.com/SonMooSans/discord-fp)
+- Typescript with **esbulid/tsx**
+- Database with **Prisma**
+- Application Commands with
+  [**Discord-FP**](https://github.com/SonMooSans/discord-fp)
 
 ## Installation
 
@@ -22,7 +31,8 @@ We are using **pnpm** by default
 
 ### Configuration
 
-Since it's using `prisma` by default, you can use PostgreSQL, MySQL or any databases supported by prisma
+Since it's using `prisma` by default, you can use PostgreSQL, MySQL or any
+databases supported by prisma
 
 Edit your `.env` file for configure bot token & Database url
 

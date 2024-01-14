@@ -5,12 +5,12 @@ export const dfp = initDiscordFP();
 export const command = dfp.command;
 
 export const protectedCommand = dfp.command.middleware(({ event, next }) => {
-    //check permissions
+  //check permissions
 
-    return next({
-        ctx: {
-            message: "hello world",
-        },
-        event,
-    });
+  return next({
+    ctx: {
+      message: "hello world",
+    },
+    event,
+  });
 });

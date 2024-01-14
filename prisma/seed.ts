@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import * as config from "../config";
 import { extractUnit } from "../utils/extractUnit";
+import { logger } from "@/client";
 
 const prisma = new PrismaClient();
 
@@ -64,7 +65,7 @@ async function main() {
 
 main()
   .catch((e) => {
-    console.log(e);
+    logger.log("error seeding the db", e);
     process.exit(1);
   })
   .finally(async () => {
