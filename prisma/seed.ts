@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import * as config from "../config";
 import { extractUnit } from "../utils/extractUnit";
-import { logger } from "@/client";
+import { logger } from "../client";
 
 const prisma = new PrismaClient();
 
