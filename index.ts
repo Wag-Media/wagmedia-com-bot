@@ -9,6 +9,7 @@ import { PrismaClient } from "@prisma/client";
 import { handleMessageCreate } from "./handlers/handleMessageCreate.js";
 import { handleMessageReactionAdd } from "./handlers/handleMessageReactionAdd.js";
 import { DiscordLogger } from "./utils/DiscordLogger.js";
+import { handleMessageReactionRemove } from "./handlers/handleMessageReactionRemove.js";
 
 //store your token in environment variable or put it here
 const token = process.env["DISCORD_BOT_TOKEN"];
@@ -43,20 +44,12 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
   }
 });
 
-discordClient.on(
-  "messageReactionRemove",
-  async (reaction: MessageReaction, user: User) => {
-    try {
-      if (reaction.message.partial) await reaction.message.fetch(); // If the message is not cached
-      if (reaction.partial) await reaction.fetch(); // If the reaction is not cached
-      if (user.bot) return; // Ignore bot reactions
-
-      // Uncomment and use your logic here
-      // Ensure this logic is also wrapped in try-catch if it can throw errors
-    } catch (error) {
-      console.error("Error in messageReactionRemove handler:", error);
-    }
+discordClient.on("messageReactionRemove", async (reaction, user) => {
+  try {
+    await handleMessageReactionRemove(reaction, user);
+  } catch (error) {
+    console.error("Error in messageReactionRemove event handler:", error);
   }
-);
+});
 
 discordClient.login(token);

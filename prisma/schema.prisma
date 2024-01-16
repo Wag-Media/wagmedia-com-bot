@@ -99,9 +99,10 @@ model Payment {
   userId     Int
   user       User     @relation(fields: [userId], references: [id])
   reactionId Int
-  reaction   Reaction @relation(fields: [reactionId], references: [id])
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  reaction   Reaction @relation(fields: [reactionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([postId, userId, reactionId])
 }
