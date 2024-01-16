@@ -164,9 +164,7 @@ export async function handleMessageReactionRemove(
       data: { totalEarnings: updatedTotalEarnings },
     });
 
-    logger.log(
-      `Payment rule processed for above post: new total earnings ${updatedTotalEarnings}`
-    );
+    logger.log(`New total earnings ${updatedTotalEarnings}`);
 
     // Check if there are no remaining payment emojis on the post
     // Check if there are no remaining payment emojis on the updated post
