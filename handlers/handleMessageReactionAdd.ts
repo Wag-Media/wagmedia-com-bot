@@ -81,7 +81,7 @@ export async function handleMessageReactionAdd(
     });
 
     if (!post) {
-      console.log(
+      logger.warn(
         `Post with ID ${reaction.message.id} not found in the database.`
       );
       return; // Skip handling if the post is not found
@@ -239,6 +239,8 @@ async function handlePostIncomplete(
     await reaction.users.remove(discordUser.id);
     return true;
   }
+
+  return false;
 }
 
 async function handlePaymentRule(
