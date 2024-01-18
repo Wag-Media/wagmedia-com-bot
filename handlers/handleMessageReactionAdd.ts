@@ -1,4 +1,9 @@
-import { findOrCreateEmoji } from "@/data/emoji.js";
+import {
+  findEmoji,
+  findEmojiCategoryRule,
+  findEmojiPaymentRule,
+  findOrCreateEmoji,
+} from "@/data/emoji.js";
 import { userHasRole } from "@/utils/userHasRole.js";
 import {
   Category,
@@ -15,9 +20,19 @@ import {
   User as DiscordUser,
   PartialMessageReaction,
   PartialUser,
+  Guild,
+  messageLink,
 } from "discord.js";
 import * as config from "../config.js";
 import { logger } from "@/client.js";
+import { ensureFullEntities, shouldIgnoreReaction } from "./util.js";
+import { fetchPost } from "@/data/post.js";
+import {
+  logNewEmojiReceived,
+  logNewRegularUserEmojiReceived,
+} from "./log-utils.js";
+import { findOrCreateUser, findOrCreateUserFromReaction } from "@/data/user.js";
+import { upsertReaction } from "@/data/reaction.js";
 
 const prisma = new PrismaClient();
 
@@ -31,118 +46,48 @@ export async function handleMessageReactionAdd(
   reaction: MessageReaction | PartialMessageReaction,
   user: DiscordUser | PartialUser
 ) {
-  // Check if the reaction is in the channel we are interested in
-  if (!config.CHANNELS_TO_MONITOR.includes(reaction.message.channel.id)) return;
-  if (user.bot) return; // Ignore bot reactions
-  if (!reaction.message.guild) return; // Ignore DMs
+  if (shouldIgnoreReaction(reaction, user)) return;
 
-  const guild = reaction.message.guild;
-
-  // make sure the message, reaction and user are cached
-  if (reaction.message.partial) {
-    try {
-      await reaction.message.fetch();
-    } catch (error) {
-      console.error("Something went wrong when fetching the message:", error);
-      return;
-    }
-  }
-
-  if (reaction.partial) {
-    try {
-      reaction = (await reaction.fetch()) as MessageReaction;
-    } catch (error) {
-      console.error("Something went wrong when fetching the reaction:", error);
-      return;
-    }
-  }
-
-  if (user.partial) {
-    try {
-      user = (await user.fetch()) as DiscordUser;
-    } catch (error) {
-      console.error("Something went wrong when fetching the user:", error);
-      return;
-    }
-  }
-
+  // guild is not null because we checked for it in shouldIgnoreReaction
+  const guild = reaction.message.guild!;
   const messageLink = `https://discord.com/channels/${guild.id}/${reaction.message.channel.id}/${reaction.message.id}`;
 
-  // Check if the message exists in the database i.e.,
-  // if it is a valid post with title and description
+  // make sure the message, reaction and user are cached
   try {
-    const post = await prisma.post.findUnique({
-      where: {
-        id: reaction.message.id,
-      },
-      include: {
-        categories: true, // Include the categories in the result
-      },
-    });
+    const fullEntities = await ensureFullEntities(reaction, user);
+    reaction = fullEntities.reaction;
+    user = fullEntities.user;
+  } catch (error) {
+    logger.error("Error ensuring full entities:", error);
+    return;
+  }
 
-    if (!post) {
-      logger.warn(
-        `Post with ID ${reaction.message.id} not found in the database.`
-      );
-      return; // Skip handling if the post is not found
-    }
+  try {
+    const post = await fetchPost(reaction);
+    // if the message doesn't exist in the database,
+    // ignore the reaction as the message is not relevant for the bot
+    if (!post) return;
 
-    logger.log(
-      `new emoji received on valid post ${messageLink} ${JSON.stringify(
-        reaction.emoji.name
-      )} by ${user.displayName}`
-    );
+    logNewEmojiReceived(reaction, user, messageLink);
+    const dbEmoji = await findOrCreateEmoji(reaction.emoji);
 
-    // Remove WM emojis if the user does not have the power role
-    if (
-      !userHasRole(guild, user, config.ROLES_WITH_POWER) &&
-      reaction.emoji.name?.startsWith("WM")
-    ) {
-      await user.send(
-        `You do not have permission to add WagMedia emojis in ${messageLink}`
-      );
-      logger.log(
-        `Informed ${user.tag} about not having permission to use the emoji.`
-      );
-      await reaction.users.remove(user.id);
-      return;
-    }
-
-    const emoji = await findOrCreateEmoji(reaction.emoji);
-    const dbUser = await prisma.user.findUnique({
-      where: { discordId: user.id },
-    });
-
+    // upsert the user who reacted
+    const dbUser = await findOrCreateUserFromReaction(reaction);
     if (!dbUser) {
       logger.error("User not found in the database.");
       return;
     }
 
-    // upsert PostReaction in any other case (user didnt post WM emoji, user has power role, etc.)
-    const dbReaction = await prisma.reaction.upsert({
-      where: {
-        postId_userDiscordId_emojiId: {
-          postId: post.id,
-          emojiId: emoji.id,
-          userDiscordId: dbUser.discordId,
-        },
-      },
-      update: {},
-      create: {
-        postId: post.id,
-        emojiId: emoji.id,
-        userDiscordId: dbUser.discordId,
-      },
-    });
-
     if (userHasRole(guild, user, config.ROLES_WITH_POWER)) {
-      await handleElevatedReaction(
+      await processSuperuserReaction(reaction, user, dbUser, post, dbEmoji);
+    } else {
+      await processRegularUserReaction(
         reaction,
+        user,
         dbUser,
         post,
-        emoji,
-        dbReaction,
-        user
+        dbEmoji,
+        messageLink
       );
     }
   } catch (error) {
@@ -151,25 +96,56 @@ export async function handleMessageReactionAdd(
   }
 }
 
-export async function handleElevatedReaction(
+export async function processRegularUserReaction(
   reaction: MessageReaction,
-  user: User,
+  discordUser: DiscordUser,
+  dbUser: User,
   post: Post & { categories: Category[] },
-  emoji: Emoji,
-  dbReaction: Reaction,
-  discordUser: DiscordUser
+  dbEmoji: Emoji,
+  messageLink: string
 ) {
-  const postId = reaction.message.id; // Assuming message ID is used as post ID
+  // Remove WM emojis if the user does not have the power role
+  if (reaction.emoji.name?.startsWith("WM")) {
+    await discordUser.send(
+      `You do not have permission to add WagMedia emojis in ${messageLink}`
+    );
+    logger.log(
+      `Informed ${discordUser.tag} about not having permission to use the emoji.`
+    );
+    await reaction.users.remove(discordUser.id);
+  } else {
+    await upsertReaction(post, dbUser, dbEmoji);
+    logNewRegularUserEmojiReceived(reaction, discordUser, messageLink);
+  }
+}
+
+export async function processSuperuserReaction(
+  reaction: MessageReaction,
+  discordUser: DiscordUser,
+  dbUser: User,
+  post: Post & { categories: Category[] },
+  dbEmoji: Emoji
+) {
+  const postId = reaction.message.id;
+  const dbReaction = await upsertReaction(post, dbUser, dbEmoji);
+
+  // process possible rules for the emoji
+  // 1. Category Rule
+  // 2. Payment Rule
+  // 3. Feature Rule
 
   try {
-    // Check for Payment Rule
-    const paymentRule = await prisma.paymentRule.findUnique({
-      where: { emojiId: emoji.id },
-    });
+    // 1. Check for Category Rule
+    const categoryRule = await findEmojiCategoryRule(dbEmoji.id);
+    if (categoryRule) {
+      await handleCategoryRule(postId, categoryRule);
+      return;
+    }
 
+    // 2. Check for Payment Rule
+    const paymentRule = await findEmojiPaymentRule(dbEmoji.id);
     if (paymentRule) {
       // first check if the post is complete before publishing it by adding the payment emoji
-
       const isPostIncomplete = await handlePostIncomplete(
         post,
         discordUser,
@@ -178,25 +154,13 @@ export async function handleElevatedReaction(
 
       // if the post is complete, process the payment rule (=add payment and publish post)
       if (!isPostIncomplete) {
-        await handlePaymentRule(post, user.id, paymentRule, dbReaction);
+        await handlePaymentRule(post, dbUser.id, paymentRule, dbReaction.id);
       }
-
       return;
     }
 
-    // Check for Category Rule
-    const categoryRule = await prisma.categoryRule.findUnique({
-      where: { emojiId: emoji.id },
-      include: { category: true },
-    });
-
-    if (categoryRule) {
-      await handleCategoryRule(postId, categoryRule);
-      return;
-    }
-
-    // Check for Feature Rule
-    if (emoji.name === config.FEATURE_EMOJI) {
+    // 3. Check for Feature Rule
+    if (dbEmoji.name === config.FEATURE_EMOJI) {
       await prisma.post.update({
         where: {
           id: reaction.message.id,
@@ -247,7 +211,7 @@ async function handlePaymentRule(
   post: Post & { categories: Category[] },
   userId: number,
   paymentRule: PaymentRule,
-  reaction: Reaction
+  reactionId: number
 ) {
   const amount = paymentRule.paymentAmount;
 
@@ -257,7 +221,7 @@ async function handlePaymentRule(
       postId_userId_reactionId: {
         postId: post.id,
         userId,
-        reactionId: reaction.id,
+        reactionId: reactionId,
       },
     },
     update: {
@@ -268,7 +232,7 @@ async function handlePaymentRule(
       userId,
       amount,
       status: "unknown", // initial payment status
-      reactionId: reaction.id, // Assuming you're storing the emojiId in the reaction
+      reactionId: reactionId,
     },
   });
 

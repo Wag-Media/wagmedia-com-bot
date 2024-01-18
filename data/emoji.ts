@@ -1,4 +1,9 @@
-import { PrismaClient } from "@prisma/client";
+import {
+  Category,
+  CategoryRule,
+  PaymentRule,
+  PrismaClient,
+} from "@prisma/client";
 import { GuildEmoji, MessageReaction, ReactionEmoji } from "discord.js";
 const prisma = new PrismaClient();
 
@@ -69,3 +74,20 @@ export const findOrCreateEmoji = async (emoji: GuildEmoji | ReactionEmoji) => {
 
   return dbEmoji;
 };
+
+export async function findEmojiPaymentRule(
+  emojiId
+): Promise<PaymentRule | null> {
+  return await prisma.paymentRule.findUnique({
+    where: { emojiId: emojiId },
+  });
+}
+
+export async function findEmojiCategoryRule(
+  emojiId: string
+): Promise<(CategoryRule & { category: Category }) | null> {
+  return await prisma.categoryRule.findUnique({
+    where: { emojiId: emojiId },
+    include: { category: true },
+  });
+}
