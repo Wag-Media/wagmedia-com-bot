@@ -4,10 +4,12 @@ import {
   PaymentRule,
   PrismaClient,
 } from "@prisma/client";
-import { GuildEmoji, MessageReaction, ReactionEmoji } from "discord.js";
+import { Emoji, GuildEmoji, MessageReaction, ReactionEmoji } from "discord.js";
 const prisma = new PrismaClient();
 
-export const findEmoji = async (emoji: GuildEmoji | ReactionEmoji) => {
+export const findEmoji = async (
+  emoji: GuildEmoji | ReactionEmoji
+): Promise<Emoji | null> => {
   let emojiName: string | undefined;
   let emojiChar: string | undefined;
   let discordEmojiId: string | undefined;
@@ -76,7 +78,7 @@ export const findOrCreateEmoji = async (emoji: GuildEmoji | ReactionEmoji) => {
 };
 
 export async function findEmojiPaymentRule(
-  emojiId
+  emojiId: string
 ): Promise<PaymentRule | null> {
   return await prisma.paymentRule.findUnique({
     where: { emojiId: emojiId },

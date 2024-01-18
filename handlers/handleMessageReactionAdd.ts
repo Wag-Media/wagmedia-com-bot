@@ -31,7 +31,10 @@ import {
   logNewEmojiReceived,
   logNewRegularUserEmojiReceived,
 } from "./log-utils.js";
-import { findOrCreateUser, findOrCreateUserFromReaction } from "@/data/user.js";
+import {
+  findOrCreateUser,
+  findOrCreateUserFromDiscordUser,
+} from "@/data/user.js";
 import { upsertReaction } from "@/data/reaction.js";
 
 const prisma = new PrismaClient();
@@ -72,7 +75,7 @@ export async function handleMessageReactionAdd(
     const dbEmoji = await findOrCreateEmoji(reaction.emoji);
 
     // upsert the user who reacted
-    const dbUser = await findOrCreateUserFromReaction(reaction);
+    const dbUser = await findOrCreateUserFromDiscordUser(user);
     if (!dbUser) {
       logger.error("User not found in the database.");
       return;

@@ -1,14 +1,31 @@
-import { PrismaClient } from "@prisma/client";
+import {
+  Category,
+  PaymentRule,
+  Post,
+  PrismaClient,
+  User,
+} from "@prisma/client";
 import {
   MessageReaction,
   User as DiscordUser,
   PartialMessageReaction,
   PartialUser,
+  Emoji,
 } from "discord.js";
 import * as config from "../config.js";
 import { logger } from "@/client.js";
-import { findEmoji, findOrCreateEmoji } from "@/data/emoji.js";
+import {
+  findEmoji,
+  findEmojiPaymentRule,
+  findOrCreateEmoji,
+} from "@/data/emoji.js";
 import { userHasRole } from "@/utils/userHasRole.js";
+import { ensureFullEntities, shouldIgnoreReaction } from "./util.js";
+import { logEmojiRemoved } from "./log-utils";
+import {
+  deleteReaction,
+  getPostUserEmojiFromReaction,
+} from "@/data/reaction.js";
 
 const prisma = new PrismaClient();
 
@@ -23,85 +40,60 @@ export async function handleMessageReactionRemove(
   user: DiscordUser | PartialUser
 ) {
   // Similar checks as in handleMessageReactionAdd
-  if (!config.CHANNELS_TO_MONITOR.includes(reaction.message.channel.id)) return;
-  if (user.bot) return; // Ignore bot reactions
-  if (!reaction.message.guild) return; // Ignore DMs
+  if (shouldIgnoreReaction(reaction, user)) return;
 
-  const guild = reaction.message.guild;
+  // guild is not null because we checked for it in shouldIgnoreReaction
+  const guild = reaction.message.guild!;
+  const messageLink = `https://discord.com/channels/${guild.id}/${reaction.message.channel.id}/${reaction.message.id}`;
 
   // make sure the message, reaction and user are cached
-  if (reaction.message.partial) {
-    try {
-      await reaction.message.fetch();
-    } catch (error) {
-      logger.error("Something went wrong when fetching the message:", error);
-      return;
-    }
-  }
-
-  if (reaction.partial) {
-    try {
-      reaction = (await reaction.fetch()) as MessageReaction;
-    } catch (error) {
-      logger.error("Something went wrong when fetching the reaction:", error);
-      return;
-    }
-  }
-
-  if (user.partial) {
-    try {
-      user = (await user.fetch()) as DiscordUser;
-    } catch (error) {
-      logger.error("Something went wrong when fetching the user:", error);
-      return;
-    }
-  }
-
-  const messageLink = `https://discord.com/channels/${guild.id}/${reaction.message.channel.id}/${reaction.message.id}`;
-  if (!userHasRole(guild, user, config.ROLES_WITH_POWER)) {
-    // TODO if the user doesn't have the role, remove the reaction
-    return;
-  }
-
-  const emoji = await findEmoji(reaction.emoji);
-
-  if (!emoji) {
-    logger.log(
-      `Emoji ${reaction.emoji.name} not found in the database. Skipping.`
+  try {
+    const fullEntities = await ensureFullEntities(reaction, user);
+    reaction = fullEntities.reaction;
+    user = fullEntities.user;
+  } catch (error) {
+    logger.error(
+      "Error ensuring full entities when removing a message reaction:",
+      error
     );
     return;
   }
 
-  logger.log(
-    `Reaction ${reaction.emoji.name} removed from message ${messageLink} by user ${user.username}#${user.discriminator}.`
-  );
-
-  const post = await prisma.post.findUnique({
-    where: { id: reaction.message.id },
-    include: {
-      reactions: {
-        include: {
-          emoji: {
-            include: {
-              PaymentRule: true, // Include PaymentRule in the emoji
-            },
-          },
-        },
-      },
-    },
-  });
-
-  if (!post) {
-    logger.log(
-      `Post with ID ${reaction.message.id} not found in the database.`
+  try {
+    const { post, dbUser, dbEmoji } = await getPostUserEmojiFromReaction(
+      reaction,
+      user.id
     );
-    return;
-  }
 
-  // Find the payment rule for the emoji
-  const paymentRule = await prisma.paymentRule.findFirst({
-    where: { emojiId: emoji.id },
-  });
+    logEmojiRemoved(reaction, user, messageLink);
+
+    if (userHasRole(guild, user, config.ROLES_WITH_POWER)) {
+      processSuperuserReactionRemove(reaction, user, dbUser, post, dbEmoji);
+    } else {
+      //   processRegularUserReactionRemove(
+      //     reaction,
+      //     user,
+      //     dbUser,
+      //     post,
+      //     dbEmoji,
+      //     messageLink
+      //   );
+    }
+  } catch (error) {
+    logger.error("Error logging emoji removed:", error);
+  }
+}
+
+export async function processSuperuserReactionRemove(
+  reaction: MessageReaction,
+  discordUser: DiscordUser,
+  dbUser: User,
+  post: Post,
+  dbEmoji: Emoji
+) {
+  // dbEmoji.id is not null because we checked for it in getPostUserEmojiFromReaction
+  await deleteReaction(post.id, dbUser.discordId, dbEmoji.id!);
+  const paymentRule = await findEmojiPaymentRule(dbEmoji.id!);
 
   if (paymentRule) {
     if (!post.totalEarnings) {
@@ -110,17 +102,6 @@ export async function handleMessageReactionRemove(
       );
       return;
     }
-
-    // Remove the reaction (cascade delete will remove associated payments)
-    await prisma.reaction.delete({
-      where: {
-        postId_userDiscordId_emojiId: {
-          postId: post.id,
-          emojiId: emoji.id,
-          userDiscordId: user.id,
-        },
-      },
-    });
 
     // Refetch the post and its reactions to get updated state
     const updatedPost = await prisma.post.findUnique({
@@ -160,13 +141,12 @@ export async function handleMessageReactionRemove(
 
     // Update the post's total earnings
     await prisma.post.update({
-      where: { id: post.id },
+      where: { id: updatedPost!.id },
       data: { totalEarnings: updatedTotalEarnings },
     });
 
     logger.log(`New total earnings ${updatedTotalEarnings}`);
 
-    // Check if there are no remaining payment emojis on the post
     // Check if there are no remaining payment emojis on the updated post
     const remainingPaymentEmojis = updatedPost!.reactions.filter(
       (reaction) =>
@@ -184,6 +164,4 @@ export async function handleMessageReactionRemove(
       );
     }
   }
-
-  // ... Add any additional logic for other emojis or conditions
 }
