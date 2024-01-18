@@ -2,7 +2,7 @@ import "dotenv/config";
 import { dfp } from "./utils/dfp.js";
 import { discordClient, logger } from "./client";
 import * as config from "./config.js";
-import { Emoji, MessageReaction, User } from "discord.js";
+import { Emoji, MessageReaction, TextChannel, User } from "discord.js";
 
 import { PrismaClient } from "@prisma/client";
 
@@ -10,13 +10,17 @@ import { handleMessageCreate } from "./handlers/handleMessageCreate.js";
 import { handleMessageReactionAdd } from "./handlers/handleMessageReactionAdd.js";
 import { DiscordLogger } from "./utils/DiscordLogger.js";
 import { handleMessageReactionRemove } from "./handlers/handleMessageReactionRemove.js";
+import { handleOldMessagesAndReactions } from "./handlers/handleOldMessagesAndReactions.js";
 
 //store your token in environment variable or put it here
 const token = process.env["DISCORD_BOT_TOKEN"];
-const prisma = new PrismaClient();
 
 discordClient.on("ready", () => {
   logger.log(`logged in as ${discordClient.user?.tag}!`);
+
+  if (config.FETCH_OLD_MESSAGES) {
+    handleOldMessagesAndReactions(config.FETCH_OLD_MESSAGES_LIMIT || 10);
+  }
 });
 
 discordClient.on("error", console.error);
