@@ -12,6 +12,12 @@ export const CHANNEL_LOG = "1195416315314323626";
 // which channels the bot should monitor on the server
 export const CHANNELS_TO_MONITOR = ["1191869922930868315"]; //#bot];
 
+// if true, the bot will fetch old messages from the channels it monitors when it starts
+export const FETCH_OLD_MESSAGES = true;
+
+// how many messages to fetch when the bot starts from each monitored channel
+export const FETCH_OLD_MESSAGES_LIMIT = 10;
+
 // the emojis that trigger the add category action.
 
 // 🚨 The following values are only used for
