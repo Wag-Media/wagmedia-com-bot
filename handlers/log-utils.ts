@@ -24,3 +24,13 @@ export function logNewRegularUserEmojiReceived(
     )} by ${user.displayName}`
   );
 }
+
+export function logEmojiRemoved(
+  reaction: MessageReaction,
+  user: DiscordUser,
+  messageLink: string
+) {
+  logger.log(
+    `Reaction ${reaction.emoji.name} removed from message ${messageLink} by user ${user.username}#${user.discriminator}.`
+  );
+}
