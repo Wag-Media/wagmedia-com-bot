@@ -59,3 +59,21 @@ export async function fetchPost(
   }
   return post;
 }
+
+export async function removeCategoryFromPost(
+  postId: string,
+  categoryId: number
+) {
+  const post = await prisma.post.update({
+    where: {
+      id: postId,
+    },
+    data: {
+      categories: {
+        disconnect: [{ id: categoryId }],
+      },
+    },
+  });
+
+  return post;
+}
