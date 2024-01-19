@@ -11,7 +11,7 @@ export const CHANNEL_LOG = "1195416315314323626";
 
 // which channels the bot should monitor on the server
 export const CHANNELS_TO_MONITOR = [
-  "1191869922930868315", //#bot
+  "1191869922930868315", // #bot
   "1191801234345168917", // finders -> #nft-meta-news
 ];
 

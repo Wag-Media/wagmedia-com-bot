@@ -72,17 +72,23 @@ export async function handleMessageReactionRemove(
     if (userHasRole(guild, user, config.ROLES_WITH_POWER)) {
       processSuperuserReactionRemove(reaction, user, dbUser, post, dbEmoji);
     } else {
-      //   processRegularUserReactionRemove(
-      //     reaction,
-      //     user,
-      //     dbUser,
-      //     post,
-      //     dbEmoji,
-      //     messageLink
-      //   );
+      processRegularUserReactionRemove(dbUser, post, dbEmoji);
     }
   } catch (error) {
     logger.error("Error logging emoji removed:", error);
+  }
+}
+
+export async function processRegularUserReactionRemove(
+  dbUser: User,
+  post: Post,
+  dbEmoji: Emoji
+) {
+  try {
+    // dbEmoji.id is not null because we checked for it in getPostUserEmojiFromReaction
+    await deleteReaction(post.id, dbUser.discordId, dbEmoji.id!);
+  } catch (error) {
+    logger.error("Error deleting regular user reaction:", error);
   }
 }
 
@@ -93,18 +99,26 @@ export async function processSuperuserReactionRemove(
   post: Post,
   dbEmoji: Emoji
 ) {
-  // dbEmoji.id is not null because we checked for it in getPostUserEmojiFromReaction
-  await deleteReaction(post.id, dbUser.discordId, dbEmoji.id!);
+  try {
+    // dbEmoji.id is not null because we checked for it in getPostUserEmojiFromReaction
+    await deleteReaction(post.id, dbUser.discordId, dbEmoji.id!);
 
-  const paymentRule = await findEmojiPaymentRule(dbEmoji.id!);
-  if (paymentRule) {
-    handleSuperUserPaymentRuleReactionRemove(reaction, post);
-    return;
-  }
+    const paymentRule = await findEmojiPaymentRule(dbEmoji.id!);
+    if (paymentRule) {
+      handleSuperUserPaymentRuleReactionRemove(reaction, post);
+      return;
+    }
 
-  const categoryRule = await findEmojiCategoryRule(dbEmoji.id!);
-  if (categoryRule) {
-    handleSuperUserCategoryRuleReactionRemove(post, categoryRule, discordUser);
+    const categoryRule = await findEmojiCategoryRule(dbEmoji.id!);
+    if (categoryRule) {
+      handleSuperUserCategoryRuleReactionRemove(
+        post,
+        categoryRule,
+        discordUser
+      );
+    }
+  } catch (error) {
+    logger.error("Error deleting superuser reaction:", error);
   }
 }
 
