@@ -7,6 +7,10 @@ import {
 import * as config from "../config.js";
 import { logger } from "@/client.js";
 
+export function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /**
  * Check if a reaction should be ignored. Ignore:
  * - not from a monitored channel
