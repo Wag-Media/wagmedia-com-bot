@@ -77,3 +77,28 @@ export async function removeCategoryFromPost(
 
   return post;
 }
+
+export async function removeReactionFromPost(
+  postId: string,
+  userId: string,
+  emojiId: string
+) {
+  const post = await prisma.post.update({
+    where: {
+      id: postId,
+    },
+    data: {
+      reactions: {
+        delete: {
+          postId_userDiscordId_emojiId: {
+            postId,
+            emojiId,
+            userDiscordId: userId,
+          },
+        },
+      },
+    },
+  });
+
+  return post;
+}
