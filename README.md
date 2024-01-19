@@ -7,7 +7,7 @@
 
 (optional)
 
-1. Setup a discord log channel for the bot to log its reactions. Allow the bot
+3. Setup a discord log channel for the bot to log its reactions. Allow the bot
    roles to join and disable embeds for the bot roles to increase readability
 
 ## Features
@@ -17,11 +17,11 @@
 - Application Commands with
   [**Discord-FP**](https://github.com/SonMooSans/discord-fp)
 
-## Installation
+## Local Development
 
 ### Clone this repository
 
-`git clone https://github.com/SonMooSans/discord-bot-starter.git`
+`git clone git@github.com:Wag-Media/wagmedia-com-bot.git`
 
 ### Init
 
@@ -29,14 +29,35 @@ We are using **pnpm** by default
 
 `pnpm install`
 
-### Configuration
+### Run the Project
+
+### Watch Mode
+
+`pnpm run dev`
+
+### Changing the db schema
+
+After you made changes to the schema in `prisma/schema.prisma`
+
+`npx prisma migrate dev` to update the database
+
+### Look in the database
+
+`npx prisma studio` will serve a local database client on
+[https://localhost:5555](https://localhost:5555)
+
+### Run without watch
+
+`pnpm run start`
+
+## Configuration
 
 Since it's using `prisma` by default, you can use PostgreSQL, MySQL or any
 databases supported by prisma
 
 Edit your `.env` file for configure bot token & Database url
 
-### File structure
+## File structure
 
 | Path       | Description                    |
 | ---------- | ------------------------------ |
@@ -44,13 +65,3 @@ Edit your `.env` file for configure bot token & Database url
 | ./commands | All application commands       |
 | .env       | Environment Variables          |
 | ./prisma   | Prisma folder                  |
-
-## Run the Project
-
-### Watch Mode
-
-`pnpm run dev`
-
-### Run without watch
-
-`pnpm run start`
