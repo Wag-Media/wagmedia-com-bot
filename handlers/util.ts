@@ -7,6 +7,11 @@ import {
 import * as config from "../config.js";
 import { logger } from "@/client.js";
 
+/**
+ * Just a simple delay function.
+ * @param ms
+ * @returns
+ */
 export function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
