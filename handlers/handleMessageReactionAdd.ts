@@ -294,6 +294,10 @@ async function handlePaymentRule(
     },
   });
 
+  if (!post.totalEarnings) {
+    logger.log(`The above post has been published.`);
+  }
+
   // Update the post's total earnings
   const updatedEarnings = (post.totalEarnings || 0) + amount;
   await prisma.post.update({
