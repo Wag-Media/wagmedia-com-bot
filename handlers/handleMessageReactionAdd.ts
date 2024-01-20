@@ -114,7 +114,15 @@ export async function processRegularUserReaction(
       `You do not have permission to add WagMedia emojis in ${messageLink}`
     );
     logger.log(
-      `Informed ${discordUser.tag} about not having permission to use the emoji.`
+      `Informed ${discordUser.tag} about not having permission to use a WagMedia emoji.`
+    );
+    await reaction.users.remove(discordUser.id);
+  } else if (isCountryFlag(reaction.emoji.id)) {
+    await discordUser.send(
+      `You do not have permission to add country flag emojis in ${messageLink}`
+    );
+    logger.log(
+      `Informed ${discordUser.tag} about not having permission to use a country flag emoji.`
     );
     await reaction.users.remove(discordUser.id);
   } else {
@@ -203,7 +211,7 @@ async function handlePostIncomplete(
       `Before you can publish the post ${messageLink}, make sure it has a category.`
     );
     logger.log(
-      `Informed ${discordUser.tag} about the post not having a category.`
+      `Informed ${discordUser.tag} about the post not having a category when trying to publish.`
     );
     await reaction.users.remove(discordUser.id);
     return true;
@@ -228,19 +236,30 @@ async function handlePostIncomplete(
 
     if (!hasFlag) {
       await discordUser.send(
-        `Before you can publish the post ${messageLink}, make sure it has a flag.`
+        `Before you can publish the post ${messageLink}, with non-anglo category, make sure it has a flag.`
       );
       logger.log(
-        `Informed ${discordUser.tag} about the post not having a flag.`
+        `Informed ${discordUser.tag} about the post not having a flag when trying to publish.`
       );
       await reaction.users.remove(discordUser.id);
       return true;
-    } else {
-      logger.info(
-        "Post has a flag",
-        postReactions.filter((r) => r.emoji.id)
-      );
     }
+  }
+
+  // 3. make sure translation posts have a non anglo category
+  const isTranslation = postCategories.some((category) =>
+    category.name.includes("Translations")
+  );
+
+  if (isTranslation && !isNonAnglo) {
+    await discordUser.send(
+      `Before you can publish the post ${messageLink} with a translation category, make sure it also has a Non Anglo category.`
+    );
+    logger.log(
+      `Informed ${discordUser.tag} about a translated post not having a Non Anglo category when trying to publish.`
+    );
+    await reaction.users.remove(discordUser.id);
+    return true;
   }
 
   return false;
