@@ -36,6 +36,7 @@ import {
   findOrCreateUserFromDiscordUser,
 } from "@/data/user.js";
 import { upsertReaction } from "@/data/reaction.js";
+import { isCountryFlag } from "../utils/is-country-flag";
 
 const prisma = new PrismaClient();
 
@@ -193,10 +194,11 @@ async function handlePostIncomplete(
   discordUser: DiscordUser,
   reaction: MessageReaction
 ) {
-  // make sure the post has a category
   const postCategories = post.categories;
+  const messageLink = `https://discord.com/channels/${reaction.message.guild?.id}/${reaction.message.channel.id}/${reaction.message.id}`;
+
+  // 1.  make sure the post has a category
   if (postCategories.length === 0) {
-    const messageLink = `https://discord.com/channels/${reaction.message.guild?.id}/${reaction.message.channel.id}/${reaction.message.id}`;
     await discordUser.send(
       `Before you can publish the post ${messageLink}, make sure it has a category.`
     );
@@ -205,6 +207,40 @@ async function handlePostIncomplete(
     );
     await reaction.users.remove(discordUser.id);
     return true;
+  }
+
+  // 2. make sure non anglo posts have a flag
+  const isNonAnglo = postCategories.some((category) =>
+    category.name.includes("Non Anglo")
+  );
+
+  if (isNonAnglo) {
+    //get post reactions
+    const postReactions = await prisma.reaction.findMany({
+      where: { postId: post.id },
+      include: { emoji: true },
+    });
+
+    // check if the post has a flag
+    const hasFlag = postReactions.some((reaction) =>
+      isCountryFlag(reaction.emoji?.id)
+    );
+
+    if (!hasFlag) {
+      await discordUser.send(
+        `Before you can publish the post ${messageLink}, make sure it has a flag.`
+      );
+      logger.log(
+        `Informed ${discordUser.tag} about the post not having a flag.`
+      );
+      await reaction.users.remove(discordUser.id);
+      return true;
+    } else {
+      logger.info(
+        "Post has a flag",
+        postReactions.filter((r) => r.emoji.id)
+      );
+    }
   }
 
   return false;
