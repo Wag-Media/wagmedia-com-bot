@@ -275,7 +275,7 @@ async function handlePaymentRule(
 
   await prisma.payment.upsert({
     where: {
-      // Define unique identifier for payment, e.g., a combination of postId and userId
+      // Define unique identifier for payment
       postId_userId_reactionId: {
         postId: post.id,
         userId,
@@ -283,7 +283,7 @@ async function handlePaymentRule(
       },
     },
     update: {
-      amount, // Update the payment amount or any other necessary fields
+      amount, // Update the payment amount
     },
     create: {
       postId: post.id,

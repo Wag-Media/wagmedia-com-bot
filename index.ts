@@ -11,6 +11,7 @@ import { handleMessageReactionAdd } from "./handlers/handleMessageReactionAdd.js
 import { DiscordLogger } from "./utils/DiscordLogger.js";
 import { handleMessageReactionRemove } from "./handlers/handleMessageReactionRemove.js";
 import { handleOldMessagesAndReactions } from "./handlers/handleOldMessagesAndReactions.js";
+import { handleMessageUpdate } from "./handlers/handleMessageUpdate.js";
 
 //store your token in environment variable or put it here
 const token = process.env["DISCORD_BOT_TOKEN"];
@@ -37,6 +38,14 @@ discordClient.on("messageCreate", async (message) => {
     await handleMessageCreate(message);
   } catch (error) {
     console.error("Error in messageCreate event handler:", error);
+  }
+});
+
+discordClient.on("messageUpdate", async (oldMessage, newMessage) => {
+  try {
+    await handleMessageUpdate(oldMessage, newMessage);
+  } catch (error) {
+    console.error("Error in messageUpdate event handler:", error);
   }
 });
 
