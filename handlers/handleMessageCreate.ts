@@ -26,7 +26,6 @@ export async function handleMessageCreate(
     logger.log(`↪ title: ${title}`);
     logger.log(`↪ description: ${description}`);
     logger.log(`↪ tags: ${tags}`);
-
     const post = findOrCreatePost(message);
   }
 }
