@@ -1,4 +1,4 @@
-import { Category, Post, PrismaClient } from "@prisma/client";
+import { Category, Post, PrismaClient, Tag } from "@prisma/client";
 import { Message, MessageReaction, PartialMessage } from "discord.js";
 import { findOrCreateUser } from "./user.js";
 import { parseMessage } from "@/utils/parse-message.js";
@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 
 export const findOrCreatePost = async (
   message: Message<boolean> | PartialMessage
-): Promise<Post & { categories: Category[] }> => {
+): Promise<Post & { categories: Category[] & Tag[] }> => {
   if (!message.id) {
     throw new Error("Message must have an id");
   }
@@ -18,19 +18,43 @@ export const findOrCreatePost = async (
   const { title, description, tags } = parseMessage(message.content);
   const user = await findOrCreateUser(message);
 
+  // Ensure all tags exist
+  const tagInstances = await Promise.all(
+    tags.map(async (tag) => {
+      return prisma.tag.upsert({
+        where: { name: tag },
+        update: {},
+        create: {
+          name: tag,
+        },
+      });
+    })
+  );
+
+  // Upsert the post
   const post = await prisma.post.upsert({
-    where: {
-      id: message.id,
+    where: { id: message.id },
+    update: {
+      title,
+      content: description,
+      // Update tags connection
+      tags: {
+        set: [], // Disconnect any existing tags
+        connect: tagInstances.map((tag) => ({ id: tag.id })), // Connect new tags
+      },
     },
-    include: {
-      categories: true, // Include the categories in the result
-    },
-    update: {},
     create: {
       id: message.id,
       title,
       content: description,
-      userId: user.id, // use the discordId from the upserted user
+      userId: user.id, // Assuming you have the user's ID
+      tags: {
+        connect: tagInstances.map((tag) => ({ id: tag.id })),
+      },
+    },
+    include: {
+      categories: true,
+      tags: true, // Include tags in the returned object for verification
     },
   });
 

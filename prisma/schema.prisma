@@ -8,20 +8,26 @@ datasource db {
 }
 
 model Post {
-  id            String     @id
-  title         String
-  content       String?
-  userId        Int
-  user          User       @relation(fields: [userId], references: [id])
-  reactions     Reaction[]
-  categories    Category[]
-  tags          Tag[] // One-to-many relationship with Tag
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  isPublished   Boolean    @default(false)
-  isFeatured    Boolean    @default(false)
-  totalEarnings Float?     @default(0)
-  Payment       Payment[]
+  id         String     @id
+  title      String
+  content    String?
+  userId     Int
+  user       User       @relation(fields: [userId], references: [id])
+  reactions  Reaction[]
+  categories Category[]
+  tags       Tag[]      @relation("PostTags")
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  isPublished   Boolean  @default(false)
+  isFeatured    Boolean  @default(false)
+  totalEarnings Float?   @default(0)
+
+  // Payments directly associated with this post
+  payments Payment[] @relation(name: "PaymentPost")
+
+  // Payments associated with threads under this post
+  threadPayments Payment[] @relation(name: "PaymentThreadParent")
 }
 
 model User {
@@ -77,10 +83,9 @@ model Emoji {
 }
 
 model Tag {
-  id     Int    @id @default(autoincrement())
-  name   String @unique
-  postId String
-  post   Post   @relation(fields: [postId], references: [id])
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  posts Post[] @relation("PostTags")
 }
 
 model LastProcessedPost {
@@ -91,11 +96,18 @@ model LastProcessedPost {
 
 // A payment is a record of a power user paying for a post they reacted to
 model Payment {
-  id         Int      @id @default(autoincrement())
-  amount     Float
-  status     String // e.g., "pending", "completed"
-  postId     String
-  post       Post     @relation(fields: [postId], references: [id])
+  id     Int    @id @default(autoincrement())
+  amount Float
+  status String // e.g., "pending", "completed"
+
+  // Direct post associated with the payment
+  postId String
+  Post   Post   @relation(name: "PaymentPost", fields: [postId], references: [id])
+
+  // Parent post of the thread where the payment occurred
+  threadParentId String?
+  threadParent   Post?   @relation(name: "PaymentThreadParent", fields: [threadParentId], references: [id])
+
   userId     Int
   user       User     @relation(fields: [userId], references: [id])
   reactionId Int

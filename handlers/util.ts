@@ -3,6 +3,8 @@ import {
   PartialMessageReaction,
   PartialUser,
   User as DiscordUser,
+  Message,
+  PartialMessage,
 } from "discord.js";
 import * as config from "../config.js";
 import { logger } from "@/client.js";
@@ -40,6 +42,36 @@ export function shouldIgnoreReaction(
   if (!reaction.message.guild) return true;
 
   return false;
+}
+
+export function shouldIgnoreMessage(
+  message: Message<boolean> | PartialMessage
+) {
+  // Ignore DMs
+  if (!message.guild) return true;
+
+  // Ignore bot messages
+  if (message.author?.bot) return true;
+
+  // Ignore messages from channels we are not interested in
+  if (!config.CHANNELS_TO_MONITOR.includes(message.channel.id)) return true;
+
+  return false;
+}
+
+export async function ensureFullMessage(
+  message: Message<boolean> | PartialMessage
+): Promise<Message> {
+  if (message.partial) {
+    try {
+      message = (await message.fetch()) as Message;
+    } catch (error) {
+      logger.error("Something went wrong when fetching the message:", error);
+      throw new Error("Something went wrong when fetching the message:");
+    }
+  }
+
+  return message;
 }
 
 /**
