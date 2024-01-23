@@ -16,7 +16,7 @@ export const CHANNELS_TO_MONITOR = [
 ];
 
 // if true, the bot will fetch old messages from the channels it monitors when it starts
-export const FETCH_OLD_MESSAGES = true;
+export const FETCH_OLD_MESSAGES = false;
 
 // how many messages to fetch when the bot starts from each monitored channel
 export const FETCH_OLD_MESSAGES_LIMIT = 10;
@@ -51,23 +51,41 @@ export const categoryEmojiMap: {
 
 // payments are recorded and executed by another bot: https://github.com/Wag-Media/wagmi-bot
 export const paymentEmojiMap: {
-  [key in string]: number;
+  [key in string]: { amount: number; currency: string };
 } = {
-  "005DOT": 0.05,
-  "01DOT": 0.1,
-  "02DOT": 0.2,
-  "03DOT": 0.3,
-  "05DOT": 0.5,
-  "1DOT": 1,
-  "2DOT": 2,
-  "3DOT": 3,
-  "5DOT": 5,
-  "10DOT": 10,
-  "20DOT": 20,
-  "30DOT": 30,
-  "50DOT": 50,
-  "100DOT": 100,
-  "200DOT": 200,
-  "300DOT": 300,
-  "500DOT": 500,
+  "005WMDOT": { amount: 0.05, currency: "DOT" },
+  "01WMDOT": { amount: 0.1, currency: "DOT" },
+  "02WMDOT": { amount: 0.2, currency: "DOT" },
+  "03WMDOT": { amount: 0.3, currency: "DOT" },
+  "05WMDOT": { amount: 0.5, currency: "DOT" },
+  "1WMDOT": { amount: 1, currency: "DOT" },
+  "2WMDOT": { amount: 2, currency: "DOT" },
+  "3WMDOT": { amount: 3, currency: "DOT" },
+  "5WMDOT": { amount: 5, currency: "DOT" },
+  "10WMDOT": { amount: 10, currency: "DOT" },
+  "20WMDOT": { amount: 20, currency: "DOT" },
+  "30WMDOT": { amount: 30, currency: "DOT" },
+  "50WMDOT": { amount: 50, currency: "DOT" },
+  "100WMDOT": { amount: 100, currency: "DOT" },
+  "200WMDOT": { amount: 200, currency: "DOT" },
+  "300WMDOT": { amount: 300, currency: "DOT" },
+  "500WMDOT": { amount: 500, currency: "DOT" },
+
+  "1WMUSD": { amount: 1, currency: "USD" },
+  "2WMUSD": { amount: 2, currency: "USD" },
+  "3WMUSD": { amount: 3, currency: "USD" },
+  "5WMUSD": { amount: 5, currency: "USD" },
+  "10WMUSD": { amount: 10, currency: "USD" },
+  "20WMUSD": { amount: 20, currency: "USD" },
+  "30WMUSD": { amount: 30, currency: "USD" },
+  "50WMUSD": { amount: 50, currency: "USD" },
+  "100WMUSD": { amount: 100, currency: "USD" },
+  "200WMUSD": { amount: 200, currency: "USD" },
+  "300WMUSD": { amount: 300, currency: "USD" },
+  "500WMUSD": { amount: 500, currency: "USD" },
+  "1000WMUSD": { amount: 1000, currency: "USD" },
+  "2000WMUSD": { amount: 2000, currency: "USD" },
+  "3000WMUSD": { amount: 3000, currency: "USD" },
+  "5000WMUSD": { amount: 5000, currency: "USD" },
+  "10000WMUSD": { amount: 10000, currency: "USD" },
 };

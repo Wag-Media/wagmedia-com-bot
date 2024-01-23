@@ -43,8 +43,8 @@ async function main() {
 
   // 2) Seed Emojis for Payment Rules
   for (const paymentEmojiName in config.paymentEmojiMap) {
-    const paymentValue = config.paymentEmojiMap[paymentEmojiName];
-    const paymentUnit = extractUnit(paymentEmojiName);
+    const paymentValue = config.paymentEmojiMap[paymentEmojiName].amount;
+    const paymentUnit = config.paymentEmojiMap[paymentEmojiName].currency;
     const emoji = await prisma.emoji.upsert({
       where: {
         id: paymentEmojiName,
