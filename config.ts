@@ -15,6 +15,10 @@ export const CHANNELS_TO_MONITOR = [
   "1191801234345168917", // finders -> #nft-meta-news
 ];
 
+// categories group many channels together in discord, the bot
+// will monitor all channels in the categories listed here
+export const CATEGORIES_TO_MONITOR = ["1191800968493416581"]; // ---- FINDERS ----
+
 // if true, the bot will fetch old messages from the channels it monitors when it starts
 export const FETCH_OLD_MESSAGES = false;
 

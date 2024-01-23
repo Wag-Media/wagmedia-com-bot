@@ -7,14 +7,12 @@ import { ensureFullMessage, shouldIgnoreMessage } from "./util";
 import { Message, PartialMessage } from "discord.js";
 import { findOrCreatePost } from "@/data/post";
 
-const prisma = new PrismaClient();
-
 export async function handleMessageUpdate(
   oldMessage: Message<boolean> | PartialMessage,
   newMessage: Message<boolean> | PartialMessage
 ) {
   logger.log(`(edited) new relevant message in the channel`);
-  if (shouldIgnoreMessage(newMessage)) return;
+  if (shouldIgnoreMessage(newMessage, newMessage.author)) return;
 
   newMessage = await ensureFullMessage(newMessage);
 
