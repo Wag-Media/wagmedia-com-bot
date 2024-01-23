@@ -8,9 +8,18 @@ CREATE TABLE "Post" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "isPublished" BOOLEAN NOT NULL DEFAULT false,
     "isFeatured" BOOLEAN NOT NULL DEFAULT false,
-    "totalEarnings" DOUBLE PRECISION DEFAULT 0,
 
     CONSTRAINT "Post_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PostEarnings" (
+    "id" SERIAL NOT NULL,
+    "postId" TEXT NOT NULL,
+    "totalAmount" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "unit" TEXT NOT NULL,
+
+    CONSTRAINT "PostEarnings_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -62,7 +71,6 @@ CREATE TABLE "Emoji" (
 CREATE TABLE "Tag" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
-    "postId" TEXT NOT NULL,
 
     CONSTRAINT "Tag_pkey" PRIMARY KEY ("id")
 );
@@ -80,8 +88,10 @@ CREATE TABLE "LastProcessedPost" (
 CREATE TABLE "Payment" (
     "id" SERIAL NOT NULL,
     "amount" DOUBLE PRECISION NOT NULL,
+    "unit" TEXT NOT NULL,
     "status" TEXT NOT NULL,
     "postId" TEXT NOT NULL,
+    "threadParentId" TEXT,
     "userId" INTEGER NOT NULL,
     "reactionId" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -110,10 +120,19 @@ CREATE TABLE "CategoryRule" (
 );
 
 -- CreateTable
+CREATE TABLE "_PostTags" (
+    "A" TEXT NOT NULL,
+    "B" INTEGER NOT NULL
+);
+
+-- CreateTable
 CREATE TABLE "_CategoryToPost" (
     "A" INTEGER NOT NULL,
     "B" TEXT NOT NULL
 );
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PostEarnings_postId_unit_key" ON "PostEarnings"("postId", "unit");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_discordId_key" ON "User"("discordId");
@@ -140,7 +159,16 @@ CREATE UNIQUE INDEX "Payment_postId_userId_reactionId_key" ON "Payment"("postId"
 CREATE UNIQUE INDEX "PaymentRule_emojiId_key" ON "PaymentRule"("emojiId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "PaymentRule_paymentAmount_paymentUnit_key" ON "PaymentRule"("paymentAmount", "paymentUnit");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "CategoryRule_emojiId_key" ON "CategoryRule"("emojiId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "_PostTags_AB_unique" ON "_PostTags"("A", "B");
+
+-- CreateIndex
+CREATE INDEX "_PostTags_B_index" ON "_PostTags"("B");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "_CategoryToPost_AB_unique" ON "_CategoryToPost"("A", "B");
@@ -150,6 +178,9 @@ CREATE INDEX "_CategoryToPost_B_index" ON "_CategoryToPost"("B");
 
 -- AddForeignKey
 ALTER TABLE "Post" ADD CONSTRAINT "Post_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PostEarnings" ADD CONSTRAINT "PostEarnings_postId_fkey" FOREIGN KEY ("postId") REFERENCES "Post"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Reaction" ADD CONSTRAINT "Reaction_emojiId_fkey" FOREIGN KEY ("emojiId") REFERENCES "Emoji"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -164,16 +195,16 @@ ALTER TABLE "Reaction" ADD CONSTRAINT "Reaction_postId_fkey" FOREIGN KEY ("postI
 ALTER TABLE "Category" ADD CONSTRAINT "Category_emojiId_fkey" FOREIGN KEY ("emojiId") REFERENCES "Emoji"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Tag" ADD CONSTRAINT "Tag_postId_fkey" FOREIGN KEY ("postId") REFERENCES "Post"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Payment" ADD CONSTRAINT "Payment_postId_fkey" FOREIGN KEY ("postId") REFERENCES "Post"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Payment" ADD CONSTRAINT "Payment_postId_fkey" FOREIGN KEY ("postId") REFERENCES "Post"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Payment" ADD CONSTRAINT "Payment_threadParentId_fkey" FOREIGN KEY ("threadParentId") REFERENCES "Post"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Payment" ADD CONSTRAINT "Payment_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Payment" ADD CONSTRAINT "Payment_reactionId_fkey" FOREIGN KEY ("reactionId") REFERENCES "Reaction"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Payment" ADD CONSTRAINT "Payment_reactionId_fkey" FOREIGN KEY ("reactionId") REFERENCES "Reaction"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PaymentRule" ADD CONSTRAINT "PaymentRule_emojiId_fkey" FOREIGN KEY ("emojiId") REFERENCES "Emoji"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -183,6 +214,12 @@ ALTER TABLE "CategoryRule" ADD CONSTRAINT "CategoryRule_emojiId_fkey" FOREIGN KE
 
 -- AddForeignKey
 ALTER TABLE "CategoryRule" ADD CONSTRAINT "CategoryRule_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_PostTags" ADD CONSTRAINT "_PostTags_A_fkey" FOREIGN KEY ("A") REFERENCES "Post"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_PostTags" ADD CONSTRAINT "_PostTags_B_fkey" FOREIGN KEY ("B") REFERENCES "Tag"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_CategoryToPost" ADD CONSTRAINT "_CategoryToPost_A_fkey" FOREIGN KEY ("A") REFERENCES "Category"("id") ON DELETE CASCADE ON UPDATE CASCADE;
