@@ -57,7 +57,7 @@ databases supported by prisma
 
 Edit your `.env` file for configure bot token & Database url
 
-## Folder structure
+## Folders structure
 
 | Path       | Description                    |
 | ---------- | ------------------------------ |
