@@ -25,15 +25,15 @@
 
 ### Init
 
-We are using **pnpm** by default
+We are using **npm** by default
 
-`pnpm install`
+`npm install`
 
 ### Run the Project
 
 ### Watch Mode
 
-`pnpm run dev`
+`npm run dev`
 
 ### Changing the db schema
 
@@ -48,7 +48,7 @@ After you made changes to the schema in `prisma/schema.prisma`
 
 ### Run without watch
 
-`pnpm run start`
+`npm run start`
 
 ## Configuration
 
