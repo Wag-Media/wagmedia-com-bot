@@ -22,7 +22,7 @@ import {
 } from "@/data/emoji.js";
 import { userHasRole } from "@/utils/userHasRole.js";
 import { ensureFullEntities, shouldIgnoreReaction } from "./util.js";
-import { logEmojiRemoved } from "./log-utils";
+import { logEmojiRemoved, logPostEarnings } from "./log-utils";
 import {
   deleteReaction,
   getPostUserEmojiFromReaction,
@@ -105,7 +105,7 @@ export async function processSuperuserReactionRemove(
 
     const paymentRule = await findEmojiPaymentRule(dbEmoji.id!);
     if (paymentRule) {
-      handleSuperUserPaymentRuleReactionRemove(reaction, post);
+      handleSuperUserPaymentRuleReactionRemove(post, paymentRule);
       return;
     }
 
@@ -152,30 +152,9 @@ export async function handleSuperUserCategoryRuleReactionRemove(
 }
 
 export async function handleSuperUserPaymentRuleReactionRemove(
-  reaction: MessageReaction,
-  post: Post
+  post: Post,
+  paymentRule: PaymentRule
 ) {
-  if (!post.totalEarnings) {
-    logger.warn(`Post ${reaction.message.id} has no total earnings. Skipping.`);
-    return;
-  }
-
-  // Refetch the post and its reactions to get updated state
-  const updatedPost = await prisma.post.findUnique({
-    where: { id: reaction.message.id },
-    include: {
-      reactions: {
-        include: {
-          emoji: {
-            include: {
-              PaymentRule: true,
-            },
-          },
-        },
-      },
-    },
-  });
-
   // Fetch all reactions for the post and filter in code to include only those with a PaymentRule
   const remainingReactions = await prisma.reaction.findMany({
     where: { postId: post.id },
@@ -188,33 +167,48 @@ export async function handleSuperUserPaymentRuleReactionRemove(
     },
   });
 
-  // Aggregate the total payment amount from remaining reactions
-  const updatedTotalEarnings = remainingReactions.reduce((total, reaction) => {
-    return total + (reaction.emoji.PaymentRule[0]?.paymentAmount || 0);
-  }, 0);
-
-  // Update the post's total earnings
-  await prisma.post.update({
-    where: { id: updatedPost!.id },
-    data: { totalEarnings: updatedTotalEarnings },
-  });
-
-  logger.log(`New total earnings ${updatedTotalEarnings}`);
-
-  // Check if there are no remaining payment emojis on the updated post
-  const remainingPaymentEmojis = updatedPost!.reactions.filter(
-    (reaction) =>
-      reaction.emoji.PaymentRule && reaction.emoji.PaymentRule.length > 0
+  // Check if there are no remaining payment emojis
+  const remainingPaymentEmojis = remainingReactions.filter(
+    (r) => r.emoji.PaymentRule && r.emoji.PaymentRule.length > 0
   );
 
+  // If no payment emojis are left, unpublish the post
   if (remainingPaymentEmojis.length === 0) {
-    // If no payment emojis are left, unpublish the post
     await prisma.post.update({
-      where: { id: reaction.message.id },
+      where: { id: post.id },
       data: { isPublished: false },
     });
     logger.log(
-      `Post ${reaction.message.id} has been unpublished due to no remaining payment emojis.`
+      `Post ${post.id} has been unpublished due to no remaining payment emojis.`
     );
+    return;
   }
+
+  // Aggregate the total payment amount for the specific unit
+  const updatedTotalEarnings = remainingPaymentEmojis.reduce((total, r) => {
+    const rule = r.emoji.PaymentRule.find(
+      (pr) => pr.paymentUnit === paymentRule.paymentUnit
+    );
+    return total + (rule?.paymentAmount || 0);
+  }, 0);
+
+  // Update the post's total earnings for the specific unit
+  await prisma.postEarnings.upsert({
+    where: {
+      postId_unit: {
+        postId: post.id,
+        unit: paymentRule.paymentUnit,
+      },
+    },
+    update: {
+      totalAmount: updatedTotalEarnings,
+    },
+    create: {
+      postId: post.id,
+      unit: paymentRule.paymentUnit,
+      totalAmount: updatedTotalEarnings,
+    },
+  });
+
+  logPostEarnings(post);
 }

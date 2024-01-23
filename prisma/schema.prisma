@@ -17,17 +17,29 @@ model Post {
   categories Category[]
   tags       Tag[]      @relation("PostTags")
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  isPublished   Boolean  @default(false)
-  isFeatured    Boolean  @default(false)
-  totalEarnings Float?   @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  isPublished Boolean  @default(false)
+  isFeatured  Boolean  @default(false)
+
+  // earnings associated with this post
+  earnings PostEarnings[]
 
   // Payments directly associated with this post
   payments Payment[] @relation(name: "PaymentPost")
 
   // Payments associated with threads under this post
   threadPayments Payment[] @relation(name: "PaymentThreadParent")
+}
+
+model PostEarnings {
+  id          Int    @id @default(autoincrement())
+  postId      String
+  post        Post   @relation(fields: [postId], references: [id])
+  totalAmount Float  @default(0)
+  unit        String // e.g., "DOT", "USD"
+
+  @@unique([postId, unit])
 }
 
 model User {
@@ -97,7 +109,8 @@ model LastProcessedPost {
 // A payment is a record of a power user paying for a post they reacted to
 model Payment {
   id     Int    @id @default(autoincrement())
-  amount Float
+  amount Float // e.g., 1.5
+  unit   String // e.g., "USD", "ETH", "DOT"
   status String // e.g., "pending", "completed"
 
   // Direct post associated with the payment
@@ -126,6 +139,8 @@ model PaymentRule {
   emoji         Emoji  @relation(fields: [emojiId], references: [id])
   paymentAmount Float
   paymentUnit   String
+
+  @@unique([paymentAmount, paymentUnit])
 }
 
 // Rules for which category a post belongs to

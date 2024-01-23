@@ -1,4 +1,10 @@
-import { Category, Post, PrismaClient, Tag } from "@prisma/client";
+import {
+  Category,
+  Post,
+  PostEarnings,
+  PrismaClient,
+  Tag,
+} from "@prisma/client";
 import { Message, MessageReaction, PartialMessage } from "discord.js";
 import { findOrCreateUser } from "./user.js";
 import { parseMessage } from "@/utils/parse-message.js";
@@ -63,7 +69,9 @@ export const findOrCreatePost = async (
 
 export async function fetchPost(
   reaction: MessageReaction
-): Promise<(Post & { categories: Category[] }) | null> {
+): Promise<
+  (Post & { categories: Category[] } & { earnings: PostEarnings[] }) | null
+> {
   if (!reaction.message.id) {
     throw new Error("Message must have an id");
   }
@@ -73,7 +81,7 @@ export async function fetchPost(
 
   const post = await prisma.post.findUnique({
     where: { id: reaction.message.id },
-    include: { categories: true },
+    include: { categories: true, earnings: true },
   });
 
   if (!post) {

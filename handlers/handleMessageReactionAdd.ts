@@ -11,6 +11,7 @@ import {
   Emoji,
   PaymentRule,
   Post,
+  PostEarnings,
   PrismaClient,
   Reaction,
   User,
@@ -30,6 +31,7 @@ import { fetchPost } from "@/data/post.js";
 import {
   logNewEmojiReceived,
   logNewRegularUserEmojiReceived,
+  logPostEarnings,
 } from "./log-utils.js";
 import {
   findOrCreateUser,
@@ -135,7 +137,7 @@ export async function processSuperuserReaction(
   reaction: MessageReaction,
   discordUser: DiscordUser,
   dbUser: User,
-  post: Post & { categories: Category[] },
+  post: Post & { categories: Category[] } & { earnings: PostEarnings[] },
   dbEmoji: Emoji
 ) {
   const postId = reaction.message.id;
@@ -266,48 +268,61 @@ async function handlePostIncomplete(
 }
 
 async function handlePaymentRule(
-  post: Post & { categories: Category[] },
+  post: Post & { categories: Category[] } & { earnings: PostEarnings[] },
   userId: number,
   paymentRule: PaymentRule,
   reactionId: number
 ) {
   const amount = paymentRule.paymentAmount;
+  const unit = paymentRule.paymentUnit;
 
-  await prisma.payment.upsert({
-    where: {
-      // Define unique identifier for payment
-      postId_userId_reactionId: {
-        postId: post.id,
-        userId,
-        reactionId: reactionId,
-      },
-    },
-    update: {
-      amount, // Update the payment amount
-    },
-    create: {
-      postId: post.id,
-      userId,
-      amount,
-      status: "unknown", // initial payment status
-      reactionId: reactionId,
-    },
-  });
+  const postTotalEarningsInUnit = post.earnings.find(
+    (e) => e.unit === unit
+  )?.totalAmount;
 
-  if (!post.totalEarnings) {
+  if (!postTotalEarningsInUnit) {
     logger.log(`The above post has been published.`);
   }
 
-  // Update the post's total earnings
-  const updatedEarnings = (post.totalEarnings || 0) + amount;
-  await prisma.post.update({
-    where: { id: post.id },
-    data: { totalEarnings: updatedEarnings, isPublished: true },
+  // add or update the post earnings (this is adding redundancy but makes querying easier)
+  await prisma.postEarnings.upsert({
+    where: {
+      postId_unit: {
+        postId: post.id,
+        unit,
+      },
+    },
+    update: {
+      totalAmount: {
+        increment: amount,
+      },
+    },
+    create: {
+      postId: post.id,
+      unit,
+      totalAmount: amount,
+    },
   });
 
-  logger.log(
-    `Payment rule processed for above post: new total earnings ${updatedEarnings}`
-  );
+  // Insert a payment record
+  await prisma.payment.create({
+    data: {
+      amount: amount,
+      unit: unit,
+      postId: post.id,
+      userId: userId,
+      reactionId: reactionId,
+      status: "unknown", // TODO: implement payment status
+    },
+  });
+
+  // Update the post to set isPublished to true
+  await prisma.post.update({
+    where: { id: post.id },
+    data: { isPublished: true },
+  });
+
+  logPostEarnings(post);
 }
 
 async function handleCategoryRule(
