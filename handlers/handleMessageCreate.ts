@@ -12,7 +12,7 @@ const prisma = new PrismaClient();
 export async function handleMessageCreate(
   message: Message<boolean> | PartialMessage
 ) {
-  if (shouldIgnoreMessage(message)) return;
+  if (shouldIgnoreMessage(message, message.author)) return;
 
   message = await ensureFullMessage(message);
 

@@ -5,6 +5,7 @@ import {
   User as DiscordUser,
   Message,
   PartialMessage,
+  TextChannel,
 } from "discord.js";
 import * as config from "../config.js";
 import { logger } from "@/client.js";
@@ -19,10 +20,7 @@ export function delay(ms: number) {
 }
 
 /**
- * Check if a reaction should be ignored. Ignore:
- * - not from a monitored channel
- * - bot reactions
- * - DMs
+ * See shouldIgnoreMessage
  * @param reaction
  * @param user
  * @returns
@@ -31,30 +29,46 @@ export function shouldIgnoreReaction(
   reaction: MessageReaction | PartialMessageReaction,
   user: DiscordUser | PartialUser
 ): boolean {
-  // Check if the reaction is in the channel we are interested in
-  if (!config.CHANNELS_TO_MONITOR.includes(reaction.message.channel.id))
-    return true;
-
-  // Ignore bot reactions
-  if (user.bot) return true;
-
-  // Ignore DMs
-  if (!reaction.message.guild) return true;
-
-  return false;
+  return shouldIgnoreMessage(reaction.message, user);
 }
 
+/**
+ * Check if a message should be ignored. Ignore:
+ * - not from a monitored channel or category
+ * - bot reactions
+ * - DMs
+ * - from all other channels
+ * @param message
+ * @param user
+ * @returns
+ */
 export function shouldIgnoreMessage(
-  message: Message<boolean> | PartialMessage
+  message: Message<boolean> | PartialMessage,
+  user: DiscordUser | PartialUser | null
 ) {
   // Ignore DMs
   if (!message.guild) return true;
 
+  // Ignore bot reactions
+  if (!user || user.bot) return true;
+
   // Ignore bot messages
   if (message.author?.bot) return true;
 
-  // Ignore messages from channels we are not interested in
-  if (!config.CHANNELS_TO_MONITOR.includes(message.channel.id)) return true;
+  // Ignore reactions from other channels
+  const channel = message.channel;
+  if (!(channel instanceof TextChannel) || !channel.parentId) return true;
+
+  // Ignore reactions from channels we are not interested in
+  const isReactionFromMonitoredChannel = config.CHANNELS_TO_MONITOR.includes(
+    channel.id
+  );
+  const isReactionFromMonitoredCategory = config.CATEGORIES_TO_MONITOR.includes(
+    channel.parentId
+  );
+
+  if (!isReactionFromMonitoredChannel && !isReactionFromMonitoredCategory)
+    return true;
 
   return false;
 }
