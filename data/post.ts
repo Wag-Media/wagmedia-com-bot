@@ -21,6 +21,8 @@ export const findOrCreatePost = async (
     throw new Error("Message must have content");
   }
 
+  const messageLink = `https://discord.com/channels/${message.guild?.id}/${message.channel.id}/${message.id}`;
+
   const { title, description, tags } = parseMessage(message.content);
   const user = await findOrCreateUser(message);
 
@@ -43,6 +45,7 @@ export const findOrCreatePost = async (
     update: {
       title,
       content: description,
+      link: messageLink,
       // Update tags connection
       tags: {
         set: [], // Disconnect any existing tags
@@ -53,6 +56,7 @@ export const findOrCreatePost = async (
       id: message.id,
       title,
       content: description,
+      link: messageLink,
       userId: user.id, // Assuming you have the user's ID
       tags: {
         connect: tagInstances.map((tag) => ({ id: tag.id })),

@@ -7,8 +7,6 @@ import { ensureFullMessage, shouldIgnoreMessage } from "./util";
 import { Message, PartialMessage } from "discord.js";
 import { findOrCreatePost } from "@/data/post";
 
-const prisma = new PrismaClient();
-
 export async function handleMessageCreate(
   message: Message<boolean> | PartialMessage
 ) {

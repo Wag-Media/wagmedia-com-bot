@@ -1,27 +1,34 @@
+import { logger } from "@/client";
+
 export function parseMessage(message: string): {
-  title: string;
-  description: string;
-  tags: string[];
+  title: string | null;
+  description: string | null;
+  tags: string[] | null;
 } {
-  // Regular expressions to match title and description (case-insensitive)
-  const titleRegex = /title:\s*(.*?)\s*\n/i;
-  const descriptionRegex = /description:\s*([\s\S]*?)(?=\n\S+:|$)/i;
-  const tagsRegex = /hashtags:\s*([\s\S]*?)\s*$/i;
+  try {
+    // Regular expressions to match title, description, and tags (case-insensitive)
+    const titleRegex = /title:\s*(.*?)\s*\n/i;
+    const descriptionRegex = /description:\s*([\s\S]*?)(?=\n(hashtags|tags):)/i;
+    const tagsRegex = /(hashtags|tags):\s*(#[\w-]+(?:[ ,]\s*#[\w-]+)*)/i;
 
-  // Extracting title and description using the regular expressions
-  const titleMatch = message.match(titleRegex);
-  const descriptionMatch = message.match(descriptionRegex);
-  const tagsMatch = message.match(tagsRegex);
+    // Extracting title, description, and tags using the regular expressions
+    const titleMatch = message.match(titleRegex);
+    const descriptionMatch = message.match(descriptionRegex);
+    const tagsMatch = message.match(tagsRegex);
 
-  const title = titleMatch ? titleMatch[1].trim() : "";
-  const description = descriptionMatch ? descriptionMatch[1].trim() : "";
-  const tagsString = tagsMatch ? tagsMatch[1].trim() : "";
+    const title = titleMatch ? titleMatch[1].trim() : null;
+    const description = descriptionMatch ? descriptionMatch[1].trim() : null;
+    const tagsString = tagsMatch ? tagsMatch[2].trim() : "";
 
-  // Process the hashtags string: split, remove leading '#'
-  const tags = tagsString
-    .split(/,?\s+/)
-    .map((tag) => (tag.startsWith("#") ? tag.substring(1) : tag))
-    .filter((tag) => tag.length > 1);
+    // Process the hashtags string: split, remove leading '#', and filter empty strings
+    const tags = tagsString
+      .split(/[, ]+/)
+      .map((tag) => tag.replace(/^#/, ""))
+      .filter((tag) => tag.length > 0);
 
-  return { title, description, tags };
+    return { title, description, tags };
+  } catch (error) {
+    logger.error("Something went wrong when parsing the message:", error);
+    return { title: null, description: null, tags: null };
+  }
 }
