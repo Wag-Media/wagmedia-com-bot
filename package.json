@@ -4,11 +4,7 @@
   "description": "mono repo of bot + webapp",
   "main": "index.ts",
   "scripts": {
-    "install:bot": "npm install --prefix bot",
-    "install:next": "npm install --prefix web",
-    "build:bot": "npm run build --prefix bot",
-    "build:next": "npm run build --prefix web",
-    "postinstall": "npm run install:bot && npm run build:bot && npm run install:next && npm run build:next"
+
   },
   "keywords": [
     "Polkadot",
