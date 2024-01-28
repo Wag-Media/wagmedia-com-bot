@@ -207,7 +207,19 @@ async function handlePostIncomplete(
   const postCategories = post.categories;
   const messageLink = `https://discord.com/channels/${reaction.message.guild?.id}/${reaction.message.channel.id}/${reaction.message.id}`;
 
-  // 1.  make sure the post has a category
+  // 0. make sure the post has a title and description
+  if (!post.title || !post.content) {
+    await discordUser.send(
+      `Before you can publish the post ${messageLink}, make sure it has a title and description.`
+    );
+    logger.log(
+      `Informed ${discordUser.tag} about the post not having a title or description when trying to publish.`
+    );
+    await reaction.users.remove(discordUser.id);
+    return true;
+  }
+
+  // 1. make sure the post has a category
   if (postCategories.length === 0) {
     await discordUser.send(
       `Before you can publish the post ${messageLink}, make sure it has a category.`
