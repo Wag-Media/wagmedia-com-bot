@@ -15,7 +15,11 @@ export async function handleMessageCreate(
   message = await ensureFullMessage(message);
 
   const messageLink = `https://discord.com/channels/${message.guild?.id}/${message.channel.id}/${message.id}`;
-  const { title, description, tags } = parseMessage(message.content!);
+
+  // content is not null because we checked for it in shouldIgnoreMessage
+  const parsedMessage = parseMessage(message.content!);
+  const { title, description } = parsedMessage;
+  const tags = parsedMessage.tags || [];
 
   // Check if the message contains necessary information
   if (title && description) {
@@ -24,6 +28,6 @@ export async function handleMessageCreate(
     logger.log(`↪ title: ${title}`);
     logger.log(`↪ description: ${description}`);
     logger.log(`↪ tags: ${tags}`);
-    const post = findOrCreatePost(message);
+    const post = findOrCreatePost(message, title, description, tags);
   }
 }

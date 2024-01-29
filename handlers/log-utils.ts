@@ -9,7 +9,7 @@ export function logNewEmojiReceived(
   messageLink: string
 ) {
   logger.log(
-    `new emoji received on valid post ${messageLink} ${JSON.stringify(
+    `new emoji received on post ${messageLink} ${JSON.stringify(
       reaction.emoji.name
     )} by ${user.displayName}`
   );

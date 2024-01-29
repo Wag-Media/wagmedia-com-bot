@@ -70,7 +70,14 @@ export async function handleMessageReactionRemove(
     logEmojiRemoved(reaction, user, messageLink);
 
     if (userHasRole(guild, user, config.ROLES_WITH_POWER)) {
-      processSuperuserReactionRemove(reaction, user, dbUser, post, dbEmoji);
+      processSuperuserReactionRemove(
+        reaction,
+        user,
+        dbUser,
+        post,
+        dbEmoji,
+        messageLink
+      );
     } else {
       processRegularUserReactionRemove(dbUser, post, dbEmoji);
     }
@@ -97,7 +104,8 @@ export async function processSuperuserReactionRemove(
   discordUser: DiscordUser,
   dbUser: User,
   post: Post,
-  dbEmoji: Emoji
+  dbEmoji: Emoji,
+  messageLink: string
 ) {
   try {
     // dbEmoji.id is not null because we checked for it in getPostUserEmojiFromReaction
@@ -114,7 +122,8 @@ export async function processSuperuserReactionRemove(
       handleSuperUserCategoryRuleReactionRemove(
         post,
         categoryRule,
-        discordUser
+        discordUser,
+        messageLink
       );
     }
   } catch (error) {
@@ -125,7 +134,8 @@ export async function processSuperuserReactionRemove(
 export async function handleSuperUserCategoryRuleReactionRemove(
   post,
   categoryRule,
-  discordUser
+  discordUser,
+  messageLink: string
 ) {
   //1. Remove the category from the post
   removeCategoryFromPost(post.id, categoryRule.categoryId);
@@ -143,7 +153,7 @@ export async function handleSuperUserCategoryRuleReactionRemove(
     });
 
     discordUser.send(
-      `🚨 The category ${categoryRule.category.name} has been removed from your post.`
+      `🚨 The category ${categoryRule.category.name} has been removed from your post ${messageLink}`
     );
     logger.warn(
       `Post ${post.id} has been unpublished due to no remaining categories.`

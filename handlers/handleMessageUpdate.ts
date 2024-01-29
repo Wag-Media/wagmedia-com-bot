@@ -17,7 +17,9 @@ export async function handleMessageUpdate(
   newMessage = await ensureFullMessage(newMessage);
 
   const messageLink = `https://discord.com/channels/${newMessage.guild?.id}/${newMessage.channel.id}/${newMessage.id}`;
-  const { title, description, tags } = parseMessage(newMessage.content!);
+  const parsedMessage = parseMessage(newMessage.content!);
+  const { title, description } = parsedMessage;
+  const tags = parsedMessage.tags || [];
 
   // Check if the message contains necessary information
   if (title && description) {
@@ -27,6 +29,6 @@ export async function handleMessageUpdate(
     logger.log(`↪ description: ${description}`);
     logger.log(`↪ tags: ${tags}`);
 
-    const post = findOrCreatePost(newMessage);
+    const post = findOrCreatePost(newMessage, title, description, tags);
   }
 }

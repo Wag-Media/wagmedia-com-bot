@@ -70,11 +70,17 @@ export async function handleMessageReactionAdd(
 
   try {
     const post = await fetchPost(reaction);
-    // if the message doesn't exist in the database,
-    // ignore the reaction as the message is not relevant for the bot
-    if (!post) return;
+    if (!post) {
+      await user.send(
+        `The post ${messageLink} you reacted to is not valid (e.g. no title / description).`
+      );
+      logger.log(
+        `Informed ${user.tag} about the post ${messageLink} not being valid.`
+      );
+      await reaction.users.remove(user.id);
+      return;
+    }
 
-    logNewEmojiReceived(reaction, user, messageLink);
     const dbEmoji = await findOrCreateEmoji(reaction.emoji);
 
     // upsert the user who reacted
@@ -85,7 +91,14 @@ export async function handleMessageReactionAdd(
     }
 
     if (userHasRole(guild, user, config.ROLES_WITH_POWER)) {
-      await processSuperuserReaction(reaction, user, dbUser, post, dbEmoji);
+      await processSuperuserReaction(
+        reaction,
+        user,
+        dbUser,
+        post,
+        dbEmoji,
+        messageLink
+      );
     } else {
       await processRegularUserReaction(
         reaction,
@@ -106,12 +119,17 @@ export async function processRegularUserReaction(
   reaction: MessageReaction,
   discordUser: DiscordUser,
   dbUser: User,
-  post: Post & { categories: Category[] },
+  post: (Post & { categories: Category[] }) | null,
   dbEmoji: Emoji,
   messageLink: string
 ) {
-  // Remove WM emojis if the user does not have the power role
-  if (reaction.emoji.name?.startsWith("WM")) {
+  if (!post) {
+    logger.log(
+      `Ignoring user reaction to post ${messageLink}, as it is not valid.`
+    );
+    return;
+  } else if (reaction.emoji.name?.startsWith("WM")) {
+    // Remove WM emojis if the user does not have the power role
     await discordUser.send(
       `You do not have permission to add WagMedia emojis in ${messageLink}`
     );
@@ -138,10 +156,12 @@ export async function processSuperuserReaction(
   discordUser: DiscordUser,
   dbUser: User,
   post: Post & { categories: Category[] } & { earnings: PostEarnings[] },
-  dbEmoji: Emoji
+  dbEmoji: Emoji,
+  messageLink: string
 ) {
   const postId = reaction.message.id;
   const dbReaction = await upsertReaction(post, dbUser, dbEmoji);
+  logNewEmojiReceived(reaction, discordUser, messageLink);
 
   // process possible rules for the emoji
   // 1. Category Rule
@@ -168,7 +188,8 @@ export async function processSuperuserReaction(
 
       // if the post is complete, process the payment rule (=add payment and publish post)
       if (!isPostIncomplete) {
-        await handlePaymentRule(post, dbUser.id, paymentRule, dbReaction.id);
+        // post is defined as it is not incomplete
+        await handlePaymentRule(post!, dbUser.id, paymentRule, dbReaction.id);
       }
       return;
     }

@@ -12,7 +12,10 @@ import { logger } from "@/client.js";
 const prisma = new PrismaClient();
 
 export const findOrCreatePost = async (
-  message: Message<boolean> | PartialMessage
+  message: Message<boolean> | PartialMessage,
+  title: string,
+  description: string,
+  tags: string[]
 ): Promise<Post & { categories: Category[] & Tag[] }> => {
   if (!message.id) {
     throw new Error("Message must have an id");
@@ -23,7 +26,6 @@ export const findOrCreatePost = async (
 
   const messageLink = `https://discord.com/channels/${message.guild?.id}/${message.channel.id}/${message.id}`;
 
-  const { title, description, tags } = parseMessage(message.content);
   const user = await findOrCreateUser(message);
 
   // Ensure all tags exist
