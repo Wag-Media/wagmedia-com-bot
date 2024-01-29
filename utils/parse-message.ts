@@ -8,7 +8,9 @@ export function parseMessage(message: string): {
   try {
     // Regular expressions to match title, description, and tags (case-insensitive)
     const titleRegex = /title:\s*(.*?)\s*\n/i;
-    const descriptionRegex = /description:\s*([\s\S]*?)(?=\n(hashtags|tags):)/i;
+    // Modified descriptionRegex to make the lookahead for tags optional
+    const descriptionRegex =
+      /description:\s*([\s\S]*?)(?=\n(hashtags|tags):|$)/i;
     const tagsRegex = /(hashtags|tags):\s*(#[\w-]+(?:[ ,]\s*#[\w-]+)*)/i;
 
     // Extracting title, description, and tags using the regular expressions

@@ -12,6 +12,7 @@ export async function handleMessageCreate(
 ) {
   if (shouldIgnoreMessage(message, message.author)) return;
 
+  console.log("not ignoring message");
   message = await ensureFullMessage(message);
 
   const messageLink = `https://discord.com/channels/${message.guild?.id}/${message.channel.id}/${message.id}`;
@@ -20,6 +21,9 @@ export async function handleMessageCreate(
   const parsedMessage = parseMessage(message.content!);
   const { title, description } = parsedMessage;
   const tags = parsedMessage.tags || [];
+
+  console.log("title: " + title);
+  console.log("description: " + description);
 
   // Check if the message contains necessary information
   if (title && description) {
