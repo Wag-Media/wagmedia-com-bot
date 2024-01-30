@@ -9,6 +9,7 @@ import { Message, MessageReaction, PartialMessage } from "discord.js";
 import { findOrCreateUser } from "./user.js";
 import { parseMessage } from "@/utils/parse-message.js";
 import { logger } from "@/client.js";
+import { slugify } from "@/handlers/util.js";
 const prisma = new PrismaClient();
 
 export const findOrCreatePost = async (
@@ -52,6 +53,7 @@ export const findOrCreatePost = async (
       discordLink: messageLink,
       contentUrl,
       embedImageUrl,
+      slug: slugify(title),
       // Update tags connection
       tags: {
         set: [], // Disconnect any existing tags
@@ -65,6 +67,7 @@ export const findOrCreatePost = async (
       discordLink: messageLink,
       contentUrl,
       embedImageUrl,
+      slug: slugify(title),
       userId: user.id, // Assuming you have the user's ID
       tags: {
         connect: tagInstances.map((tag) => ({ id: tag.id })),
