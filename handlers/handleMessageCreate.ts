@@ -12,26 +12,30 @@ export async function handleMessageCreate(
 ) {
   if (shouldIgnoreMessage(message, message.author)) return;
 
-  console.log("not ignoring message");
   message = await ensureFullMessage(message);
 
   const messageLink = `https://discord.com/channels/${message.guild?.id}/${message.channel.id}/${message.id}`;
 
   // content is not null because we checked for it in shouldIgnoreMessage
-  const parsedMessage = parseMessage(message.content!);
-  const { title, description } = parsedMessage;
+  const parsedMessage = parseMessage(message.content!, message.embeds);
+  const { title, description, embedUrl, embedImage } = parsedMessage;
   const tags = parsedMessage.tags || [];
 
-  console.log("title: " + title);
-  console.log("description: " + description);
-
   // Check if the message contains necessary information
-  if (title && description) {
+  if (title && description && embedUrl) {
     logger.log(`New relevant message in the channel ${messageLink}`);
     logger.log(`↪ user: ${message.member?.displayName}`);
     logger.log(`↪ title: ${title}`);
     logger.log(`↪ description: ${description}`);
+    logger.log(`↪ embedUrl: ${embedUrl}`);
     logger.log(`↪ tags: ${tags}`);
-    const post = findOrCreatePost(message, title, description, tags);
+    const post = findOrCreatePost(
+      message,
+      title,
+      description,
+      tags,
+      embedUrl,
+      embedImage
+    );
   }
 }

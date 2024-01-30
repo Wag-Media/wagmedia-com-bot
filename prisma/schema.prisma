@@ -22,7 +22,9 @@ model Post {
   isPublished Boolean  @default(false)
   isFeatured  Boolean  @default(false)
 
-  link String? // Link to the original post, if applicable
+  discordLink   String? // Discord link to the original post, if applicable
+  contentUrl    String? // URL of the content, if applicable
+  embedImageUrl String? // URL of the image from the embed
 
   // earnings associated with this post
   earnings PostEarnings[]

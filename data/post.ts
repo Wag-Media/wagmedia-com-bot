@@ -15,7 +15,9 @@ export const findOrCreatePost = async (
   message: Message<boolean> | PartialMessage,
   title: string,
   description: string,
-  tags: string[]
+  tags: string[],
+  contentUrl: string,
+  embedImageUrl: string | null
 ): Promise<Post & { categories: Category[] & Tag[] }> => {
   if (!message.id) {
     throw new Error("Message must have an id");
@@ -47,7 +49,9 @@ export const findOrCreatePost = async (
     update: {
       title,
       content: description,
-      link: messageLink,
+      discordLink: messageLink,
+      contentUrl,
+      embedImageUrl,
       // Update tags connection
       tags: {
         set: [], // Disconnect any existing tags
@@ -58,7 +62,9 @@ export const findOrCreatePost = async (
       id: message.id,
       title,
       content: description,
-      link: messageLink,
+      discordLink: messageLink,
+      contentUrl,
+      embedImageUrl,
       userId: user.id, // Assuming you have the user's ID
       tags: {
         connect: tagInstances.map((tag) => ({ id: tag.id })),

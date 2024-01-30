@@ -1,8 +1,14 @@
 import { logger } from "@/client";
+import { Embed } from "discord.js";
 
-export function parseMessage(message: string): {
+export function parseMessage(
+  message: string,
+  embeds: Embed[]
+): {
   title: string | null;
   description: string | null;
+  embedUrl: string | null;
+  embedImage: string | null;
   tags: string[] | null;
 } {
   try {
@@ -28,9 +34,45 @@ export function parseMessage(message: string): {
       .map((tag) => tag.replace(/^#/, ""))
       .filter((tag) => tag.length > 0);
 
-    return { title, description, tags };
+    // handle post embeds
+    let embedUrl: string | null = null;
+    let embedImage: string | null = null;
+    if (embeds?.length > 0) {
+      const embed = embeds[0]; // Assuming we take the first embed
+      embedUrl = embed.url;
+      embedImage = embed.thumbnail?.url || null;
+    }
+
+    return { title, description, tags, embedImage, embedUrl };
   } catch (error) {
     logger.error("Something went wrong when parsing the message:", error);
-    return { title: null, description: null, tags: null };
+    return {
+      title: null,
+      description: null,
+      tags: null,
+      embedImage: null,
+      embedUrl: null,
+    };
   }
+}
+
+// Odd-Job Role:
+// Odd-Job Description:
+// Odd-Job Timeline:
+// Agreed Payment:
+// Managing Director:
+export function parseOddjob(message: string): {
+  role: string | null;
+  description: string | null;
+  timeline: string | null;
+  payment: string | null;
+  manager: string | null;
+} {
+  return {
+    role: null,
+    description: null,
+    timeline: null,
+    payment: null,
+    manager: null,
+  };
 }

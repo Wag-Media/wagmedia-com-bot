@@ -59,10 +59,10 @@ export function shouldIgnoreMessage(
   const channel = message.channel;
   if (!(channel instanceof TextChannel) || !channel.parentId) return true;
 
-  // Ignore reactions from channels we are not interested in
-  const isReactionFromMonitoredChannel = config.CHANNELS_TO_MONITOR.includes(
-    channel.id
-  );
+  // Ignore reactions from channels or categories we are not interested in
+  const isReactionFromMonitoredChannel =
+    config.CHANNELS_TO_MONITOR.includes(channel.id) ||
+    config.CHANNELS_ODD_JOBS.includes(channel.id);
   const isReactionFromMonitoredCategory = config.CATEGORIES_TO_MONITOR.includes(
     channel.parentId
   );
