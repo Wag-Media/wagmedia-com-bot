@@ -67,3 +67,26 @@ export async function findOrCreateOddJob(
     },
   });
 }
+
+export async function fetchOddjob(
+  reaction: MessageReaction
+): Promise<OddJob | null> {
+  if (!reaction.message.id) {
+    throw new Error("Message must have an id");
+  }
+  if (!reaction.message.content) {
+    throw new Error("Message must have content");
+  }
+
+  const oddjob = await prisma.oddJob.findUnique({
+    where: { id: reaction.message.id },
+    include: { payments: true },
+  });
+
+  if (!oddjob) {
+    logger.warn(
+      `Post with ID ${reaction.message.id} not found in the database.`
+    );
+  }
+  return oddjob;
+}

@@ -13,7 +13,6 @@ import {
   Post,
   PostEarnings,
   PrismaClient,
-  Reaction,
   User,
 } from "@prisma/client";
 import {
@@ -21,12 +20,16 @@ import {
   User as DiscordUser,
   PartialMessageReaction,
   PartialUser,
-  Guild,
-  messageLink,
 } from "discord.js";
 import * as config from "../config.js";
 import { logger } from "@/client.js";
-import { ensureFullEntities, shouldIgnoreReaction } from "./util.js";
+import {
+  ensureFullEntities,
+  isMessageFromMonitoredCategory,
+  isMessageFromMonitoredChannel,
+  isMessageFromOddJobsChannel,
+  shouldIgnoreReaction,
+} from "./util.js";
 import { fetchPost } from "@/data/post.js";
 import {
   logNewEmojiReceived,
@@ -39,6 +42,7 @@ import {
 } from "@/data/user.js";
 import { upsertReaction } from "@/data/reaction.js";
 import { isCountryFlag } from "../utils/is-country-flag";
+import { fetchOddjob } from "@/data/oddjob.js";
 
 const prisma = new PrismaClient();
 
@@ -68,57 +72,120 @@ export async function handleMessageReactionAdd(
     return;
   }
 
-  // TODO handle odd jobs reactions
-  // only manager are superusers here so only they can initiate payments for oddjobs
+  if (
+    isMessageFromMonitoredCategory(reaction.message.channel) ||
+    isMessageFromMonitoredChannel(reaction.message.channel)
+  ) {
+    console.log("reaction", reaction.emoji.name);
+    console.log("channel", reaction.message.channel);
+    try {
+      const post = await fetchPost(reaction);
+      if (!post) {
+        await user.send(
+          `The post ${messageLink} you reacted to is not valid (e.g. no title / description).`
+        );
+        logger.log(
+          `Informed ${user.tag} about the post ${messageLink} not being valid.`
+        );
+        await reaction.users.remove(user.id);
+        return;
+      }
 
-  try {
-    const post = await fetchPost(reaction);
-    if (!post) {
+      const dbEmoji = await findOrCreateEmoji(reaction.emoji);
+
+      // upsert the user who reacted
+      const dbUser = await findOrCreateUserFromDiscordUser(user);
+      if (!dbUser) {
+        logger.error("User not found in the database.");
+        return;
+      }
+
+      if (userHasRole(guild, user, config.ROLES_WITH_POWER)) {
+        await processSuperuserPostReaction(
+          reaction,
+          user,
+          dbUser,
+          post,
+          dbEmoji,
+          messageLink
+        );
+      } else {
+        await processRegularUserPostReaction(
+          reaction,
+          user,
+          dbUser,
+          post,
+          dbEmoji,
+          messageLink
+        );
+      }
+    } catch (error) {
+      logger.error("Error querying the database for the post:", error);
+      return;
+    }
+  } else if (isMessageFromOddJobsChannel(reaction.message.channel)) {
+    if (!userHasRole(guild, user, config.ROLES_WITH_POWER)) {
       await user.send(
-        `The post ${messageLink} you reacted to is not valid (e.g. no title / description).`
+        `You do not have permission to add reactions in ${messageLink}`
       );
       logger.log(
-        `Informed ${user.tag} about the post ${messageLink} not being valid.`
+        `Informed ${user.tag} about not having permission to add reactions in ${messageLink}`
       );
       await reaction.users.remove(user.id);
       return;
     }
 
-    const dbEmoji = await findOrCreateEmoji(reaction.emoji);
-
-    // upsert the user who reacted
-    const dbUser = await findOrCreateUserFromDiscordUser(user);
-    if (!dbUser) {
-      logger.error("User not found in the database.");
-      return;
-    }
-
-    if (userHasRole(guild, user, config.ROLES_WITH_POWER)) {
-      await processSuperuserReaction(
-        reaction,
-        user,
-        dbUser,
-        post,
-        dbEmoji,
-        messageLink
-      );
-    } else {
-      await processRegularUserReaction(
-        reaction,
-        user,
-        dbUser,
-        post,
-        dbEmoji,
-        messageLink
-      );
-    }
-  } catch (error) {
-    logger.error("Error querying the database for the post:", error);
-    return;
+    processSuperuserOddJobReaction(reaction, user, messageLink);
   }
 }
 
-export async function processRegularUserReaction(
+export async function processSuperuserOddJobReaction(
+  reaction: MessageReaction,
+  discordUser: DiscordUser,
+  messageLink: string
+) {
+  const emojiName = reaction.emoji.name;
+  const oddjob = await fetchOddjob(reaction);
+
+  console.log("fetched oddjob", oddjob);
+
+  if (!oddjob) {
+    await discordUser.send(
+      `The oddjob ${messageLink} you reacted to is not valid - not in the correct format.`
+    );
+    logger.log(
+      `Informed ${discordUser.tag} about the post ${messageLink} not being valid.`
+    );
+    await reaction.users.remove(discordUser.id);
+    return;
+  }
+
+  const dbEmoji = await findOrCreateEmoji(reaction.emoji);
+
+  // upsert the user who reacted
+  const dbUser = await findOrCreateUserFromDiscordUser(discordUser);
+
+  const paymentRule = await findEmojiPaymentRule(dbEmoji.id);
+
+  console.log("fetched payment rule", paymentRule);
+  if (paymentRule) {
+    // if the manager is not the user who reacted, remove the reaction
+    if (oddjob.managerId !== dbUser.discordId) {
+      await discordUser.send(
+        `You do not have permission to add payment reactions in ${messageLink}, only the assigned manager can do that.`
+      );
+      logger.log(
+        `Informed ${discordUser.tag} about not having permission to add payment reactions in ${messageLink} as they are not the manager`
+      );
+      await reaction.users.remove(discordUser.id);
+      return;
+    } else {
+      logger.log("yeah the payment seems valid");
+    }
+  }
+}
+
+export async function processRegularUserPostReaction(
   reaction: MessageReaction,
   discordUser: DiscordUser,
   dbUser: User,
@@ -154,7 +221,7 @@ export async function processRegularUserReaction(
   }
 }
 
-export async function processSuperuserReaction(
+export async function processSuperuserPostReaction(
   reaction: MessageReaction,
   discordUser: DiscordUser,
   dbUser: User,

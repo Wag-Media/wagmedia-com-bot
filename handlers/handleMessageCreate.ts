@@ -27,6 +27,7 @@ export async function handleMessageCreate(
     );
 
     logger.log(`New odd job in the channel ${messageLink}`);
+    logger.log(`↪ id: ${message.id}`);
     logger.log(`↪ role: ${role}`);
     logger.log(`↪ description: ${description}`);
     logger.log(`↪ timeline: ${timeline}`);
