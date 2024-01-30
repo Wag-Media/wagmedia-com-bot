@@ -39,8 +39,9 @@ export function parseMessage(
     let embedImage: string | null = null;
     if (embeds?.length > 0) {
       const embed = embeds[0]; // Assuming we take the first embed
+      console.log(embed.thumbnail);
       embedUrl = embed.url;
-      embedImage = embed.thumbnail?.url || null;
+      embedImage = embed.thumbnail?.url || embed.thumbnail?.proxyURL || null;
     }
 
     return { title, description, tags, embedImage, embedUrl };
