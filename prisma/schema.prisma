@@ -37,6 +37,27 @@ model Post {
   threadPayments Payment[] @relation(name: "PaymentThreadParent")
 }
 
+model OddJob {
+  id              String    @id
+  role            String
+  description     String
+  timeline        String
+  requestedAmount Float
+  requestedUnit   String
+  payments        Payment[]
+
+  managerId String
+  manager   User   @relation(name: "ManagerUser", fields: [managerId], references: [discordId])
+
+  userId String
+  User   User   @relation(name: "PostedUser", fields: [userId], references: [discordId])
+
+  discordLink String? // Discord link to the original post, if applicable
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model PostEarnings {
   id          Int    @id @default(autoincrement())
   postId      String
@@ -56,6 +77,9 @@ model User {
   bio       String?
   name      String?
   Payment   Payment[]
+
+  oddjobsposted  OddJob[] @relation(name: "PostedUser")
+  oddjobsmanaged OddJob[] @relation(name: "ManagerUser")
 }
 
 model Reaction {
@@ -119,8 +143,11 @@ model Payment {
   status String // e.g., "pending", "completed"
 
   // Direct post associated with the payment
-  postId String
-  Post   Post   @relation(name: "PaymentPost", fields: [postId], references: [id])
+  postId String?
+  Post   Post?   @relation(name: "PaymentPost", fields: [postId], references: [id])
+
+  OddJob   OddJob? @relation(fields: [oddJobId], references: [id])
+  oddJobId String?
 
   // Parent post of the thread where the payment occurred
   threadParentId String?

@@ -68,6 +68,9 @@ export async function handleMessageReactionAdd(
     return;
   }
 
+  // TODO handle odd jobs reactions
+  // only manager are superusers here so only they can initiate payments for oddjobs
+
   try {
     const post = await fetchPost(reaction);
     if (!post) {

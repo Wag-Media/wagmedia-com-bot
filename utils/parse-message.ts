@@ -56,24 +56,3 @@ export function parseMessage(
     };
   }
 }
-
-// Odd-Job Role:
-// Odd-Job Description:
-// Odd-Job Timeline:
-// Agreed Payment:
-// Managing Director:
-export function parseOddjob(message: string): {
-  role: string | null;
-  description: string | null;
-  timeline: string | null;
-  payment: string | null;
-  manager: string | null;
-} {
-  return {
-    role: null,
-    description: null,
-    timeline: null,
-    payment: null,
-    manager: null,
-  };
-}

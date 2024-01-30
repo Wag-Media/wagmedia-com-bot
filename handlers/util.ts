@@ -6,6 +6,7 @@ import {
   Message,
   PartialMessage,
   TextChannel,
+  Channel,
 } from "discord.js";
 import * as config from "../config.js";
 import { logger } from "@/client.js";
@@ -75,15 +76,11 @@ export function shouldIgnoreMessage(
   const channel = message.channel;
   if (!(channel instanceof TextChannel) || !channel.parentId) return true;
 
-  // Ignore reactions from channels or categories we are not interested in
-  const isReactionFromMonitoredChannel =
-    config.CHANNELS_TO_MONITOR.includes(channel.id) ||
-    config.CHANNELS_ODD_JOBS.includes(channel.id);
-  const isReactionFromMonitoredCategory = config.CATEGORIES_TO_MONITOR.includes(
-    channel.parentId
-  );
-
-  if (!isReactionFromMonitoredChannel && !isReactionFromMonitoredCategory)
+  if (
+    !isMessageFromMonitoredChannel(channel) &&
+    !isMessageFromOddJobsChannel(channel) &&
+    !isMessageFromMonitoredCategory(channel)
+  )
     return true;
 
   return false;
@@ -155,4 +152,27 @@ export async function ensureFullEntities(
     reaction: reaction as MessageReaction,
     user: user as DiscordUser,
   };
+}
+
+export const isMessageFromMonitoredChannel = (channel: Channel) =>
+  config.CHANNELS_TO_MONITOR.includes(channel.id);
+
+export const isMessageFromOddJobsChannel = (channel: Channel) =>
+  config.CHANNELS_ODD_JOBS.includes(channel.id);
+
+export const isMessageFromMonitoredCategory = (channel: Channel) =>
+  channel instanceof TextChannel &&
+  channel.parentId &&
+  config.CATEGORIES_TO_MONITOR.includes(channel.parentId);
+
+/**
+ * Parses a Discord user mention and extracts the user ID.
+ * @param message The message containing the user mention.
+ * @returns The Discord user ID if found, otherwise null.
+ */
+export function parseDiscordUserId(message: string): string | null {
+  const mentionRegex = /<@!?(\d+)>/;
+  const match = message.match(mentionRegex);
+
+  return match ? match[1] : null;
 }

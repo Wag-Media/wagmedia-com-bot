@@ -61,3 +61,16 @@ export const findUserById = async (userId: string) => {
   });
   return dbUser;
 };
+
+export const findOrCreateUserById = async (userId: string) => {
+  const dbUser = await prisma.user.upsert({
+    where: {
+      discordId: userId,
+    },
+    update: {},
+    create: {
+      discordId: userId,
+    },
+  });
+  return dbUser;
+};
