@@ -9,6 +9,7 @@ import {
   Category,
   CategoryRule,
   Emoji,
+  OddJob,
   PaymentRule,
   Post,
   PostEarnings,
@@ -40,7 +41,7 @@ import {
   findOrCreateUser,
   findOrCreateUserFromDiscordUser,
 } from "@/data/user.js";
-import { upsertReaction } from "@/data/reaction.js";
+import { upsertOddjobReaction, upsertReaction } from "@/data/reaction.js";
 import { isCountryFlag } from "../utils/is-country-flag";
 import { fetchOddjob } from "@/data/oddjob.js";
 
@@ -164,6 +165,7 @@ export async function processSuperuserOddJobReaction(
 
   // upsert the user who reacted
   const dbUser = await findOrCreateUserFromDiscordUser(discordUser);
+  const dbReaction = await upsertOddjobReaction(oddjob, dbUser, dbEmoji);
 
   const paymentRule = await findEmojiPaymentRule(dbEmoji.id);
 
@@ -180,7 +182,7 @@ export async function processSuperuserOddJobReaction(
       await reaction.users.remove(discordUser.id);
       return;
     } else {
-      logger.log("yeah the payment seems valid");
+      handleOddjobPaymentRule(oddjob, dbUser.id, paymentRule, dbReaction.id);
     }
   }
 }
@@ -368,6 +370,35 @@ async function handlePostIncomplete(
   }
 
   return false;
+}
+
+async function handleOddjobPaymentRule(
+  oddjob: OddJob,
+  userId: number,
+  paymentRule: PaymentRule,
+  reactionId: number
+) {
+  const amount = paymentRule.paymentAmount;
+  const unit = paymentRule.paymentUnit;
+
+  console.log("oddjob", oddjob);
+  console.log("userId", userId);
+  console.log("paymentRule", paymentRule);
+  console.log("reactionId", reactionId);
+
+  // Insert a payment record
+  await prisma.payment.create({
+    data: {
+      amount: amount,
+      unit: unit,
+      oddJobId: oddjob.id,
+      reactionId: reactionId,
+      status: "unknown", // TODO: implement payment status
+      userId,
+    },
+  });
+
+  logger.log(`Payment rule processed for above oddjob.`);
 }
 
 async function handlePaymentRule(

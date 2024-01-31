@@ -8,12 +8,13 @@ datasource db {
 }
 
 model Post {
-  id         String     @id
-  title      String
-  content    String?
-  slug       String     @unique @default(uuid())
-  userId     Int
-  user       User       @relation(fields: [userId], references: [id])
+  id      String  @id
+  title   String
+  content String?
+  slug    String  @unique @default(uuid())
+  userId  Int
+  user    User    @relation(fields: [userId], references: [id])
+
   reactions  Reaction[]
   categories Category[]
   tags       Tag[]      @relation("PostTags")
@@ -38,13 +39,15 @@ model Post {
 }
 
 model OddJob {
-  id              String    @id
+  id              String @id
   role            String
   description     String
   timeline        String
   requestedAmount Float
   requestedUnit   String
-  payments        Payment[]
+
+  reactions Reaction[]
+  payments  Payment[]
 
   managerId String
   manager   User   @relation(name: "ManagerUser", fields: [managerId], references: [discordId])
@@ -83,18 +86,24 @@ model User {
 }
 
 model Reaction {
-  id               Int       @id @default(autoincrement())
-  emojiId          String
-  emoji            Emoji     @relation(fields: [emojiId], references: [id])
-  userDiscordId    String
-  user             User      @relation(fields: [userDiscordId], references: [discordId])
-  postId           String
-  post             Post      @relation(fields: [postId], references: [id])
+  id            Int    @id @default(autoincrement())
+  emojiId       String
+  emoji         Emoji  @relation(fields: [emojiId], references: [id])
+  userDiscordId String
+  user          User   @relation(fields: [userDiscordId], references: [discordId])
+
+  postId String?
+  post   Post?   @relation(fields: [postId], references: [id])
+
+  oddJobId String?
+  OddJob   OddJob? @relation(fields: [oddJobId], references: [id])
+
   createdAt        DateTime  @default(now())
   initiatesPayment Boolean   @default(false)
   Payment          Payment[]
 
   @@unique([postId, userDiscordId, emojiId])
+  @@unique([oddJobId, userDiscordId, emojiId])
 }
 
 model Category {
@@ -142,12 +151,11 @@ model Payment {
   unit   String // e.g., "USD", "ETH", "DOT"
   status String // e.g., "pending", "completed"
 
-  // Direct post associated with the payment
   postId String?
   Post   Post?   @relation(name: "PaymentPost", fields: [postId], references: [id])
 
-  OddJob   OddJob? @relation(fields: [oddJobId], references: [id])
   oddJobId String?
+  OddJob   OddJob? @relation(fields: [oddJobId], references: [id])
 
   // Parent post of the thread where the payment occurred
   threadParentId String?

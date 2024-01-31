@@ -1,6 +1,6 @@
 import { logger } from "@/client";
 import { prisma } from "@/utils/prisma";
-import { Emoji, Post, User } from "@prisma/client";
+import { Emoji, OddJob, Post, User } from "@prisma/client";
 import { MessageReaction } from "discord.js";
 import { findEmoji } from "./emoji";
 import { findUserById } from "./user";
@@ -37,6 +37,41 @@ export async function upsertReaction(post: Post, dbUser: User, emoji: Emoji) {
     update: {},
     create: {
       postId: post.id,
+      emojiId: emoji.id,
+      userDiscordId: dbUser.discordId,
+    },
+  });
+
+  if (!dbReaction) {
+    throw new Error("Reaction could not be upserted");
+  }
+
+  return dbReaction;
+}
+
+/**
+ * Upsert a oddjob reaction
+ * @param post
+ * @param dbUser
+ * @param emoji
+ * @returns
+ */
+export async function upsertOddjobReaction(
+  oddjob: OddJob,
+  dbUser: User,
+  emoji: Emoji
+) {
+  const dbReaction = await prisma.reaction.upsert({
+    where: {
+      oddJobId_userDiscordId_emojiId: {
+        oddJobId: oddjob.id,
+        emojiId: emoji.id,
+        userDiscordId: dbUser.discordId,
+      },
+    },
+    update: {},
+    create: {
+      oddJobId: oddjob.id,
       emojiId: emoji.id,
       userDiscordId: dbUser.discordId,
     },
