@@ -17,7 +17,7 @@ Bot
 
 _Complete_ posts get inserted to the db (does not mean published)
 
-- a post is correct if it has a title + description + content link
+- a post is complete if it has a title + description + content link
 - a post can additionally have a list of hashtags
 
 _Complete_ Odd Jobs get inserted to the db. Oddjobs are incomplete if one of the
@@ -51,15 +51,15 @@ Odd Jobs
 
 Posts
 
-- editing an incomplete post to make it correct adds it to the db
+- editing an incomplete post to make it complete adds it to the db
 - editing an complete post to make it incomplete unpublishes it, if it is
   published
 - editing an complete post and it stays complete update it in the db
 
 Odd Jobs
 
-- editing an incorrect odd-job to make it correct saves the oddjob
-- editing an correct odd-job to make it incorrect ??? TODO ???
+- editing an incomplete odd-job to make it complete saves the oddjob
+- editing an complete odd-job to make it incomplete ??? TODO ???
 
 ## delete messages
 
@@ -71,12 +71,12 @@ Posts
 
 - 🤷‍♂️regular users can only add regular emojis (no WM, no flags)
 - 🤷‍♂️regular users (allowed) reactions are stored to the db
-- 🦹superusers can add all emojis to correct posts (see below)
-- 🦹superusers' emojis to incorrect posts will be removed
-- 🦹superusers that add emojis to incorrect posts will be informed that the post
-  is incorrect
+- 🦹superusers can add all emojis to complete posts (see below)
+- 🦹superusers' emojis to incomplete posts will be removed
+- 🦹superusers that add emojis to incomplete posts will be informed that the
+  post is incomplete
 - 🦹superuser adds any payment emoji to a post will publish a post if the post
-  is correct. a post is **not correct** if
+  is complete. a post is **not complete** if
 
   1. it has no category
   2. it is non-anglo and has no flag
@@ -98,7 +98,7 @@ OddJobs
   emoji removed
 - manager cannot add from two set of payment emojis
 - manager will get a message when trying to add from two set of payment emojis
-- correct oddjobs with payment emojis from manager will be added to the db
+- complete oddjobs with payment emojis from manager will be added to the db
 
 ## remove reactions
 
