@@ -12,6 +12,8 @@ Bot
 - the user can configure relevant parts of the bot (e.g. monitored channels,
   logging behavior). For a full list of settings see [`config.ts`](config.ts)
   and the [`env.sample`](.env.sample) for secret settings
+- There are two levels of rights the bot differentiates between: 🤷‍♂️regular users
+  and 🦹superusers (configured to have the "🦹superuser" role)
 
 _Complete_ posts get inserted to the db (does not mean published)
 
@@ -57,32 +59,40 @@ Posts
 Odd Jobs
 
 - editing an incorrect odd-job to make it correct saves the oddjob
-- editing an correct odd-job to make it incorrect ???
+- editing an correct odd-job to make it incorrect ??? TODO ???
 
 ## delete messages
+
+- ??? TODO ??? (what should happen when posts or oddjobs are deleted)
 
 ## add reactions
 
 Posts
 
-- regular users can only add regular emojis (no WM, no flags)
-- directors can add all emojis to correct posts (see below)
-- directors' emojis to incorrect posts will be removed
-- directors that add emojis to incorrect posts will be informed that the post is
-  incorrect
-- director adds any payment emoji to a post will publish a post if the post is
-  correct. a post is **not correct** if
+- 🤷‍♂️regular users can only add regular emojis (no WM, no flags)
+- 🤷‍♂️regular users (allowed) reactions are stored to the db
+- 🦹superusers can add all emojis to correct posts (see below)
+- 🦹superusers' emojis to incorrect posts will be removed
+- 🦹superusers that add emojis to incorrect posts will be informed that the post
+  is incorrect
+- 🦹superuser adds any payment emoji to a post will publish a post if the post
+  is correct. a post is **not correct** if
 
   1. it has no category
   2. it is non-anglo and has no flag
   3. it is a translation and has no non-anglo category
 
+- payment emojis by 🦹superusers will update the total amount of payments a post
+  received and save it to the db
+- reactions in threads ??? TODO ???
+
 OddJobs
 
-- regular users cannot add any emojis to odd jobs
-- directors cannot add emojis to incomplete oddjobs
-- only the director (manager) that is added as manager can add emojis to oddjobs
-- directors who are not the manager will get a message when trying to add
+- 🤷‍♂️regular users cannot add any emojis to odd jobs
+- super user cannot add emojis to incomplete oddjobs
+- only the 🦹superuser (manager) that is added as manager can add emojis to
+  oddjobs
+- 🦹superusers who are not the manager will get a message when trying to add
   emojis, emoji removed
 - manager will get a message when trying to add emojis to incomplete oddjobs,
   emoji removed
@@ -92,4 +102,19 @@ OddJobs
 
 ## remove reactions
 
+- if a regular user removes a reaction it should also be removed from the db
+- if a superuser removes a reaction it should also be removed from the db
+- if a superuser removes a category reaction also remove it from the db
+- if a superuser removes **the last** category from a post that is published,
+  unpublish the post
+- if a superuser removes a payment reaction recalculate the total payment amount
+  of the post and store to the db
+- if a superuser removes **the last** payment reaction from a post, also
+  unpublish the post
+
 ## old messages
+
+- if the bot (re-)joins a server, it should look in all monitored channels for
+  missed messages and process them to the rules above, limited by:
+- for discord reasons it cannot look at all past messages but at the last 10
+  (config variable) in each monitored channel
