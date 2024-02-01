@@ -13,7 +13,7 @@ Bot
   logging behavior). For a full list of settings see [`config.ts`](config.ts)
   and the [`env.sample`](.env.sample) for secret settings
 - There are two levels of rights the bot differentiates between: 🤷‍♂️regular users
-  and 🦹superusers (configured to have the "🦹superuser" role)
+  and 🦹superusers (configured to have the "Director" role)
 
 _Complete_ posts get inserted to the db (does not mean published)
 
