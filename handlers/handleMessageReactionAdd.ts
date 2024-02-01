@@ -29,6 +29,7 @@ import {
   isMessageFromMonitoredCategory,
   isMessageFromMonitoredChannel,
   isMessageFromOddJobsChannel,
+  isParentMessageFromMonitoredCategoryOrChannel,
   shouldIgnoreReaction,
 } from "./util.js";
 import { fetchPost } from "@/data/post.js";
@@ -57,6 +58,10 @@ export async function handleMessageReactionAdd(
   reaction: MessageReaction | PartialMessageReaction,
   user: DiscordUser | PartialUser
 ) {
+  console.log(
+    "::::::::heeere we test the reaction:::::::",
+    shouldIgnoreReaction(reaction, user)
+  );
   if (shouldIgnoreReaction(reaction, user)) return;
 
   // guild is not null because we checked for it in shouldIgnoreReaction
@@ -73,12 +78,76 @@ export async function handleMessageReactionAdd(
     return;
   }
 
+  // reactions to threads
+  if (isParentMessageFromMonitoredCategoryOrChannel(reaction.message)) {
+    if (userHasRole(guild, user, config.ROLES_WITH_POWER)) {
+      if (!reaction.message.channel.isThread()) {
+        logger.warn(
+          `The message ${messageLink} is not a thread, but it passed the checks.`
+        );
+        return;
+      }
+
+      const dbEmoji: Emoji = await findOrCreateEmoji(reaction.emoji);
+      const paymentRule: PaymentRule | null = await findEmojiPaymentRule(
+        dbEmoji.id
+      );
+
+      if (!paymentRule) {
+        console.log("ignoring non payment emojis in thread");
+        return;
+      }
+
+      // upsert the user who reacted
+      const dbUser = await findOrCreateUserFromDiscordUser(user);
+      const parentId = reaction.message.channel.id;
+
+      const parentPost = await prisma.post.findUnique({
+        where: { id: parentId, isPublished: true },
+      });
+
+      if (!parentPost) {
+        logger.warn(
+          `Parent post is not in the database or not published yet. ${messageLink}. Payments are not possible for reviewers in this case`
+        );
+        await user.send(
+          `Parent post is not in the database or not published yet. ${messageLink}. Payments are not possible for reviewers in this case`
+        );
+        await reaction.users.remove(user.id);
+        return;
+      }
+
+      const dbReaction = await prisma.reaction.create({
+        data: {
+          emojiId: dbEmoji.id,
+          userDiscordId: dbUser.discordId,
+          postId: parentId,
+        },
+      });
+
+      await prisma.payment.create({
+        data: {
+          amount: paymentRule.paymentAmount,
+          unit: paymentRule.paymentUnit,
+          threadParentId: parentId,
+          userId: dbUser.id,
+          reactionId: dbReaction.id,
+          status: "unknown", // TODO: implement payment status
+        },
+      });
+
+      logger.log(
+        `Payment of ${paymentRule.paymentAmount} ${paymentRule.paymentUnit} processed on ${messageLink}.`
+      );
+    }
+  }
+
   if (
     isMessageFromMonitoredCategory(reaction.message.channel) ||
     isMessageFromMonitoredChannel(reaction.message.channel)
   ) {
-    console.log("reaction", reaction.emoji.url, reaction.emoji.imageURL);
-    console.log("channel", reaction.message.channel);
+    //TODO record the channel information of the message
+    // console.log("channel", reaction.message.channel);
     try {
       const post = await fetchPost(reaction);
       if (!post) {
@@ -149,8 +218,6 @@ export async function processSuperuserOddJobReaction(
   const emojiName = reaction.emoji.name;
   const oddjob = await fetchOddjob(reaction);
 
-  console.log("fetched oddjob", oddjob);
-
   if (!oddjob) {
     await discordUser.send(
       `The oddjob ${messageLink} you reacted to is not valid - not in the correct format.`
@@ -170,7 +237,6 @@ export async function processSuperuserOddJobReaction(
 
   const paymentRule = await findEmojiPaymentRule(dbEmoji.id);
 
-  console.log("fetched payment rule", paymentRule);
   if (paymentRule) {
     // if the manager is not the user who reacted, remove the reaction
     if (oddjob.managerId !== dbUser.discordId) {

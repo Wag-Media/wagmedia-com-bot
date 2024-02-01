@@ -7,6 +7,7 @@ import {
   PartialMessage,
   TextChannel,
   Channel,
+  ThreadChannel,
 } from "discord.js";
 import * as config from "../config.js";
 import { logger } from "@/client.js";
@@ -74,12 +75,14 @@ export function shouldIgnoreMessage(
 
   // Ignore reactions from other channels
   const channel = message.channel;
-  if (!(channel instanceof TextChannel) || !channel.parentId) return true;
+  if (!(channel instanceof TextChannel || channel instanceof ThreadChannel))
+    return true;
 
   if (
     !isMessageFromMonitoredChannel(channel) &&
     !isMessageFromOddJobsChannel(channel) &&
-    !isMessageFromMonitoredCategory(channel)
+    !isMessageFromMonitoredCategory(channel) &&
+    !isParentMessageFromMonitoredCategoryOrChannel(message)
   )
     return true;
 
@@ -164,6 +167,21 @@ export const isMessageFromMonitoredCategory = (channel: Channel) =>
   channel instanceof TextChannel &&
   channel.parentId &&
   config.CATEGORIES_TO_MONITOR.includes(channel.parentId);
+
+export const isParentMessageFromMonitoredCategoryOrChannel = (
+  message: Message<boolean> | PartialMessage
+) => {
+  if (message.channel.isThread()) {
+    // Access thread details
+    const parent = message.channel.parent;
+    return (
+      parent &&
+      (isMessageFromMonitoredChannel(parent) ||
+        isMessageFromMonitoredCategory(parent))
+    );
+  }
+  return false;
+};
 
 /**
  * Parses a Discord user mention and extracts the user ID.

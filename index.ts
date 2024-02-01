@@ -2,13 +2,8 @@ import "dotenv/config";
 import { dfp } from "./utils/dfp.js";
 import { discordClient, logger } from "./client";
 import * as config from "./config.js";
-import { Emoji, MessageReaction, TextChannel, User } from "discord.js";
-
-import { PrismaClient } from "@prisma/client";
-
 import { handleMessageCreate } from "./handlers/handleMessageCreate.js";
 import { handleMessageReactionAdd } from "./handlers/handleMessageReactionAdd.js";
-import { DiscordLogger } from "./utils/DiscordLogger.js";
 import { handleMessageReactionRemove } from "./handlers/handleMessageReactionRemove.js";
 import { handleOldMessagesAndReactions } from "./handlers/handleOldMessagesAndReactions.js";
 import { handleMessageUpdate } from "./handlers/handleMessageUpdate.js";

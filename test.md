@@ -63,7 +63,10 @@ Odd Jobs
 
 ## delete messages
 
-- ??? TODO ??? (what should happen when posts or oddjobs are deleted)
+- if a post that is not published yet or has no categories gets deleted, it will
+  be removed from the database.
+- if a post that is already published (=payed) or has any custom emojis by
+  directors gets deleted, it stays in the db and gets flagged as deleted
 
 ## add reactions
 

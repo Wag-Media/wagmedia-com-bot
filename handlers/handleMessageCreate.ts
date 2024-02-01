@@ -67,6 +67,7 @@ export async function handleMessageCreate(
     // Check if the message contains necessary information
     if (title && description && embedUrl) {
       logger.log(`New relevant message in the channel ${messageLink}`);
+      logger.log(`↪ id: ${message.id}`);
       logger.log(`↪ user: ${message.member?.displayName}`);
       logger.log(`↪ title: ${title}`);
       logger.log(`↪ description: ${description}`);

@@ -52,7 +52,7 @@ export const findOrCreateEmoji = async (emoji: GuildEmoji | ReactionEmoji) => {
     discordEmojiId = emoji.id;
     isAnimated = emoji.animated ?? false;
     emojiId = emoji.name ?? undefined;
-    emojiUrl = emoji.url ?? undefined;
+    emojiUrl = emoji.imageURL() ?? undefined;
   } else {
     // This is a native emoji
     emojiChar = emoji.name || undefined; // Emoji itself for native emojis
