@@ -77,7 +77,7 @@ export async function handleMessageReactionAdd(
     isMessageFromMonitoredCategory(reaction.message.channel) ||
     isMessageFromMonitoredChannel(reaction.message.channel)
   ) {
-    console.log("reaction", reaction.emoji.name);
+    console.log("reaction", reaction.emoji.url, reaction.emoji.imageURL);
     console.log("channel", reaction.message.channel);
     try {
       const post = await fetchPost(reaction);
@@ -92,6 +92,7 @@ export async function handleMessageReactionAdd(
         return;
       }
 
+      //TODO this is also done in oddjobs, can be refactored
       const dbEmoji = await findOrCreateEmoji(reaction.emoji);
 
       // upsert the user who reacted

@@ -8,7 +8,6 @@ import {
 import { Message, PartialMessage } from "discord.js";
 import { findOrCreatePost } from "@/data/post";
 import { parseOddjob } from "@/utils/parse-oddjob";
-import { parse } from "path";
 import { findOrCreateOddJob } from "@/data/oddjob";
 
 export async function handleMessageCreate(

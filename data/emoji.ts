@@ -44,6 +44,7 @@ export const findOrCreateEmoji = async (emoji: GuildEmoji | ReactionEmoji) => {
   let discordEmojiId: string | undefined;
   let isAnimated: boolean | undefined;
   let emojiId: string | undefined;
+  let emojiUrl: string | undefined;
 
   if (emoji.id) {
     // This is a custom emoji
@@ -51,6 +52,7 @@ export const findOrCreateEmoji = async (emoji: GuildEmoji | ReactionEmoji) => {
     discordEmojiId = emoji.id;
     isAnimated = emoji.animated ?? false;
     emojiId = emoji.name ?? undefined;
+    emojiUrl = emoji.url ?? undefined;
   } else {
     // This is a native emoji
     emojiChar = emoji.name || undefined; // Emoji itself for native emojis
@@ -64,6 +66,7 @@ export const findOrCreateEmoji = async (emoji: GuildEmoji | ReactionEmoji) => {
       emojiChar: emojiChar,
       isAnimated: isAnimated,
       discordId: discordEmojiId,
+      url: emojiUrl,
     },
     create: {
       id: emojiId || "unknown",
@@ -71,6 +74,7 @@ export const findOrCreateEmoji = async (emoji: GuildEmoji | ReactionEmoji) => {
       emojiChar: emojiChar,
       discordId: discordEmojiId,
       isAnimated: isAnimated,
+      url: emojiUrl,
     },
   });
 

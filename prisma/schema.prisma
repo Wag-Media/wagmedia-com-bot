@@ -122,6 +122,7 @@ model Emoji {
   emojiChar  String? // For standard unicode emojis
   discordId  String?  @unique // Unique ID for custom Discord emojis
   isAnimated Boolean? // Whether the custom emoji is animated
+  url        String? // URL of the emoji image
 
   reactions Reaction[]
   category  Category?

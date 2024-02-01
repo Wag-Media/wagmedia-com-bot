@@ -84,7 +84,11 @@ Posts
 
 - payment emojis by 🦹superusers will update the total amount of payments a post
   received and save it to the db
-- reactions in threads ??? TODO ???
+
+Post Threads
+
+- the bot monitors payment reactions to valid posts in the corresponding thread
+  and inserts a payment to the db
 
 OddJobs
 
