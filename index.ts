@@ -7,6 +7,7 @@ import { handleMessageReactionAdd } from "./handlers/handleMessageReactionAdd.js
 import { handleMessageReactionRemove } from "./handlers/handleMessageReactionRemove.js";
 import { handleOldMessagesAndReactions } from "./handlers/handleOldMessagesAndReactions.js";
 import { handleMessageUpdate } from "./handlers/handleMessageUpdate.js";
+import { handleMessageDelete } from "./handlers/handleMessageDelete.js";
 
 //store your token in environment variable or put it here
 const token = process.env["DISCORD_BOT_TOKEN"];
@@ -57,6 +58,14 @@ discordClient.on("messageReactionRemove", async (reaction, user) => {
     await handleMessageReactionRemove(reaction, user);
   } catch (error) {
     console.error("Error in messageReactionRemove event handler:", error);
+  }
+});
+
+discordClient.on("messageDelete", async (message) => {
+  try {
+    await handleMessageDelete(message);
+  } catch (error) {
+    console.error("Error in messageReactionRemoveAll event handler:", error);
   }
 });
 

@@ -23,6 +23,7 @@ model Post {
   updatedAt   DateTime @updatedAt
   isPublished Boolean  @default(false)
   isFeatured  Boolean  @default(false)
+  isDeleted   Boolean  @default(false)
 
   discordLink   String? // Discord link to the original post, if applicable
   contentUrl    String? // URL of the content, if applicable
