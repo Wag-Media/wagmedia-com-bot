@@ -59,7 +59,7 @@ Posts
 Odd Jobs
 
 - editing an incomplete odd-job to make it complete saves the oddjob
-- editing an complete odd-job to make it incomplete ??? TODO ???
+- editing an complete odd-job to make it incomplete will warn the creator
 
 ## delete messages
 
