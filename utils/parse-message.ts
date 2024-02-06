@@ -9,6 +9,7 @@ export function parseMessage(
   description: string | null;
   embedUrl: string | null;
   embedImage: string | null;
+  embedColor: number | null;
   tags: string[] | null;
 } {
   try {
@@ -37,11 +38,19 @@ export function parseMessage(
     // handle post embeds
     let embedUrl: string | null = null;
     let embedImage: string | null = null;
+    let embedColor: number | null = null;
+
     if (embeds?.length > 0) {
+      console.log("embeds", embeds);
       const embed = embeds[0]; // Assuming we take the first embed
-      console.log(embed.thumbnail);
       embedUrl = embed.url;
-      embedImage = embed.thumbnail?.url || embed.thumbnail?.proxyURL || null;
+      embedImage =
+        embed.image?.proxyURL ||
+        embed.image?.url ||
+        embed.thumbnail?.url ||
+        embed.thumbnail?.proxyURL ||
+        null;
+      embedColor = embed.color;
     }
 
     return { title, description, tags, embedImage, embedUrl };
@@ -53,6 +62,7 @@ export function parseMessage(
       tags: null,
       embedImage: null,
       embedUrl: null,
+      embedColor: null,
     };
   }
 }

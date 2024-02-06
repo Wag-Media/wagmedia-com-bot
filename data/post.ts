@@ -18,7 +18,8 @@ export const findOrCreatePost = async (
   description: string,
   tags: string[],
   contentUrl: string,
-  embedImageUrl: string | null
+  embedImageUrl: string | null,
+  embedColor: number | null
 ): Promise<Post & { categories: Category[] & Tag[] }> => {
   if (!message.id) {
     throw new Error("Message must have an id");

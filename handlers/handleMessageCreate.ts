@@ -61,7 +61,8 @@ export async function handleMessageCreate(
   } else {
     // content is not null because we checked for it in shouldIgnoreMessage
     const parsedMessage = parseMessage(message.content!, message.embeds);
-    const { title, description, embedUrl, embedImage } = parsedMessage;
+    const { title, description, embedUrl, embedImage, embedColor } =
+      parsedMessage;
     const tags = parsedMessage.tags || [];
 
     // Check if the message contains necessary information
@@ -72,6 +73,8 @@ export async function handleMessageCreate(
       logger.log(`↪ title: ${title}`);
       logger.log(`↪ description: ${description}`);
       logger.log(`↪ embedUrl: ${embedUrl}`);
+      logger.log(`↪ embedImage: ${embedImage}`);
+      logger.log(`↪ embedColor: ${embedColor}`);
       logger.log(`↪ tags: ${tags}`);
       const post = findOrCreatePost(
         message,
@@ -79,7 +82,8 @@ export async function handleMessageCreate(
         description,
         tags,
         embedUrl,
-        embedImage
+        embedImage,
+        embedColor
       );
     }
   }

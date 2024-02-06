@@ -18,7 +18,8 @@ export async function handleMessageUpdate(
 
   const messageLink = `https://discord.com/channels/${newMessage.guild?.id}/${newMessage.channel.id}/${newMessage.id}`;
   const parsedMessage = parseMessage(newMessage.content!, newMessage.embeds);
-  const { title, description, embedUrl, embedImage } = parsedMessage;
+  const { title, description, embedUrl, embedImage, embedColor } =
+    parsedMessage;
   const tags = parsedMessage.tags || [];
 
   // Check if the message contains necessary information
@@ -36,7 +37,8 @@ export async function handleMessageUpdate(
       description,
       tags,
       embedUrl,
-      embedImage
+      embedImage,
+      embedColor
     );
   }
 }
