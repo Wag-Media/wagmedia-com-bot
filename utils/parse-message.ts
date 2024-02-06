@@ -41,7 +41,6 @@ export function parseMessage(
     let embedColor: number | null = null;
 
     if (embeds?.length > 0) {
-      console.log("embeds", embeds);
       const embed = embeds[0]; // Assuming we take the first embed
       embedUrl = embed.url;
       embedImage =

@@ -71,7 +71,9 @@ export async function handleMessageCreate(
       logger.log(`↪ id: ${message.id}`);
       logger.log(`↪ user: ${message.member?.displayName}`);
       logger.log(`↪ title: ${title}`);
-      logger.log(`↪ description: ${description}`);
+      logger.log(
+        `↪ description: ${description.substring(0, 30) + "..." || description}`
+      );
       logger.log(`↪ embedUrl: ${embedUrl}`);
       logger.log(`↪ embedImage: ${embedImage}`);
       logger.log(`↪ embedColor: ${embedColor}`);

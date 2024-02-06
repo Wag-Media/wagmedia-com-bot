@@ -27,7 +27,9 @@ export async function handleMessageUpdate(
     logger.log(`(edited) new relevant message in the channel ${messageLink}`);
     logger.log(`↪ user: ${newMessage.member?.displayName}`);
     logger.log(`↪ title: ${title}`);
-    logger.log(`↪ description: ${description}`);
+    logger.log(
+      `↪ description: ${description.substring(0, 30) + "..." || description}`
+    );
     logger.log(`↪ embedUrl: ${embedUrl}`);
     logger.log(`↪ tags: ${tags}`);
 
