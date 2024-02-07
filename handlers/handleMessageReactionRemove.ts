@@ -209,7 +209,7 @@ export async function handleSuperUserPaymentRuleReactionRemove(
   }, 0);
 
   // Update the post's total earnings for the specific unit
-  await prisma.postEarnings.upsert({
+  await prisma.contentEarnings.upsert({
     where: {
       postId_unit: {
         postId: post.id,

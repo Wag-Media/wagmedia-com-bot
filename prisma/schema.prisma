@@ -30,7 +30,7 @@ model Post {
   embedImageUrl String? // URL of the image from the embed
 
   // earnings associated with this post
-  earnings PostEarnings[]
+  earnings ContentEarnings[]
 
   // Payments directly associated with this post
   payments Payment[] @relation(name: "PaymentPost")
@@ -58,18 +58,24 @@ model OddJob {
 
   discordLink String? // Discord link to the original post, if applicable
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  earnings  ContentEarnings[]
 }
 
-model PostEarnings {
+model ContentEarnings {
   id          Int    @id @default(autoincrement())
-  postId      String
-  post        Post   @relation(fields: [postId], references: [id])
   totalAmount Float  @default(0)
-  unit        String // e.g., "DOT", "USD"
+  unit        String // e.g., "USD", "DOT"
+
+  postId String? // Foreign key for Post
+  post   Post?   @relation(fields: [postId], references: [id])
+
+  oddJobId String? // Foreign key for OddJob
+  oddJob   OddJob? @relation(fields: [oddJobId], references: [id])
 
   @@unique([postId, unit])
+  @@unique([oddJobId, unit])
 }
 
 model User {

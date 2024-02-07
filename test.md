@@ -89,10 +89,15 @@ following fields is missing:
 
 ## Delete Messages
 
-- if a post that is not published yet or has no categories gets deleted, it will
-  be removed from the database.
-- if a post that is already published (=payed) or has any custom emojis by
-  directors gets deleted, it stays in the db and gets flagged as deleted
+- 1️⃣if a post message that is not published yet or has no categories gets
+  deleted, it will be removed from the database.
+- 1️⃣ if a post message that is already published (=payed) or has any custom
+  emojis by directors gets deleted, it stays in the db and gets flagged as
+  deleted
+- if an oddjob message that is not paid yet gets deleted it will be removed from
+  the database
+- if an oddjob message that is paid gets deleted, it stays in the db and gets
+  flagged as deleted
 
 ## add reactions
 

@@ -7,7 +7,7 @@ import { Post } from "@prisma/client";
 export async function handleMessageDelete(
   message: Message<boolean> | PartialMessage
 ) {
-  message = await ensureFullMessage(message);
+  // message = await ensureFullMessage(message);
   const channelLink = `https://discord.com/channels/${message.guild?.id}/${message.channel.id}`;
 
   const post = await prisma.post.findUnique({
@@ -17,9 +17,10 @@ export async function handleMessageDelete(
   if (post) {
     if (post.isPublished) {
       logger.warn(`A published post was deleted in the channel ${channelLink}`);
-      message.author.send(
-        `Uh oh, your published post in ${channelLink} was just deleted. Please contact a moderator if you think this was a mistake.`
-      );
+      message.author &&
+        message.author.send(
+          `Uh oh, your published post in ${channelLink} was just deleted. Please contact a moderator if you think this was a mistake.`
+        );
       await prisma.post.update({
         where: { id: message.id },
         data: { isDeleted: true },

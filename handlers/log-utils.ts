@@ -40,7 +40,7 @@ export function logEmojiRemoved(
 
 export async function logPostEarnings(post: Post) {
   // Fetch all earnings for the post after the update
-  const allPostEarnings = await prisma.postEarnings.findMany({
+  const allPostEarnings = await prisma.contentEarnings.findMany({
     where: {
       postId: post.id,
     },
@@ -101,11 +101,7 @@ export async function logIntroMessage(guild, discordClient) {
   );
 }
 
-export async function logAndSend(message, user) {
-  logger.log(`New message received: ${messageLink}`);
-  logger.log(`Message content: ${message.content}`);
-  logger.log(`Message author: ${user.username}#${user.discriminator}`);
-}
+export async function logAndSend(message, user) {}
 
 /**
  * Wraps all URLs in a message with <> to prevent Discord embeds.

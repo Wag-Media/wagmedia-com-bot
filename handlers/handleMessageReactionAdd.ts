@@ -7,11 +7,11 @@ import { userHasRole } from "@/utils/userHasRole.js";
 import {
   Category,
   CategoryRule,
+  ContentEarnings,
   Emoji,
   OddJob,
   PaymentRule,
   Post,
-  PostEarnings,
   PrismaClient,
   User,
 } from "@prisma/client";
@@ -313,7 +313,7 @@ export async function processSuperuserPostReaction(
   reaction: MessageReaction,
   discordUser: DiscordUser,
   dbUser: User,
-  post: Post & { categories: Category[] } & { earnings: PostEarnings[] },
+  post: Post & { categories: Category[] } & { earnings: ContentEarnings[] },
   dbEmoji: Emoji,
   messageLink: string
 ) {
@@ -501,7 +501,7 @@ async function handleOddjobPaymentRule(
 }
 
 async function handlePostPaymentRule(
-  post: Post & { categories: Category[] } & { earnings: PostEarnings[] },
+  post: Post & { categories: Category[] } & { earnings: ContentEarnings[] },
   userId: number,
   paymentRule: PaymentRule,
   reactionId: number
@@ -518,7 +518,7 @@ async function handlePostPaymentRule(
   }
 
   // add or update the post earnings (this is adding redundancy but makes querying easier)
-  await prisma.postEarnings.upsert({
+  await prisma.contentEarnings.upsert({
     where: {
       postId_unit: {
         postId: post.id,

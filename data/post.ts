@@ -1,7 +1,7 @@
 import {
   Category,
+  ContentEarnings,
   Post,
-  PostEarnings,
   PrismaClient,
   Tag,
 } from "@prisma/client";
@@ -85,7 +85,7 @@ export const findOrCreatePost = async (
 export async function fetchPost(
   reaction: MessageReaction
 ): Promise<
-  (Post & { categories: Category[] } & { earnings: PostEarnings[] }) | null
+  (Post & { categories: Category[] } & { earnings: ContentEarnings[] }) | null
 > {
   if (!reaction.message.id) {
     throw new Error("Message must have an id");
