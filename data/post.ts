@@ -7,7 +7,6 @@ import {
 } from "@prisma/client";
 import { Message, MessageReaction, PartialMessage } from "discord.js";
 import { findOrCreateUser } from "./user.js";
-import { parseMessage } from "@/utils/parse-message.js";
 import { logger } from "@/client.js";
 import { slugify } from "@/handlers/util.js";
 const prisma = new PrismaClient();

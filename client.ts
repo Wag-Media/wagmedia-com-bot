@@ -1,6 +1,6 @@
 // In a new file, say di-container.ts
 import DiscordLogger from "./utils/DiscordLogger";
-import { Client, GatewayIntentBits } from "discord.js";
+import { Client, GatewayIntentBits, Partials } from "discord.js";
 import * as config from "./config";
 
 const discordClient = new Client({
@@ -13,6 +13,13 @@ const discordClient = new Client({
     GatewayIntentBits.DirectMessageReactions,
     GatewayIntentBits.DirectMessages,
     GatewayIntentBits.GuildMessages,
+  ],
+  partials: [
+    Partials.GuildMember,
+    Partials.Message,
+    Partials.Channel,
+    Partials.Reaction,
+    Partials.User,
   ],
 });
 
