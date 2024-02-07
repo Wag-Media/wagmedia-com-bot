@@ -1,11 +1,14 @@
 import { logger } from "@/client";
 import { findOrCreateOddJob } from "@/data/oddjob";
 import { Message, MessageMentions, PartialMessage, User } from "discord.js";
+import { OddJob } from "@prisma/client";
 
 export async function handleOddJob(
   message: Message<boolean> | PartialMessage,
   messageLink: string
 ) {
+  let oddJob: OddJob | null = null;
+
   // content is not null because we checked for it in shouldIgnoreMessage
   const { description, manager, payment, role, timeline } = parseOddjob(
     message.content!,
@@ -31,9 +34,9 @@ export async function handleOddJob(
     logger.log(`↪ description: ${description}`);
     logger.log(`↪ timeline: ${timeline}`);
     logger.log(`↪ payment: ${payment?.amount} ${payment?.unit}`);
-    logger.log(`↪ manager: ${manager}`);
+    logger.log(`↪ manager: ${manager.username}`);
 
-    const oddjob = findOrCreateOddJob(
+    oddJob = await findOrCreateOddJob(
       message,
       messageLink,
       role,
@@ -44,9 +47,9 @@ export async function handleOddJob(
       manager
     );
   }
-}
 
-import { parseDiscordUserId } from "@/handlers/util";
+  return oddJob;
+}
 
 /**
  * Parses a message for oddjob information

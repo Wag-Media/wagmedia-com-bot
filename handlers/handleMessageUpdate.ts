@@ -24,8 +24,25 @@ export async function handleMessageUpdate(
   const messageLink = `https://discord.com/channels/${newMessage.guild?.id}/${newMessage.channel.id}/${newMessage.id}`;
 
   if (isMessageFromOddJobsChannel(newMessage.channel)) {
-    handleOddJob(newMessage, messageLink);
+    oldMessage = await ensureFullMessage(oldMessage);
+    const oldOddJob = await handleOddJob(oldMessage, messageLink);
+    const newOddJob = await handleOddJob(newMessage, messageLink);
+
+    if (oldOddJob && newOddJob) {
+      logger.log(`Odd job updated in the channel ${messageLink}`);
+    } else if (oldOddJob && !newOddJob) {
+      logger.log(
+        `Odd job invalid in the channel ${messageLink}. Not updating.`
+      );
+      newMessage.author.send(
+        `Your odd job in ${messageLink} is invalid and is not being updated. Please correct it.`
+      );
+    } else if (!oldOddJob && newOddJob) {
+      logger.log(
+        `Oddjob is now valid and added to the db / updated: ${messageLink}`
+      );
+    }
   } else {
-    handlePost(newMessage, messageLink);
+    await handlePost(newMessage, messageLink);
   }
 }

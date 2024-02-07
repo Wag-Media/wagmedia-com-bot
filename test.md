@@ -73,17 +73,18 @@ following fields is missing:
 
 ## edit messages
 
-Posts
+**Posts**
 
 - editing an incomplete post to make it complete adds it to the db
 - editing an complete post to make it incomplete unpublishes it, if it is
   published
 - editing an complete post and it stays complete update it in the db
 
-Odd Jobs
+**Odd Jobs**
 
-- editing an incomplete odd-job to make it complete saves the oddjob
-- editing an complete odd-job to make it incomplete will warn the creator
+- 1️⃣ editing an incomplete odd-job to make it complete saves the oddjob
+- 1️⃣ editing an complete odd-job to make it incomplete will warn the creator but
+  leave the odd job in the db
 
 ## delete messages
 
@@ -94,7 +95,7 @@ Odd Jobs
 
 ## add reactions
 
-Posts
+**Posts**
 
 - regular users🤷‍♂️ can only add regular emojis (no WM, no flags)
 - regular users🤷‍♂️ (allowed) reactions are stored to the db
@@ -112,12 +113,12 @@ Posts
 - payment emojis by superusers🦹 will update the total amount of payments a post
   received and save it to the db
 
-Post Threads
+**Post Threads**
 
 - the bot monitors payment reactions to valid posts in the corresponding thread
   and inserts a payment to the db
 
-OddJobs
+**OddJobs**
 
 - regular users🤷‍♂️ cannot add any emojis to odd jobs
 - super user cannot add emojis to incomplete oddjobs
@@ -154,7 +155,7 @@ OddJobs
 
 - the bot stays online
 
-## publishing
+## website
 
 - ⭕️ correct posts that have a category and paymentEmoji are added to the
   website
