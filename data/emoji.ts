@@ -3,8 +3,9 @@ import {
   CategoryRule,
   PaymentRule,
   PrismaClient,
+  Emoji,
 } from "@prisma/client";
-import { Emoji, GuildEmoji, MessageReaction, ReactionEmoji } from "discord.js";
+import { GuildEmoji, MessageReaction, ReactionEmoji } from "discord.js";
 const prisma = new PrismaClient();
 
 export const findEmoji = async (

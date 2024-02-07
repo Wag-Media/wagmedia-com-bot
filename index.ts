@@ -1,17 +1,27 @@
 import "dotenv/config";
 import { dfp } from "./utils/dfp.js";
 import { discordClient, logger } from "./client";
-import * as config from "./config.js";
 import { handleMessageCreate } from "./handlers/handleMessageCreate.js";
 import { handleMessageReactionAdd } from "./handlers/handleMessageReactionAdd.js";
 import { handleMessageReactionRemove } from "./handlers/handleMessageReactionRemove.js";
-import { handleOldMessagesAndReactions } from "./handlers/handleOldMessagesAndReactions.js";
 import { handleMessageUpdate } from "./handlers/handleMessageUpdate.js";
 import { handleMessageDelete } from "./handlers/handleMessageDelete.js";
-import { ChannelType, Collection, Events } from "discord.js";
+import { Events } from "discord.js";
+import { logIntroMessage } from "./handlers/log-utils.js";
 
-//store your token in environment variable or put it here
+import * as config from "./config.js";
+
+//store your token in environment variable in .env
 const token = process.env["DISCORD_BOT_TOKEN"];
+
+discordClient.on(Events.Error, logger.error);
+discordClient.on(Events.Warn, logger.warn);
+discordClient.on("disconnect", () => {
+  logger.info("Disconnected from discord.");
+});
+discordClient.on(Events.ShardReconnecting, () => {
+  logger.info("Reconnecting to discord.");
+});
 
 discordClient.on(Events.ClientReady, () => {
   // Iterate over all guilds the bot is part of
@@ -23,58 +33,8 @@ discordClient.on(Events.ClientReady, () => {
       guild.leave();
     }
 
-    logger.info(`Connected to guild: ${guild.name} (${guild.id})`);
-    logger.info(`logged in as ${discordClient.user?.tag}!`);
-
-    let monitoredChannelCount = config.CATEGORIES_TO_MONITOR.length;
-
-    const guildChannels = await guild.channels.fetch();
-    const monitoredCategoriesChannels = guildChannels.filter(
-      (channel) =>
-        channel &&
-        channel.type === ChannelType.GuildText && // Adjust this if you're looking for voice channels, etc.
-        channel.parentId && // Ensure channel has a parent
-        config.CATEGORIES_TO_MONITOR.includes(channel.parentId)
-    );
-
-    logger.info(
-      `Listening for posts and post reactions in ${
-        monitoredChannelCount + monitoredCategoriesChannels.size
-      } channels in guild ${guild.name}:`
-    );
-
-    logger.info(
-      config.CHANNELS_TO_MONITOR.map((channelId) => {
-        const channel = guild.channels.cache.get(channelId);
-        return `↪ #${channel?.name} (${channel?.id})`;
-      }).join("\n")
-    );
-
-    monitoredCategoriesChannels?.forEach((channel) => {
-      logger.info(
-        `↪ ${channel?.parent?.name} ↪ #${channel?.name} (${channel?.id})`
-      );
-    });
-
-    logger.info(
-      `Listening for oddjobs and oddjob reactions in ${config.CHANNELS_ODD_JOBS.length} channels in guild ${guild.name}:`
-    );
-    logger.info(
-      config.CHANNELS_ODD_JOBS.map((channelId) => {
-        const channel = guild.channels.cache.get(channelId);
-        return `↪ #${channel?.name} (${channel?.id})`;
-      }).join("\n")
-    );
+    logIntroMessage(guild, discordClient);
   });
-});
-
-discordClient.on(Events.Error, console.error);
-discordClient.on(Events.Warn, console.warn);
-discordClient.on("disconnect", () => {
-  console.info("Disconnected from discord.");
-});
-discordClient.on(Events.ShardReconnecting, () => {
-  console.info("Reconnecting to discord.");
 });
 
 discordClient.on(Events.MessageCreate, async (message) => {
@@ -113,7 +73,7 @@ discordClient.on(Events.MessageDelete, async (message) => {
   try {
     await handleMessageDelete(message);
   } catch (error) {
-    console.error("Error in messageReactionRemoveAll event handler:", error);
+    console.error("Error in messageDelete event handler:", error);
   }
 });
 

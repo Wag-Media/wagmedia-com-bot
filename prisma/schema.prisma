@@ -148,10 +148,11 @@ model LastProcessedPost {
 
 // A payment is a record of a power user paying for a post they reacted to
 model Payment {
-  id     Int    @id @default(autoincrement())
-  amount Float // e.g., 1.5
-  unit   String // e.g., "USD", "ETH", "DOT"
-  status String // e.g., "pending", "completed"
+  id            Int     @id @default(autoincrement())
+  amount        Float // e.g., 1.5
+  unit          String // e.g., "USD", "ETH", "DOT"
+  status        String // e.g., "pending", "completed"
+  fundingSource String? // e.g. the proposal ID for a treasury proposal
 
   postId String?
   Post   Post?   @relation(name: "PaymentPost", fields: [postId], references: [id])
@@ -176,13 +177,14 @@ model Payment {
 
 // Rules for how much to pay for a given reaction
 model PaymentRule {
-  id            Int    @id @default(autoincrement())
-  emojiId       String @unique
-  emoji         Emoji  @relation(fields: [emojiId], references: [id])
+  id            Int     @id @default(autoincrement())
+  emojiId       String  @unique
+  emoji         Emoji   @relation(fields: [emojiId], references: [id])
   paymentAmount Float
   paymentUnit   String
+  fundingSource String? @default(uuid()) // e.g. the proposal ID for a treasury proposal
 
-  @@unique([paymentAmount, paymentUnit])
+  @@unique([paymentAmount, paymentUnit, fundingSource])
 }
 
 // Rules for which category a post belongs to

@@ -45,6 +45,8 @@ async function main() {
   for (const paymentEmojiName in config.paymentEmojiMap) {
     const paymentValue = config.paymentEmojiMap[paymentEmojiName].amount;
     const paymentUnit = config.paymentEmojiMap[paymentEmojiName].currency;
+    const paymentFundingSource =
+      config.paymentEmojiMap[paymentEmojiName].fundingSource;
     const emoji = await prisma.emoji.upsert({
       where: {
         id: paymentEmojiName,
@@ -58,7 +60,12 @@ async function main() {
 
     // 2.1) Seed Payment Rules
     await prisma.paymentRule.create({
-      data: { emojiId: emoji.id, paymentAmount: paymentValue, paymentUnit },
+      data: {
+        emojiId: emoji.id,
+        paymentAmount: paymentValue,
+        paymentUnit,
+        fundingSource: paymentFundingSource,
+      },
     });
   }
 }

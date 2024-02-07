@@ -1,4 +1,5 @@
-import { Client, PermissionsBitField, TextChannel } from "discord.js";
+import { wrapUrlsInMessage } from "@/handlers/log-utils";
+import { Client, PermissionsBitField, TextChannel, User } from "discord.js";
 
 export class DiscordLogger {
   private discordClient: Client;
@@ -89,6 +90,13 @@ export class DiscordLogger {
   public error(...messages: any[]): void {
     console.error("[error]", ...messages);
     this.maybeLogToDiscord("error", ...messages).catch(console.error);
+  }
+
+  public logAndSend(message: string, user: User, level?: string): void {
+    const logFunction = this[level || "log"];
+
+    user.send(message).catch(console.error);
+    logFunction.call(this, `Informed user ${user.tag}: ${message}`);
   }
 }
 

@@ -1,7 +1,8 @@
 import { logger } from "@/client";
 import { prisma } from "@/utils/prisma";
 import { Post } from "@prisma/client";
-import { MessageReaction, User as DiscordUser } from "discord.js";
+import { MessageReaction, User as DiscordUser, ChannelType } from "discord.js";
+import * as config from "@/config";
 
 export function logNewEmojiReceived(
   reaction: MessageReaction,
@@ -53,4 +54,68 @@ export async function logPostEarnings(post: Post) {
   logger.log(
     `Total earnings for the above post: ${JSON.stringify(totalEarningsPerUnit)}`
   );
+}
+
+export async function logIntroMessage(guild, discordClient) {
+  logger.info(`Connected to guild: ${guild.name} (${guild.id})`);
+  logger.info(`logged in as ${discordClient.user?.tag}!`);
+
+  let monitoredChannelCount = config.CATEGORIES_TO_MONITOR.length;
+
+  const guildChannels = await guild.channels.fetch();
+  const monitoredCategoriesChannels = guildChannels.filter(
+    (channel) =>
+      channel &&
+      channel.type === ChannelType.GuildText && // Adjust this if you're looking for voice channels, etc.
+      channel.parentId && // Ensure channel has a parent
+      config.CATEGORIES_TO_MONITOR.includes(channel.parentId)
+  );
+
+  logger.info(
+    `Listening for posts and post reactions in ${
+      monitoredChannelCount + monitoredCategoriesChannels.size
+    } channels in guild ${guild.name}:`
+  );
+
+  logger.info(
+    config.CHANNELS_TO_MONITOR.map((channelId) => {
+      const channel = guild.channels.cache.get(channelId);
+      return `↪ #${channel?.name} (${channel?.id})`;
+    }).join("\n")
+  );
+
+  monitoredCategoriesChannels?.forEach((channel) => {
+    logger.info(
+      `↪ ${channel?.parent?.name} ↪ #${channel?.name} (${channel?.id})`
+    );
+  });
+
+  logger.info(
+    `Listening for oddjobs and oddjob reactions in ${config.CHANNELS_ODD_JOBS.length} channels in guild ${guild.name}:`
+  );
+  logger.info(
+    config.CHANNELS_ODD_JOBS.map((channelId) => {
+      const channel = guild.channels.cache.get(channelId);
+      return `↪ #${channel?.name} (${channel?.id})`;
+    }).join("\n")
+  );
+}
+
+export async function logAndSend(message, user) {
+  logger.log(`New message received: ${messageLink}`);
+  logger.log(`Message content: ${message.content}`);
+  logger.log(`Message author: ${user.username}#${user.discriminator}`);
+}
+
+/**
+ * Wraps all URLs in a message with <> to prevent Discord embeds.
+ * @param {string} message The message that may contain URLs.
+ * @return {string} The message with all URLs wrapped in <>.
+ */
+export function wrapUrlsInMessage(message: string): string {
+  // Regular expression to match URLs
+  const urlRegex =
+    /(\bhttps?:\/\/[-A-Z0-9+&@#/%?=~_|!:,.;]*[-A-Z0-9+&@#/%=~_|])/gi;
+  // Replace each URL with the same URL wrapped in <>
+  return message.replace(urlRegex, "<$1>");
 }

@@ -100,10 +100,11 @@ following fields is missing:
 
 - regular users🤷‍♂️ can only add regular emojis (no WM, no flags)
 - regular users🤷‍♂️ (allowed) reactions are stored to the db
-- superusers🦹 can add all emojis to complete posts (see below)
+- superusers🦹 can add all emojis to completed posts (see below)
 - superusers🦹' emojis to incomplete posts will be removed
 - superusers🦹 that add emojis to incomplete posts will be informed that the
   post is incomplete
+- 1️⃣ superusers🦹 cannot add payment emojis from two different sets or units
 - superuser🦹 adds any payment emoji to a post will publish a post if the post
   is complete. a post is **not complete** if
 
@@ -111,27 +112,32 @@ following fields is missing:
   2. it is non-anglo and has no flag
   3. it is a translation and has no non-anglo category
 
-- payment emojis by superusers🦹 will update the total amount of payments a post
-  received and save it to the db
+- 1️⃣ payment emojis by superusers🦹 will update the total amount of payments a
+  post received and save it to the db
 
 **Post Threads**
 
 - the bot monitors payment reactions to valid posts in the corresponding thread
   and inserts a payment to the db
+- superusers🦹 cannot add payment emojis from two different sets or units
 
-**OddJobs**
+**Odd Jobs**
 
-- regular users🤷‍♂️ cannot add any emojis to odd jobs
-- super user cannot add emojis to incomplete oddjobs
-- only the 🦹superuser (manager) that is added as manager can add emojis to
-  oddjobs
-- superusers🦹 who are not the manager will get a message when trying to add
+- 1️⃣ regular users🤷‍♂️ cannot add any emojis to odd jobs
+- 1️⃣ super user cannot add emojis to incomplete oddjobs
+- 1️⃣ only the 🦹superuser (manager) that is added as manager can add payment
+  emojis to oddjobs
+- 1️⃣ superusers🦹 who are not the manager will get a message when trying to add
   emojis, emoji removed
-- manager will get a message when trying to add emojis to incomplete oddjobs,
+- 1️⃣ manager will get a message when trying to add emojis to incomplete oddjobs,
   emoji removed
-- manager cannot add from two set of payment emojis
-- manager will get a message when trying to add from two set of payment emojis
-- complete oddjobs with payment emojis from manager will be added to the db
+- 1️⃣ manager cannot add payment emojis from two different sets or units
+- 1️⃣ manager will get a message when trying to add from two set of payment
+  emojis (neither different unit nor different funding source)
+- 1️⃣ complete odd-jobs with payment emojis from manager will be added to the db
+  with a payment
+- 1️⃣ payment emojis by superusers🦹 will update the total amount of payments an
+  odd job received and save it to the db
 
 ## remove reactions
 

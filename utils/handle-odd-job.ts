@@ -10,24 +10,14 @@ export async function handleOddJob(
   let oddJob: OddJob | null = null;
 
   // content is not null because we checked for it in shouldIgnoreMessage
-  const { description, manager, payment, role, timeline } = parseOddjob(
-    message.content!,
-    message.mentions
-  );
+  const parsedOddJob = parseOddjob(message.content!, message.mentions);
 
-  if (
-    !role ||
-    !description ||
-    !timeline ||
-    !payment ||
-    !payment.amount ||
-    !payment.unit ||
-    !manager
-  ) {
+  if (!parsedOddJob) {
     logger.error(
       `Odd job missing required fields in the channel ${messageLink}`
     );
   } else {
+    const { description, manager, payment, role, timeline } = parsedOddJob;
     logger.log(`New odd job in the channel ${messageLink}`);
     logger.log(`↪ id: ${message.id}`);
     logger.log(`↪ role: ${role}`);
@@ -65,12 +55,12 @@ export function parseOddjob(
   message: string,
   mentions: MessageMentions
 ): {
-  role: string | null;
-  description: string | null;
-  timeline: string | null;
-  payment: { amount: number | null; unit: string | null } | null;
-  manager: User | null;
-} {
+  role: string;
+  description: string;
+  timeline: string;
+  payment: { amount: number; unit: string };
+  manager: User;
+} | null {
   const roleRegex = /Odd-Job Role:\s*(.+?)(?=\n|$)/;
   const descriptionRegex = /Odd-Job Description:\s*(.+?)(?=\n|$)/;
   const timelineRegex = /Odd-Job Timeline:\s*(.+?)(?=\n|$)/;
@@ -83,8 +73,6 @@ export function parseOddjob(
   const paymentMatch = message.match(paymentRegex);
   const managerMatch = message.match(managerRegex);
 
-  console.log("the manager match is", managerMatch);
-
   let manager: User | null = null;
   if (managerMatch && managerMatch[1]) {
     // Extract ID from mention format e.g., <@450723766939549696>
@@ -96,11 +84,28 @@ export function parseOddjob(
 
   const parsedPayment = paymentMatch ? parsePayment(paymentMatch[1]) : null;
 
+  if (
+    manager === null ||
+    !managerMatch ||
+    !managerMatch[1] ||
+    !roleMatch ||
+    !descriptionMatch ||
+    !timelineMatch ||
+    !parsedPayment ||
+    !parsedPayment.amount ||
+    !parsedPayment.unit
+  ) {
+    return null;
+  }
+
   return {
-    role: roleMatch ? roleMatch[1].trim() : null,
-    description: descriptionMatch ? descriptionMatch[1].trim() : null,
-    timeline: timelineMatch ? timelineMatch[1].trim() : null,
-    payment: parsedPayment,
+    role: roleMatch[1].trim(),
+    description: descriptionMatch[1].trim(),
+    timeline: timelineMatch[1].trim(),
+    payment: {
+      amount: parsedPayment.amount!,
+      unit: parsedPayment.unit!,
+    },
     manager,
   };
 }

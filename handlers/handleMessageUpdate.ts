@@ -31,7 +31,7 @@ export async function handleMessageUpdate(
         `Odd job invalid in the channel ${messageLink}. Not updating.`
       );
       newMessage.author.send(
-        `Your odd job in ${messageLink} is invalid and is not being updated. Please correct it.`
+        `Your odd job in ${messageLink} is invalid and is not being updated in the database. Please correct it.`
       );
     } else if (!oldOddJob && newOddJob) {
       logger.log(

@@ -4,6 +4,7 @@ import {
   Post,
   PrismaClient,
   User,
+  Emoji as DbEmoji,
 } from "@prisma/client";
 import {
   MessageReaction,
@@ -94,7 +95,7 @@ export async function handleMessageReactionRemove(
 export async function processRegularUserReactionRemove(
   dbUser: User,
   post: Post,
-  dbEmoji: Emoji
+  dbEmoji: DbEmoji
 ) {
   try {
     // dbEmoji.id is not null because we checked for it in getPostUserEmojiFromReaction
@@ -109,7 +110,7 @@ export async function processSuperuserReactionRemove(
   discordUser: DiscordUser,
   dbUser: User,
   post: Post,
-  dbEmoji: Emoji,
+  dbEmoji: DbEmoji,
   messageLink: string
 ) {
   try {

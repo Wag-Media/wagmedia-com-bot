@@ -1,5 +1,4 @@
 import {
-  findEmoji,
   findEmojiCategoryRule,
   findEmojiPaymentRule,
   findOrCreateEmoji,
@@ -21,8 +20,9 @@ import {
   User as DiscordUser,
   PartialMessageReaction,
   PartialUser,
+  Message,
 } from "discord.js";
-import * as config from "../config.js";
+
 import { logger } from "@/client.js";
 import {
   ensureFullEntities,
@@ -38,13 +38,14 @@ import {
   logNewRegularUserEmojiReceived,
   logPostEarnings,
 } from "./log-utils.js";
-import {
-  findOrCreateUser,
-  findOrCreateUserFromDiscordUser,
-} from "@/data/user.js";
+import { findOrCreateUserFromDiscordUser } from "@/data/user.js";
 import { upsertOddjobReaction, upsertReaction } from "@/data/reaction.js";
 import { isCountryFlag } from "../utils/is-country-flag";
 import { fetchOddjob } from "@/data/oddjob.js";
+import { parseOddjob } from "@/utils/handle-odd-job.js";
+import { isPaymentReactionValid } from "@/utils/payment-valid.js";
+
+import * as config from "../config.js";
 
 const prisma = new PrismaClient();
 
@@ -58,27 +59,6 @@ export async function handleMessageReactionAdd(
   reaction: MessageReaction | PartialMessageReaction,
   user: DiscordUser | PartialUser
 ) {
-  if (reaction.message.partial) {
-    console.log("Message is partial");
-  } else {
-    console.log("Message is not partial");
-  }
-  if (reaction.partial) {
-    console.log("Reaction is partial");
-  } else {
-    console.log("Reaction is not partial");
-  }
-  if (user.partial) {
-    console.log("User is partial");
-  } else {
-    console.log("User is not partial");
-  }
-
-  console.log(
-    "::::::::heeere we test the reaction:::::::",
-    shouldIgnoreReaction(reaction, user)
-  );
-
   // make sure the message, reaction and user are cached
   try {
     const fullEntities = await ensureFullEntities(reaction, user);
@@ -146,6 +126,7 @@ export async function handleMessageReactionAdd(
         data: {
           amount: paymentRule.paymentAmount,
           unit: paymentRule.paymentUnit,
+          fundingSource: paymentRule.fundingSource,
           threadParentId: parentId,
           userId: dbUser.id,
           reactionId: dbReaction.id,
@@ -214,10 +195,26 @@ export async function handleMessageReactionAdd(
   } else if (isMessageFromOddJobsChannel(reaction.message.channel)) {
     if (!userHasRole(guild, user, config.ROLES_WITH_POWER)) {
       await user.send(
-        `You do not have permission to add reactions in ${messageLink}`
+        `You do not have permission to add reactions to odd jobs in ${messageLink}`
       );
       logger.log(
         `Informed ${user.tag} about not having permission to add reactions in ${messageLink}`
+      );
+      await reaction.users.remove(user.id);
+      return;
+    }
+
+    const oddJob = parseOddjob(
+      reaction.message.content || "",
+      reaction.message.mentions
+    );
+
+    if (!oddJob) {
+      await user.send(
+        `The oddjob ${messageLink} you reacted to is not valid - not in the correct format. Please correct it before adding emojis`
+      );
+      logger.log(
+        `Informed ${user.tag} about the post ${messageLink} not being valid.`
       );
       await reaction.users.remove(user.id);
       return;
@@ -232,15 +229,12 @@ export async function processSuperuserOddJobReaction(
   discordUser: DiscordUser,
   messageLink: string
 ) {
-  const emojiName = reaction.emoji.name;
   const oddjob = await fetchOddjob(reaction);
 
   if (!oddjob) {
-    await discordUser.send(
-      `The oddjob ${messageLink} you reacted to is not valid - not in the correct format.`
-    );
-    logger.log(
-      `Informed ${discordUser.tag} about the post ${messageLink} not being valid.`
+    logger.logAndSend(
+      `The oddjob ${messageLink} you reacted to is not valid - not in the correct format. Please correct it before adding emojis`,
+      discordUser
     );
     await reaction.users.remove(discordUser.id);
     return;
@@ -257,16 +251,28 @@ export async function processSuperuserOddJobReaction(
   if (paymentRule) {
     // if the manager is not the user who reacted, remove the reaction
     if (oddjob.managerId !== dbUser.discordId) {
-      await discordUser.send(
-        `You do not have permission to add payment reactions in ${messageLink}, only the assigned manager can do that.`
-      );
-      logger.log(
-        `Informed ${discordUser.tag} about not having permission to add payment reactions in ${messageLink} as they are not the manager`
+      logger.logAndSend(
+        `You do not have permission to add payment reactions in ${messageLink}, only the assigned manager can do that.`,
+        discordUser
       );
       await reaction.users.remove(discordUser.id);
       return;
-    } else {
+    }
+
+    // everything is a full entity so we can use the message as a message
+    const valid = await isPaymentReactionValid(
+      reaction.message as Message,
+      reaction,
+      messageLink
+    );
+    if (valid) {
       handleOddjobPaymentRule(oddjob, dbUser.id, paymentRule, dbReaction.id);
+    } else {
+      logger.logAndSend(
+        `You do not have permission to add payment reactions in ${messageLink}, that differ from the first payment unit and funding source.`,
+        discordUser
+      );
+      await reaction.users.remove(discordUser.id);
     }
   }
 }
@@ -286,19 +292,15 @@ export async function processRegularUserPostReaction(
     return;
   } else if (reaction.emoji.name?.startsWith("WM")) {
     // Remove WM emojis if the user does not have the power role
-    await discordUser.send(
-      `You do not have permission to add WagMedia emojis in ${messageLink}`
-    );
-    logger.log(
-      `Informed ${discordUser.tag} about not having permission to use a WagMedia emoji.`
+    logger.logAndSend(
+      `You do not have permission to add WagMedia emojis in ${messageLink}`,
+      discordUser
     );
     await reaction.users.remove(discordUser.id);
   } else if (isCountryFlag(reaction.emoji.id)) {
-    await discordUser.send(
-      `You do not have permission to add country flag emojis in ${messageLink}`
-    );
-    logger.log(
-      `Informed ${discordUser.tag} about not having permission to use a country flag emoji.`
+    logger.logAndSend(
+      `You do not have permission to add country flag emojis in ${messageLink}`,
+      discordUser
     );
     await reaction.users.remove(discordUser.id);
   } else {
@@ -344,8 +346,32 @@ export async function processSuperuserPostReaction(
 
       // if the post is complete, process the payment rule (=add payment and publish post)
       if (!isPostIncomplete) {
-        // post is defined as it is not incomplete
-        await handlePaymentRule(post!, dbUser.id, paymentRule, dbReaction.id);
+        const valid = await isPaymentReactionValid(
+          reaction.message as Message,
+          reaction,
+          messageLink
+        );
+        if (valid) {
+          await handlePostPaymentRule(
+            post!,
+            dbUser.id,
+            paymentRule,
+            dbReaction.id
+          );
+        } else {
+          logger.logAndSend(
+            `You do not have permission to add payment reactions in ${messageLink}, that differ from the first payment unit and funding source.`,
+            discordUser
+          );
+          await reaction.users.remove(discordUser.id);
+        }
+
+        await handlePostPaymentRule(
+          post!,
+          dbUser.id,
+          paymentRule,
+          dbReaction.id
+        );
       }
       return;
     }
@@ -475,6 +501,7 @@ async function handleOddjobPaymentRule(
     data: {
       amount: amount,
       unit: unit,
+      fundingSource: paymentRule.fundingSource,
       oddJobId: oddjob.id,
       reactionId: reactionId,
       status: "unknown", // TODO: implement payment status
@@ -485,7 +512,7 @@ async function handleOddjobPaymentRule(
   logger.log(`Payment rule processed for above oddjob.`);
 }
 
-async function handlePaymentRule(
+async function handlePostPaymentRule(
   post: Post & { categories: Category[] } & { earnings: PostEarnings[] },
   userId: number,
   paymentRule: PaymentRule,
@@ -527,6 +554,7 @@ async function handlePaymentRule(
     data: {
       amount: amount,
       unit: unit,
+      fundingSource: paymentRule.fundingSource,
       postId: post.id,
       userId: userId,
       reactionId: reactionId,
