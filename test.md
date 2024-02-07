@@ -47,6 +47,7 @@ following fields is missing:
   the db
 - 1️⃣ all emojis that are defined in `paymentEmojiMap` have a `PaymentRule` in
   the db
+- 1️⃣ the bot leaves guilds(servers) that is not configured in `config.GUILD_ID`
 
 ## create messages
 

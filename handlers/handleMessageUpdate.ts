@@ -14,9 +14,9 @@ export async function handleMessageUpdate(
   newMessage: Message<boolean> | PartialMessage
 ) {
   logger.log(`(edited) new relevant message in the channel`);
+  newMessage = await ensureFullMessage(newMessage);
   if (shouldIgnoreMessage(newMessage, newMessage.author)) return;
 
-  newMessage = await ensureFullMessage(newMessage);
   const messageLink = `https://discord.com/channels/${newMessage.guild?.id}/${newMessage.channel.id}/${newMessage.id}`;
 
   if (isMessageFromOddJobsChannel(newMessage.channel)) {

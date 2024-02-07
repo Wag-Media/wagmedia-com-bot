@@ -78,11 +78,6 @@ export async function handleMessageReactionAdd(
     "::::::::heeere we test the reaction:::::::",
     shouldIgnoreReaction(reaction, user)
   );
-  if (shouldIgnoreReaction(reaction, user)) return;
-
-  // guild is not null because we checked for it in shouldIgnoreReaction
-  const guild = reaction.message.guild!;
-  const messageLink = `https://discord.com/channels/${guild.id}/${reaction.message.channel.id}/${reaction.message.id}`;
 
   // make sure the message, reaction and user are cached
   try {
@@ -93,6 +88,12 @@ export async function handleMessageReactionAdd(
     logger.error("Error ensuring full entities:", error);
     return;
   }
+
+  if (shouldIgnoreReaction(reaction, user)) return;
+
+  // guild is not null because we checked for it in shouldIgnoreReaction
+  const guild = reaction.message.guild!;
+  const messageLink = `https://discord.com/channels/${guild.id}/${reaction.message.channel.id}/${reaction.message.id}`;
 
   // reactions to threads
   if (isParentMessageFromMonitoredCategoryOrChannel(reaction.message)) {

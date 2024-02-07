@@ -14,9 +14,8 @@ export async function handleMessageCreate(
     console.log("Message is partial");
   }
 
-  if (shouldIgnoreMessage(message, message.author)) return;
-
   message = await ensureFullMessage(message);
+  if (shouldIgnoreMessage(message, message.author)) return;
 
   const messageLink = `https://discord.com/channels/${message.guild?.id}/${message.channel.id}/${message.id}`;
 
