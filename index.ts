@@ -8,11 +8,12 @@ import { handleMessageReactionRemove } from "./handlers/handleMessageReactionRem
 import { handleOldMessagesAndReactions } from "./handlers/handleOldMessagesAndReactions.js";
 import { handleMessageUpdate } from "./handlers/handleMessageUpdate.js";
 import { handleMessageDelete } from "./handlers/handleMessageDelete.js";
+import { Events } from "discord.js";
 
 //store your token in environment variable or put it here
 const token = process.env["DISCORD_BOT_TOKEN"];
 
-discordClient.on("ready", () => {
+discordClient.on(Events.ClientReady, () => {
   logger.log(`logged in as ${discordClient.user?.tag}!`);
 
   if (config.FETCH_OLD_MESSAGES) {
@@ -20,16 +21,16 @@ discordClient.on("ready", () => {
   }
 });
 
-discordClient.on("error", console.error);
-discordClient.on("warn", console.warn);
+discordClient.on(Events.Error, console.error);
+discordClient.on(Events.Warn, console.warn);
 discordClient.on("disconnect", () => {
   console.info("Disconnected from discord.");
 });
-discordClient.on("reconnecting", () => {
+discordClient.on(Events.ShardReconnecting, () => {
   console.info("Reconnecting to discord.");
 });
 
-discordClient.on("messageCreate", async (message) => {
+discordClient.on(Events.MessageCreate, async (message) => {
   try {
     await handleMessageCreate(message);
   } catch (error) {
@@ -37,7 +38,7 @@ discordClient.on("messageCreate", async (message) => {
   }
 });
 
-discordClient.on("messageUpdate", async (oldMessage, newMessage) => {
+discordClient.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
   try {
     await handleMessageUpdate(oldMessage, newMessage);
   } catch (error) {
@@ -45,7 +46,7 @@ discordClient.on("messageUpdate", async (oldMessage, newMessage) => {
   }
 });
 
-discordClient.on("messageReactionAdd", async (reaction, user) => {
+discordClient.on(Events.MessageReactionAdd, async (reaction, user) => {
   try {
     await handleMessageReactionAdd(reaction, user);
   } catch (error) {
@@ -53,7 +54,7 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
   }
 });
 
-discordClient.on("messageReactionRemove", async (reaction, user) => {
+discordClient.on(Events.MessageReactionRemove, async (reaction, user) => {
   try {
     await handleMessageReactionRemove(reaction, user);
   } catch (error) {
@@ -61,7 +62,7 @@ discordClient.on("messageReactionRemove", async (reaction, user) => {
   }
 });
 
-discordClient.on("messageDelete", async (message) => {
+discordClient.on(Events.MessageDelete, async (message) => {
   try {
     await handleMessageDelete(message);
   } catch (error) {

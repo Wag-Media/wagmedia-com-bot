@@ -28,6 +28,7 @@ import {
   getPostUserEmojiFromReaction,
 } from "@/data/reaction.js";
 import { removeCategoryFromPost } from "@/data/post.js";
+import { isMessageFromOddJobsChannel } from "./util";
 
 const prisma = new PrismaClient();
 
@@ -61,28 +62,32 @@ export async function handleMessageReactionRemove(
     return;
   }
 
-  try {
-    const { post, dbUser, dbEmoji } = await getPostUserEmojiFromReaction(
-      reaction,
-      user.id
-    );
-
-    logEmojiRemoved(reaction, user, messageLink);
-
-    if (userHasRole(guild, user, config.ROLES_WITH_POWER)) {
-      processSuperuserReactionRemove(
+  if (isMessageFromOddJobsChannel(reaction.message.channel)) {
+    return;
+  } else {
+    try {
+      const { post, dbUser, dbEmoji } = await getPostUserEmojiFromReaction(
         reaction,
-        user,
-        dbUser,
-        post,
-        dbEmoji,
-        messageLink
+        user.id
       );
-    } else {
-      processRegularUserReactionRemove(dbUser, post, dbEmoji);
+
+      logEmojiRemoved(reaction, user, messageLink);
+
+      if (userHasRole(guild, user, config.ROLES_WITH_POWER)) {
+        processSuperuserReactionRemove(
+          reaction,
+          user,
+          dbUser,
+          post,
+          dbEmoji,
+          messageLink
+        );
+      } else {
+        processRegularUserReactionRemove(dbUser, post, dbEmoji);
+      }
+    } catch (error) {
+      logger.error("Error logging emoji removed:", error);
     }
-  } catch (error) {
-    logger.error("Error logging emoji removed:", error);
   }
 }
 

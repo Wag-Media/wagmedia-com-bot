@@ -1,20 +1,19 @@
-import { parseMessage } from "@/utils/parse-message";
-import { logger } from "@/client";
 import {
   ensureFullMessage,
   isMessageFromOddJobsChannel,
   shouldIgnoreMessage,
 } from "./util";
 import { Message, PartialMessage } from "discord.js";
-import { findOrCreatePost } from "@/data/post";
-import { parseOddjob } from "@/utils/parse-oddjob";
-import { findOrCreateOddJob } from "@/data/oddjob";
 import { handlePost } from "../utils/handle-post";
-import { _handleOddJob, handleOddJob } from "../utils/handle-odd-job";
+import { handleOddJob } from "../utils/handle-odd-job";
 
 export async function handleMessageCreate(
   message: Message<boolean> | PartialMessage
 ) {
+  if (message.partial) {
+    console.log("Message is partial");
+  }
+
   if (shouldIgnoreMessage(message, message.author)) return;
 
   message = await ensureFullMessage(message);

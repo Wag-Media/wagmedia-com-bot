@@ -58,6 +58,22 @@ export async function handleMessageReactionAdd(
   reaction: MessageReaction | PartialMessageReaction,
   user: DiscordUser | PartialUser
 ) {
+  if (reaction.message.partial) {
+    console.log("Message is partial");
+  } else {
+    console.log("Message is not partial");
+  }
+  if (reaction.partial) {
+    console.log("Reaction is partial");
+  } else {
+    console.log("Reaction is not partial");
+  }
+  if (user.partial) {
+    console.log("User is partial");
+  } else {
+    console.log("User is not partial");
+  }
+
   console.log(
     "::::::::heeere we test the reaction:::::::",
     shouldIgnoreReaction(reaction, user)

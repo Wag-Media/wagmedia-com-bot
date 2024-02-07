@@ -1,7 +1,3 @@
-import { parseMessage } from "@/utils/parse-message";
-import * as config from "../config";
-import { findOrCreateUser } from "@/data/user";
-import { PrismaClient } from "@prisma/client";
 import { logger } from "@/client";
 import {
   ensureFullMessage,
