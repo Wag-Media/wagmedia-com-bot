@@ -155,6 +155,8 @@ following fields is missing:
 ## integration tests
 
 - the bot stays online
+- the bot does not negatively influence wagmi bot
+- the bot is not negatively influenced by wagmi bot
 
 ## website
 
