@@ -68,8 +68,8 @@ following fields is missing:
 
 **Odd Jobs**
 
-- [incomplete](#general) odd-jobs should notify poster
-- [complete](#general) odd-jobs should add odd-job to the db
+- 1️⃣ [incomplete](#general) odd-jobs should notify poster
+- 1️⃣ [complete](#general) odd-jobs should add odd-job to the db
 
 ## edit messages
 

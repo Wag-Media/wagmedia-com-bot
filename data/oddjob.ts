@@ -1,16 +1,7 @@
-import {
-  Category,
-  OddJob,
-  Post,
-  PostEarnings,
-  PrismaClient,
-  Tag,
-} from "@prisma/client";
-import { Message, MessageReaction, PartialMessage } from "discord.js";
-import { findOrCreateUser, findOrCreateUserById } from "./user.js";
-import { parseMessage } from "@/utils/parse-message.js";
+import { OddJob, PrismaClient } from "@prisma/client";
+import { Message, MessageReaction, PartialMessage, User } from "discord.js";
+import { findOrCreateUser, findOrCreateUserFromDiscordUser } from "./user.js";
 import { logger } from "@/client.js";
-import { slugify } from "@/handlers/util.js";
 const prisma = new PrismaClient();
 
 // id              String    @id
@@ -35,10 +26,10 @@ export async function findOrCreateOddJob(
   timeline: string,
   requestedAmount: number,
   requestedUnit: string,
-  managerId: string
+  manager: User
 ): Promise<OddJob> {
   const user = await findOrCreateUser(message);
-  const manager = await findOrCreateUserById(managerId);
+  const managerInDb = await findOrCreateUserFromDiscordUser(manager);
 
   return prisma.oddJob.upsert({
     where: { id: message.id },
@@ -49,7 +40,7 @@ export async function findOrCreateOddJob(
       role,
       requestedAmount,
       requestedUnit,
-      managerId: manager.discordId,
+      managerId: managerInDb.discordId,
     },
     create: {
       id: message.id,
@@ -60,7 +51,7 @@ export async function findOrCreateOddJob(
       requestedAmount,
       requestedUnit,
       userId: user.discordId,
-      managerId: manager.discordId,
+      managerId: managerInDb.discordId,
     },
     include: {
       payments: true,

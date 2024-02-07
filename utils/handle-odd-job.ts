@@ -1,3 +1,51 @@
+import { logger } from "@/client";
+import { findOrCreateOddJob } from "@/data/oddjob";
+import { Message, MessageMentions, PartialMessage, User } from "discord.js";
+
+export async function handleOddJob(
+  message: Message<boolean> | PartialMessage,
+  messageLink: string
+) {
+  // content is not null because we checked for it in shouldIgnoreMessage
+  const { description, manager, payment, role, timeline } = parseOddjob(
+    message.content!,
+    message.mentions
+  );
+
+  if (
+    !role ||
+    !description ||
+    !timeline ||
+    !payment ||
+    !payment.amount ||
+    !payment.unit ||
+    !manager
+  ) {
+    logger.error(
+      `Odd job missing required fields in the channel ${messageLink}`
+    );
+  } else {
+    logger.log(`New odd job in the channel ${messageLink}`);
+    logger.log(`↪ id: ${message.id}`);
+    logger.log(`↪ role: ${role}`);
+    logger.log(`↪ description: ${description}`);
+    logger.log(`↪ timeline: ${timeline}`);
+    logger.log(`↪ payment: ${payment?.amount} ${payment?.unit}`);
+    logger.log(`↪ manager: ${manager}`);
+
+    const oddjob = findOrCreateOddJob(
+      message,
+      messageLink,
+      role,
+      description,
+      timeline,
+      payment?.amount,
+      payment?.unit,
+      manager
+    );
+  }
+}
+
 import { parseDiscordUserId } from "@/handlers/util";
 
 /**
@@ -10,12 +58,15 @@ import { parseDiscordUserId } from "@/handlers/util";
  * @param message
  * @returns
  */
-export function parseOddjob(message: string): {
+export function parseOddjob(
+  message: string,
+  mentions: MessageMentions
+): {
   role: string | null;
   description: string | null;
   timeline: string | null;
   payment: { amount: number | null; unit: string | null } | null;
-  manager: string | null;
+  manager: User | null;
 } {
   const roleRegex = /Odd-Job Role:\s*(.+?)(?=\n|$)/;
   const descriptionRegex = /Odd-Job Description:\s*(.+?)(?=\n|$)/;
@@ -29,18 +80,25 @@ export function parseOddjob(message: string): {
   const paymentMatch = message.match(paymentRegex);
   const managerMatch = message.match(managerRegex);
 
-  const parsedPayment = paymentMatch ? parsePayment(paymentMatch[1]) : null;
+  console.log("the manager match is", managerMatch);
 
-  const parsedManager = managerMatch
-    ? parseDiscordUserId(managerMatch[1])
-    : null;
+  let manager: User | null = null;
+  if (managerMatch && managerMatch[1]) {
+    // Extract ID from mention format e.g., <@450723766939549696>
+    const managerId = managerMatch[1].replace(/<@!?(\d+)>/, "$1");
+
+    // Find the user by ID in the mentions
+    manager = mentions.users.get(managerId) || null;
+  }
+
+  const parsedPayment = paymentMatch ? parsePayment(paymentMatch[1]) : null;
 
   return {
     role: roleMatch ? roleMatch[1].trim() : null,
     description: descriptionMatch ? descriptionMatch[1].trim() : null,
     timeline: timelineMatch ? timelineMatch[1].trim() : null,
     payment: parsedPayment,
-    manager: parsedManager,
+    manager,
   };
 }
 

@@ -3,9 +3,15 @@ import * as config from "../config";
 import { findOrCreateUser } from "@/data/user";
 import { PrismaClient } from "@prisma/client";
 import { logger } from "@/client";
-import { ensureFullMessage, shouldIgnoreMessage } from "./util";
+import {
+  ensureFullMessage,
+  isMessageFromOddJobsChannel,
+  shouldIgnoreMessage,
+} from "./util";
 import { Message, PartialMessage } from "discord.js";
 import { findOrCreatePost } from "@/data/post";
+import { handleOddJob } from "../utils/handle-odd-job";
+import { handlePost } from "../utils/handle-post";
 
 export async function handleMessageUpdate(
   oldMessage: Message<boolean> | PartialMessage,
@@ -15,32 +21,11 @@ export async function handleMessageUpdate(
   if (shouldIgnoreMessage(newMessage, newMessage.author)) return;
 
   newMessage = await ensureFullMessage(newMessage);
-
   const messageLink = `https://discord.com/channels/${newMessage.guild?.id}/${newMessage.channel.id}/${newMessage.id}`;
-  const parsedMessage = parseMessage(newMessage.content!, newMessage.embeds);
-  const { title, description, embedUrl, embedImage, embedColor } =
-    parsedMessage;
-  const tags = parsedMessage.tags || [];
 
-  // Check if the message contains necessary information
-  if (title && description && embedUrl) {
-    logger.log(`(edited) new relevant message in the channel ${messageLink}`);
-    logger.log(`↪ user: ${newMessage.member?.displayName}`);
-    logger.log(`↪ title: ${title}`);
-    logger.log(
-      `↪ description: ${description.substring(0, 30) + "..." || description}`
-    );
-    logger.log(`↪ embedUrl: ${embedUrl}`);
-    logger.log(`↪ tags: ${tags}`);
-
-    const post = findOrCreatePost(
-      newMessage,
-      title,
-      description,
-      tags,
-      embedUrl,
-      embedImage,
-      embedColor
-    );
+  if (isMessageFromOddJobsChannel(newMessage.channel)) {
+    handleOddJob(newMessage, messageLink);
+  } else {
+    handlePost(newMessage, messageLink);
   }
 }
