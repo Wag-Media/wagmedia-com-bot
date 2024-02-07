@@ -1,9 +1,16 @@
 # Functionality
 
 This document lists all functional requirements for the Wagmedia Communications
-Bot
+Bot. It also lists the completion of manual tests by the developer and the
+WagMedia team.
 
-## general
+## Legend
+
+- ⭕️ wagmedia team please verify
+- 1️⃣ tested manually by niftesty
+- 2️⃣ tested manually by wagmedia team
+
+## General Functionality
 
 - all messages from bots are ignored
 - all dms are ignored
@@ -30,17 +37,10 @@ following fields is missing:
 5. requestedUnit
 6. manager (@username)
 
-## legend
-
-- ⭕️ wagmedia team please verify
-
-- 1️⃣ tested manually by niftesty
-- 2️⃣ tested manually by wagmedia team
-
 ## general tests
 
-- the set of emojis to seed the db is complete for the functioning of the bot,
-  `./config.ts`-> `paymentEmojiMap`, `categoryEmojiMap` ⭕️
+- ⭕️ the set of emojis to seed the db is complete for the functioning of the
+  bot, `./config.ts`-> `paymentEmojiMap`, `categoryEmojiMap`
 - 1️⃣ all emojis that are defined `./config.ts`-> `paymentEmojiMap`,
   `categoryEmojiMap` are used to seed the db
 - 1️⃣ all emojis that are defined in `categoryEmojiMap` have a `CategoryRule` in
@@ -51,7 +51,7 @@ following fields is missing:
 
 ## create messages
 
-**Posts**
+### Posts
 
 - 1️⃣ complete posts are added to the db but not published to the website
 - 1️⃣ complete post added to the db should be logged to discord
@@ -67,27 +67,27 @@ following fields is missing:
 - 1️⃣ correct posts added in channels / categories that are not monitored should
   be ignored
 
-**Odd Jobs**
+### Odd Jobs
 
 - 1️⃣ [incomplete](#general) odd-jobs should notify poster
 - 1️⃣ [complete](#general) odd-jobs should add odd-job to the db
 
-## edit messages
+## Edit Messages
 
-**Posts**
+### Posts
 
 - editing an incomplete post to make it complete adds it to the db
 - editing an complete post to make it incomplete unpublishes it, if it is
   published
 - editing an complete post and it stays complete update it in the db
 
-**Odd Jobs**
+### Odd Jobs
 
 - 1️⃣ editing an incomplete odd-job to make it complete saves the oddjob
 - 1️⃣ editing an complete odd-job to make it incomplete will warn the creator but
   leave the odd job in the db
 
-## delete messages
+## Delete Messages
 
 - if a post that is not published yet or has no categories gets deleted, it will
   be removed from the database.
@@ -96,7 +96,7 @@ following fields is missing:
 
 ## add reactions
 
-**Posts**
+### Posts
 
 - regular users🤷‍♂️ can only add regular emojis (no WM, no flags)
 - regular users🤷‍♂️ (allowed) reactions are stored to the db
@@ -115,13 +115,13 @@ following fields is missing:
 - 1️⃣ payment emojis by superusers🦹 will update the total amount of payments a
   post received and save it to the db
 
-**Post Threads**
+### Post Threads
 
 - the bot monitors payment reactions to valid posts in the corresponding thread
   and inserts a payment to the db
 - superusers🦹 cannot add payment emojis from two different sets or units
 
-**Odd Jobs**
+### Odd Jobs
 
 - 1️⃣ regular users🤷‍♂️ cannot add any emojis to odd jobs
 - 1️⃣ super user cannot add emojis to incomplete oddjobs
@@ -139,7 +139,7 @@ following fields is missing:
 - 1️⃣ payment emojis by superusers🦹 will update the total amount of payments an
   odd job received and save it to the db
 
-## remove reactions
+## Remove Reactions
 
 - if a regular user removes a reaction it should also be removed from the db
 - if a superuser removes a reaction it should also be removed from the db
@@ -151,20 +151,18 @@ following fields is missing:
 - if a superuser removes **the last** payment reaction from a post, also
   unpublish the post
 
-## old messages
+## Old Messages
 
 - if the bot (re-)joins a server, it should look in all monitored channels for
-  missed messages and process them to the rules above, limited by:
-- for discord reasons it cannot look at all past messages but at the last 10
-  (config variable) in each monitored channel
+  missed messages and process them to the rules above
 
-## integration tests
+## Integration Tests
 
 - the bot stays online
 - the bot does not negatively influence wagmi bot
 - the bot is not negatively influenced by wagmi bot
 
-## website
+## Website
 
 - ⭕️ correct posts that have a category and paymentEmoji are added to the
   website

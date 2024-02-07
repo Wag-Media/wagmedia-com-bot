@@ -20,15 +20,15 @@ export async function handleMessageDelete(
       message.author.send(
         `Uh oh, your published post in ${channelLink} was just deleted. Please contact a moderator if you think this was a mistake.`
       );
+      await prisma.post.update({
+        where: { id: message.id },
+        data: { isDeleted: true },
+      });
     } else {
       logger.log(
         `A post that was not yet published was deleted in the channel ${channelLink}`
       );
+      await prisma.post.delete({ where: { id: message.id } });
     }
-
-    await prisma.post.update({
-      where: { id: message.id },
-      data: { isDeleted: true },
-    });
   }
 }

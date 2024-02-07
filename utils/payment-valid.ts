@@ -63,8 +63,6 @@ export async function isPaymentReactionValid(
     },
   });
 
-  console.log("first payment for message", firstPayment);
-
   if (!firstPayment || !firstPayment.reaction) {
     logger.info(
       `Payment for ${messageLink} is valid because it is the first payment.`
@@ -77,15 +75,9 @@ export async function isPaymentReactionValid(
   const paymentRule = await findEmojiPaymentRule(dbEmoji.id);
 
   if (!paymentRule) {
-    console.log("No payment rule found for this reaction emoji.");
+    logger.log("No payment rule found for this reaction emoji.");
     return false;
   }
-
-  console.log(
-    "same unit and funding source",
-    paymentRule.paymentUnit === firstPayment.unit &&
-      paymentRule.fundingSource === firstPayment.fundingSource
-  );
 
   // Validate the reaction's payment rule against the first payment's rule
   return (

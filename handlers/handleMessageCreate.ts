@@ -10,10 +10,6 @@ import { handleOddJob } from "../utils/handle-odd-job";
 export async function handleMessageCreate(
   message: Message<boolean> | PartialMessage
 ) {
-  if (message.partial) {
-    console.log("Message is partial");
-  }
-
   message = await ensureFullMessage(message);
   if (shouldIgnoreMessage(message, message.author)) return;
 

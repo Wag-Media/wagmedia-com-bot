@@ -365,13 +365,6 @@ export async function processSuperuserPostReaction(
           );
           await reaction.users.remove(discordUser.id);
         }
-
-        await handlePostPaymentRule(
-          post!,
-          dbUser.id,
-          paymentRule,
-          dbReaction.id
-        );
       }
       return;
     }
@@ -491,11 +484,6 @@ async function handleOddjobPaymentRule(
   const amount = paymentRule.paymentAmount;
   const unit = paymentRule.paymentUnit;
 
-  console.log("oddjob", oddjob);
-  console.log("userId", userId);
-  console.log("paymentRule", paymentRule);
-  console.log("reactionId", reactionId);
-
   // Insert a payment record
   await prisma.payment.create({
     data: {
@@ -509,7 +497,7 @@ async function handleOddjobPaymentRule(
     },
   });
 
-  logger.log(`Payment rule processed for above oddjob.`);
+  logger.log(`Payment rule processed for oddjob.`);
 }
 
 async function handlePostPaymentRule(
