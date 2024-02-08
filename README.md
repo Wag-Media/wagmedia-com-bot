@@ -3,11 +3,13 @@
 ## Installation
 
 1. copy .env.sample to .env and set the variables
-2. do more config in `config.ts`
+1. do more config in `config.ts` (especially guild id and monitored channels)
+1. Invite the bot to your guild via this link:
+   https://discord.com/api/oauth2/authorize?client_id=1195395899489275988&permissions=466004864064&scope=bot
 
 (optional)
 
-3. Setup a discord log channel for the bot to log its reactions. Allow the bot
+1. Setup a discord log channel for the bot to log its reactions. Allow the bot
    roles to join and disable embeds for the bot roles to increase readability
 
 ## Features
