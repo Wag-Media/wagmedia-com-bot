@@ -124,9 +124,9 @@ following fields is missing:
 
 ### Post Threads
 
-- the bot monitors payment reactions to valid posts in the corresponding thread
-  and inserts a payment to the db
-- superusers🦹 cannot add payment emojis from two different sets or units
+- 1️⃣ the bot monitors payment reactions to valid posts in the corresponding
+  thread and inserts a payment to the db
+- 1️⃣ superusers🦹 cannot add payment emojis from two different sets or units
 
 ### Odd Jobs
 
@@ -176,9 +176,9 @@ following fields is missing:
 
 ## Integration Tests
 
-- the bot stays online
-- the bot does not negatively influence wagmi bot
-- the bot is not negatively influenced by wagmi bot
+- ⭕️ the bot stays online
+- ⭕️ the bot does not negatively influence wagmi bot
+- ⭕️ the bot is not negatively influenced by wagmi bot
 
 ## Website
 

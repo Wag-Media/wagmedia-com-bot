@@ -99,7 +99,6 @@ export async function logIntroMessage(guild, discordClient) {
       return `   ↪ #${channel?.name} (${channel?.id})`;
     }).join("\n")
   );
-  logger.info("🦻 🦻 🦻 🦻 🦻 🦻 🦻 🦻 🦻 🦻");
 }
 
 export async function logAndSend(message, user) {}
