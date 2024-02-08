@@ -31,5 +31,31 @@ export async function handleMessageDelete(
       );
       await prisma.post.delete({ where: { id: message.id } });
     }
+
+    return;
+  }
+
+  const oddJob = await prisma.oddJob.findUnique({
+    where: { id: message.id },
+    include: { payments: true },
+  });
+
+  if (oddJob) {
+    if (oddJob.payments.length > 0) {
+      logger.warn(`A paid oddJob was deleted in ${channelLink}`);
+      message.author &&
+        message.author.send(
+          `Uh oh, your paid odd job in ${channelLink} was just deleted. Please contact a moderator if you think this was a mistake.`
+        );
+      await prisma.oddJob.update({
+        where: { id: message.id },
+        data: { isDeleted: true },
+      });
+    } else {
+      logger.log(
+        `An odd-job that was not yet published was deleted in the channel ${channelLink}`
+      );
+      await prisma.oddJob.delete({ where: { id: message.id } });
+    }
   }
 }

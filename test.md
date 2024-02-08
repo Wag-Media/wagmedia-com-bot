@@ -37,7 +37,7 @@ following fields is missing:
 5. requestedUnit
 6. manager (@username)
 
-## general tests
+## General Tests
 
 - ⭕️ the set of emojis to seed the db is complete for the functioning of the
   bot, `./config.ts`-> `paymentEmojiMap`, `categoryEmojiMap`
@@ -49,7 +49,7 @@ following fields is missing:
   the db
 - 1️⃣ the bot leaves guilds(servers) that is not configured in `config.GUILD_ID`
 
-## create messages
+## Create Messages
 
 ### Posts
 
@@ -76,10 +76,11 @@ following fields is missing:
 
 ### Posts
 
-- editing an incomplete post to make it complete adds it to the db
-- editing an complete post to make it incomplete unpublishes it, if it is
+- 1️⃣ editing an incomplete post to make it complete adds it to the db
+- 1️⃣ editing an complete post to make it incomplete unpublishes it, if it is
   published
-- editing an complete post and it stays complete update it in the db
+- 1️⃣ editing an complete post and it stays complete update it in the db
+- 1️⃣ editing an incomplete post and it stays incomplete is ignored
 
 ### Odd Jobs
 
@@ -89,29 +90,29 @@ following fields is missing:
 
 ## Delete Messages
 
-- 1️⃣if a post message that is not published yet or has no categories gets
+- 1️⃣ if a post message that is not published yet or has no categories gets
   deleted, it will be removed from the database.
 - 1️⃣ if a post message that is already published (=payed) or has any custom
   emojis by directors gets deleted, it stays in the db and gets flagged as
   deleted
-- if an oddjob message that is not paid yet gets deleted it will be removed from
-  the database
-- if an oddjob message that is paid gets deleted, it stays in the db and gets
+- 1️⃣ if an oddjob message that is not paid yet gets deleted it will be removed
+  from the database
+- 1️⃣ if an oddjob message that is paid gets deleted, it stays in the db and gets
   flagged as deleted
 
 ## add reactions
 
 ### Posts
 
-- regular users🤷‍♂️ can only add regular emojis (no WM, no flags)
-- regular users🤷‍♂️ (allowed) reactions are stored to the db
-- superusers🦹 can add all emojis to completed posts (see below)
-- superusers🦹' emojis to incomplete posts will be removed
-- superusers🦹 that add emojis to incomplete posts will be informed that the
+- 1️⃣ regular users🤷‍♂️ can only add regular emojis (no WM, no flags)
+- 1️⃣ regular users🤷‍♂️ (allowed) reactions are stored to the db
+- 1️⃣ superusers🦹 can add all emojis to completed posts (see below)
+- 1️⃣ superusers🦹' emojis to incomplete posts will be removed
+- 1️⃣ superusers🦹 that add emojis to incomplete posts will be informed that the
   post is incomplete
 - 1️⃣ superusers🦹 cannot add payment emojis from two different sets or units
-- superuser🦹 adds any payment emoji to a post will publish a post if the post
-  is complete. a post is **not complete** if
+- 1️⃣ superuser🦹 adds any payment emoji to a post will publish a post if the
+  post is complete. a post is **not complete** if
 
   1. it has no category
   2. it is non-anglo and has no flag
@@ -146,15 +147,24 @@ following fields is missing:
 
 ## Remove Reactions
 
-- if a regular user removes a reaction it should also be removed from the db
-- if a superuser removes a reaction it should also be removed from the db
-- if a superuser removes a category reaction also remove it from the db
-- if a superuser removes **the last** category from a post that is published,
+### Posts
+
+- 1️⃣ if a regular user🤷‍♂️ removes a reaction it should also be removed from the
+  db
+- 1️⃣ if a superuser🦹 removes a reaction it should also be removed from the db
+- 1️⃣ if a superuser🦹 removes a category reaction also remove it from the db
+- if a superuser🦹 removes **the last** category from a post that is published,
   unpublish the post
-- if a superuser removes a payment reaction recalculate the total payment amount
-  of the post and store to the db
-- if a superuser removes **the last** payment reaction from a post, also
+- 1️⃣ if a superuser🦹 removes **the last** category from a post that is
+  published, inform the user
+- 1️⃣ if a superuser🦹 removes a payment reaction recalculate the total payment
+  amount of the post and store to the db
+- 1️⃣ if a superuser🦹 removes **the last** payment reaction from a post, also
   unpublish the post
+
+### Odd Jobs
+
+- ?
 
 ## Old Messages
 

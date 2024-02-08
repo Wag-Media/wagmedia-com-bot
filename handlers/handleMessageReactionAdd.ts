@@ -77,6 +77,7 @@ export async function handleMessageReactionAdd(
 
   // reactions to threads
   if (isParentMessageFromMonitoredCategoryOrChannel(reaction.message)) {
+    console.log("🚨🚨🚨🚨🚨 THREAD 🚨🚨🚨🚨🚨🚨");
     if (userHasRole(guild, user, config.ROLES_WITH_POWER)) {
       if (!reaction.message.channel.isThread()) {
         logger.warn(
@@ -297,7 +298,7 @@ export async function processRegularUserPostReaction(
       discordUser
     );
     await reaction.users.remove(discordUser.id);
-  } else if (isCountryFlag(reaction.emoji.id)) {
+  } else if (isCountryFlag(reaction.emoji.name)) {
     logger.logAndSend(
       `You do not have permission to add country flag emojis in ${messageLink}`,
       discordUser

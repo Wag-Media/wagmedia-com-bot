@@ -5,9 +5,9 @@ import {
   shouldIgnoreMessage,
 } from "./util";
 import { Message, PartialMessage } from "discord.js";
-import { findOrCreatePost } from "@/data/post";
+import { findOrCreatePost, flagDeletePost, unpublishPost } from "@/data/post";
 import { handleOddJob } from "../utils/handle-odd-job";
-import { handlePost } from "../utils/handle-post";
+import { handlePost, parseMessage } from "../utils/handle-post";
 
 export async function handleMessageUpdate(
   oldMessage: Message<boolean> | PartialMessage,
@@ -39,6 +39,43 @@ export async function handleMessageUpdate(
       );
     }
   } else {
-    await handlePost(newMessage, messageLink);
+    oldMessage = await ensureFullMessage(oldMessage);
+    const oldPost = await parseMessage(oldMessage.content, oldMessage.embeds);
+    const newPost = await parseMessage(newMessage.content, newMessage.embeds);
+
+    console.log("oldPost", oldPost);
+    console.log("newPost", newPost);
+
+    if (oldPost && newPost) {
+      await findOrCreatePost(
+        newMessage,
+        newPost.title,
+        newPost.description,
+        newPost.tags,
+        newPost.embedUrl,
+        newPost.embedImage,
+        newPost.embedColor
+      );
+      logger.log(`Post updated in the channel ${messageLink}`);
+    } else if (oldPost && !newPost) {
+      await flagDeletePost(newMessage.id);
+      logger.logAndSend(
+        `Your post in ${messageLink} is invalid and is unpublished until it is corrected.`,
+        newMessage.author
+      );
+    } else if (!oldPost && newPost) {
+      await findOrCreatePost(
+        newMessage,
+        newPost.title,
+        newPost.description,
+        newPost.tags,
+        newPost.embedUrl,
+        newPost.embedImage,
+        newPost.embedColor
+      );
+      logger.log(`Post is valid and added to the db / updated: ${messageLink}`);
+    } else if (!oldPost && !newPost) {
+      return;
+    }
   }
 }

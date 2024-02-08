@@ -61,53 +61,58 @@ export function parseOddjob(
   payment: { amount: number; unit: string };
   manager: User;
 } | null {
-  const roleRegex = /Odd-Job Role:\s*(.+?)(?=\n|$)/;
-  const descriptionRegex = /Odd-Job Description:\s*(.+?)(?=\n|$)/;
-  const timelineRegex = /Odd-Job Timeline:\s*(.+?)(?=\n|$)/;
-  const paymentRegex = /Agreed Payment:\s*(.+?)(?=\n|$)/;
-  const managerRegex = /Managing Director:\s*(.+?)(?=\n|$)/;
+  try {
+    const roleRegex = /Odd-Job Role:\s*(.+?)(?=\n|$)/;
+    const descriptionRegex = /Odd-Job Description:\s*(.+?)(?=\n|$)/;
+    const timelineRegex = /Odd-Job Timeline:\s*(.+?)(?=\n|$)/;
+    const paymentRegex = /Agreed Payment:\s*(.+?)(?=\n|$)/;
+    const managerRegex = /Managing Director:\s*(.+?)(?=\n|$)/;
 
-  const roleMatch = message.match(roleRegex);
-  const descriptionMatch = message.match(descriptionRegex);
-  const timelineMatch = message.match(timelineRegex);
-  const paymentMatch = message.match(paymentRegex);
-  const managerMatch = message.match(managerRegex);
+    const roleMatch = message.match(roleRegex);
+    const descriptionMatch = message.match(descriptionRegex);
+    const timelineMatch = message.match(timelineRegex);
+    const paymentMatch = message.match(paymentRegex);
+    const managerMatch = message.match(managerRegex);
 
-  let manager: User | null = null;
-  if (managerMatch && managerMatch[1]) {
-    // Extract ID from mention format e.g., <@450723766939549696>
-    const managerId = managerMatch[1].replace(/<@!?(\d+)>/, "$1");
+    let manager: User | null = null;
+    if (managerMatch && managerMatch[1]) {
+      // Extract ID from mention format e.g., <@450723766939549696>
+      const managerId = managerMatch[1].replace(/<@!?(\d+)>/, "$1");
 
-    // Find the user by ID in the mentions
-    manager = mentions.users.get(managerId) || null;
-  }
+      // Find the user by ID in the mentions
+      manager = mentions.users.get(managerId) || null;
+    }
 
-  const parsedPayment = paymentMatch ? parsePayment(paymentMatch[1]) : null;
+    const parsedPayment = paymentMatch ? parsePayment(paymentMatch[1]) : null;
 
-  if (
-    manager === null ||
-    !managerMatch ||
-    !managerMatch[1] ||
-    !roleMatch ||
-    !descriptionMatch ||
-    !timelineMatch ||
-    !parsedPayment ||
-    !parsedPayment.amount ||
-    !parsedPayment.unit
-  ) {
+    if (
+      manager === null ||
+      !managerMatch ||
+      !managerMatch[1] ||
+      !roleMatch ||
+      !descriptionMatch ||
+      !timelineMatch ||
+      !parsedPayment ||
+      !parsedPayment.amount ||
+      !parsedPayment.unit
+    ) {
+      return null;
+    }
+
+    return {
+      role: roleMatch[1].trim(),
+      description: descriptionMatch[1].trim(),
+      timeline: timelineMatch[1].trim(),
+      payment: {
+        amount: parsedPayment.amount!,
+        unit: parsedPayment.unit!,
+      },
+      manager,
+    };
+  } catch (error) {
+    logger.error("Error parsing odd job:", error);
     return null;
   }
-
-  return {
-    role: roleMatch[1].trim(),
-    description: descriptionMatch[1].trim(),
-    timeline: timelineMatch[1].trim(),
-    payment: {
-      amount: parsedPayment.amount!,
-      unit: parsedPayment.unit!,
-    },
-    manager,
-  };
 }
 
 /**

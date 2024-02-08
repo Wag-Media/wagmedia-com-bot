@@ -47,6 +47,8 @@ model OddJob {
   requestedAmount Float
   requestedUnit   String
 
+  isDeleted Boolean @default(false)
+
   reactions Reaction[]
   payments  Payment[]
 

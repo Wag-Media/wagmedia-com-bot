@@ -54,6 +54,7 @@ export const findOrCreatePost = async (
       contentUrl,
       embedImageUrl,
       slug: slugify(title),
+      isDeleted: false,
       // Update tags connection
       tags: {
         set: [], // Disconnect any existing tags
@@ -144,6 +145,32 @@ export async function removeReactionFromPost(
           },
         },
       },
+    },
+  });
+
+  return post;
+}
+
+export async function unpublishPost(postId: string) {
+  const post = await prisma.post.update({
+    where: {
+      id: postId,
+    },
+    data: {
+      isPublished: false,
+    },
+  });
+
+  return post;
+}
+
+export async function flagDeletePost(postId: string) {
+  const post = await prisma.post.update({
+    where: {
+      id: postId,
+    },
+    data: {
+      isDeleted: true,
     },
   });
 

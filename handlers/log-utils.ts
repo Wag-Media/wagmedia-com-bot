@@ -57,8 +57,8 @@ export async function logPostEarnings(post: Post) {
 }
 
 export async function logIntroMessage(guild, discordClient) {
-  logger.info(`Connected to guild: ${guild.name} (${guild.id})`);
-  logger.info(`logged in as ${discordClient.user?.tag}!`);
+  logger.info(`⚡️ Connected to guild: ${guild.name} (${guild.id})`);
+  logger.info(`🤖 Logged in as ${discordClient.user?.tag}!`);
 
   let monitoredChannelCount = config.CATEGORIES_TO_MONITOR.length;
 
@@ -72,7 +72,7 @@ export async function logIntroMessage(guild, discordClient) {
   );
 
   logger.info(
-    `Listening for posts and post reactions in ${
+    `🦻 Listening for posts and post reactions in ${
       monitoredChannelCount + monitoredCategoriesChannels.size
     } channels in guild ${guild.name}:`
   );
@@ -80,25 +80,26 @@ export async function logIntroMessage(guild, discordClient) {
   logger.info(
     config.CHANNELS_TO_MONITOR.map((channelId) => {
       const channel = guild.channels.cache.get(channelId);
-      return `↪ #${channel?.name} (${channel?.id})`;
+      return `   ↪ #${channel?.name} (${channel?.id})`;
     }).join("\n")
   );
 
   monitoredCategoriesChannels?.forEach((channel) => {
     logger.info(
-      `↪ ${channel?.parent?.name} ↪ #${channel?.name} (${channel?.id})`
+      `   ↪ ${channel?.parent?.name} ↪ #${channel?.name} (${channel?.id})`
     );
   });
 
   logger.info(
-    `Listening for oddjobs and oddjob reactions in ${config.CHANNELS_ODD_JOBS.length} channels in guild ${guild.name}:`
+    `🦻 Listening for oddjobs and oddjob reactions in ${config.CHANNELS_ODD_JOBS.length} channels in guild ${guild.name}:`
   );
   logger.info(
     config.CHANNELS_ODD_JOBS.map((channelId) => {
       const channel = guild.channels.cache.get(channelId);
-      return `↪ #${channel?.name} (${channel?.id})`;
+      return `   ↪ #${channel?.name} (${channel?.id})`;
     }).join("\n")
   );
+  logger.info("🦻 🦻 🦻 🦻 🦻 🦻 🦻 🦻 🦻 🦻");
 }
 
 export async function logAndSend(message, user) {}

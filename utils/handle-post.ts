@@ -8,50 +8,53 @@ export async function handlePost(
 ) {
   // content is not null because we checked for it in shouldIgnoreMessage
   const parsedMessage = parseMessage(message.content!, message.embeds);
+
+  if (!parsedMessage) {
+    logger.error(`Post missing required fields in the channel ${messageLink}`);
+    return;
+  }
+
   const { title, description, embedUrl, embedImage, embedColor } =
     parsedMessage;
   const tags = parsedMessage.tags || [];
 
   // Check if the message contains necessary information
-  if (title && description && embedUrl) {
-    logger.log(`New relevant message in the channel ${messageLink}`);
-    logger.log(`↪ id: ${message.id}`);
-    logger.log(`↪ user: ${message.member?.displayName}`);
-    logger.log(`↪ title: ${title}`);
-    logger.log(
-      `↪ description: ${description.substring(0, 30) + "..." || description}`
-    );
-    logger.log(`↪ embedUrl: ${embedUrl}`);
-    logger.log(`↪ embedImage: ${embedImage}`);
-    logger.log(`↪ embedColor: ${embedColor}`);
-    logger.log(`↪ tags: ${tags}`);
-    const post = findOrCreatePost(
-      message,
-      title,
-      description,
-      tags,
-      embedUrl,
-      embedImage,
-      embedColor
-    );
-  } else {
-    logger.error(
-      `Post is missing required fields in the channel ${messageLink}`
-    );
-  }
+  logger.log(`New relevant message in the channel ${messageLink}`);
+  logger.log(`↪ id: ${message.id}`);
+  logger.log(`↪ user: ${message.member?.displayName}`);
+  logger.log(`↪ title: ${title}`);
+  logger.log(
+    `↪ description: ${description.substring(0, 30) + "..." || description}`
+  );
+  logger.log(`↪ embedUrl: ${embedUrl}`);
+  logger.log(`↪ embedImage: ${embedImage}`);
+  logger.log(`↪ embedColor: ${embedColor}`);
+  logger.log(`↪ tags: ${tags}`);
+
+  const post = findOrCreatePost(
+    message,
+    title,
+    description,
+    tags,
+    embedUrl,
+    embedImage,
+    embedColor
+  );
+
+  return post;
 }
 
 export function parseMessage(
   message: string,
   embeds: Embed[]
 ): {
-  title: string | null;
-  description: string | null;
-  embedUrl: string | null;
+  title: string;
+  description: string;
+  embedUrl: string;
   embedImage: string | null;
   embedColor: number | null;
-  tags: string[] | null;
-} {
+  tags: string[];
+} | null {
   try {
     // Regular expressions to match title, description, and tags (case-insensitive)
     const titleRegex = /title:\s*(.*?)\s*\n/i;
@@ -92,16 +95,13 @@ export function parseMessage(
       embedColor = embed.color;
     }
 
+    if (!title || !description || !embedUrl) {
+      return null;
+    }
+
     return { title, description, tags, embedImage, embedUrl, embedColor };
   } catch (error) {
     logger.error("Something went wrong when parsing the message:", error);
-    return {
-      title: null,
-      description: null,
-      tags: null,
-      embedImage: null,
-      embedUrl: null,
-      embedColor: null,
-    };
+    return null;
   }
 }

@@ -64,6 +64,7 @@ export async function handleMessageReactionRemove(
   }
 
   if (isMessageFromOddJobsChannel(reaction.message.channel)) {
+    //TODO
     return;
   } else {
     try {
@@ -101,7 +102,8 @@ export async function processRegularUserReactionRemove(
     // dbEmoji.id is not null because we checked for it in getPostUserEmojiFromReaction
     await deleteReaction(post.id, dbUser.discordId, dbEmoji.id!);
   } catch (error) {
-    logger.error("Error deleting regular user reaction:", error);
+    // it was probably already deleted
+    return;
   }
 }
 
@@ -144,12 +146,14 @@ export async function handleSuperUserCategoryRuleReactionRemove(
   messageLink: string
 ) {
   //1. Remove the category from the post
-  removeCategoryFromPost(post.id, categoryRule.categoryId);
+  await removeCategoryFromPost(post.id, categoryRule.categoryId);
 
   //2. Check if the post has any remaining categories
   const remainingCategories = await prisma.category.findMany({
     where: { posts: { some: { id: post.id } } },
   });
+
+  console.log("post remaining categories", remainingCategories);
 
   //3. If the post has no remaining categories, unpublish it
   if (remainingCategories.length === 0) {
@@ -159,7 +163,7 @@ export async function handleSuperUserCategoryRuleReactionRemove(
     });
 
     discordUser.send(
-      `🚨 The category ${categoryRule.category.name} has been removed from your post ${messageLink}`
+      `🚨 The category ${categoryRule.category.name} has been removed from the post ${messageLink}`
     );
     logger.warn(
       `Post ${post.id} has been unpublished due to no remaining categories.`
