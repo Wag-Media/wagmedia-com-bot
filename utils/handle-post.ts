@@ -31,15 +31,23 @@ export async function handlePost(
   logger.log(`↪ embedColor: ${embedColor}`);
   logger.log(`↪ tags: ${tags}`);
 
-  const post = findOrCreatePost(
+  const post = findOrCreatePost({
     message,
     title,
     description,
     tags,
-    embedUrl,
-    embedImage,
-    embedColor
-  );
+    embedImageUrl: embedUrl,
+    contentUrl: embedUrl,
+    embedColor,
+  });
+  //   message,
+  //   title,
+  //   description,
+  //   tags,
+  //   embedUrl,
+  //   embedImage,
+  //   embedColor
+  // );
 
   return post;
 }

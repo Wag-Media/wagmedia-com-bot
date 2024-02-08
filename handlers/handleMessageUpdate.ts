@@ -43,19 +43,16 @@ export async function handleMessageUpdate(
     const oldPost = await parseMessage(oldMessage.content, oldMessage.embeds);
     const newPost = await parseMessage(newMessage.content, newMessage.embeds);
 
-    console.log("oldPost", oldPost);
-    console.log("newPost", newPost);
-
     if (oldPost && newPost) {
-      await findOrCreatePost(
-        newMessage,
-        newPost.title,
-        newPost.description,
-        newPost.tags,
-        newPost.embedUrl,
-        newPost.embedImage,
-        newPost.embedColor
-      );
+      await findOrCreatePost({
+        message: newMessage,
+        title: newPost.title,
+        description: newPost.description,
+        tags: newPost.tags,
+        contentUrl: newPost.embedUrl,
+        embedImageUrl: newPost.embedImage,
+        embedColor: newPost.embedColor,
+      });
       logger.log(`Post updated in the channel ${messageLink}`);
     } else if (oldPost && !newPost) {
       await flagDeletePost(newMessage.id);
@@ -64,15 +61,15 @@ export async function handleMessageUpdate(
         newMessage.author
       );
     } else if (!oldPost && newPost) {
-      await findOrCreatePost(
-        newMessage,
-        newPost.title,
-        newPost.description,
-        newPost.tags,
-        newPost.embedUrl,
-        newPost.embedImage,
-        newPost.embedColor
-      );
+      await findOrCreatePost({
+        message: newMessage,
+        title: newPost.title,
+        description: newPost.description,
+        tags: newPost.tags,
+        contentUrl: newPost.embedUrl,
+        embedImageUrl: newPost.embedImage,
+        embedColor: newPost.embedColor,
+      });
       logger.log(`Post is valid and added to the db / updated: ${messageLink}`);
     } else if (!oldPost && !newPost) {
       return;

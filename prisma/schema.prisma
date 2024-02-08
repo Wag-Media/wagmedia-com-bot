@@ -8,12 +8,12 @@ datasource db {
 }
 
 model Post {
-  id      String  @id
+  id      String @id
   title   String
-  content String?
-  slug    String  @unique @default(uuid())
+  content String
+  slug    String @unique @default(uuid())
   userId  Int
-  user    User    @relation(fields: [userId], references: [id])
+  user    User   @relation(fields: [userId], references: [id])
 
   reactions  Reaction[]
   categories Category[]

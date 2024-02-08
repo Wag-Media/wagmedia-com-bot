@@ -153,8 +153,6 @@ export async function handleSuperUserCategoryRuleReactionRemove(
     where: { posts: { some: { id: post.id } } },
   });
 
-  console.log("post remaining categories", remainingCategories);
-
   //3. If the post has no remaining categories, unpublish it
   if (remainingCategories.length === 0) {
     await prisma.post.update({

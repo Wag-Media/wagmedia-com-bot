@@ -9,6 +9,7 @@ WagMedia team.
 - ⭕️ wagmedia team please verify
 - 1️⃣ tested manually by niftesty
 - 2️⃣ tested manually by wagmedia team
+- 🚥 not implemented yet
 
 ## General Functionality
 
@@ -168,8 +169,10 @@ following fields is missing:
 
 ## Old Messages
 
-- if the bot (re-)joins a server, it should look in all monitored channels for
-  missed messages and process them to the rules above
+- 1️⃣ if the bot (re-)joins a server, all reactions to old posts that happen to
+  posts that were posted before bot joined should still be handled
+- 🚥 if the bot (re-)joins a server, it should look in all monitored channels
+  for missed messages and process them to the rules above
 
 ## Integration Tests
 

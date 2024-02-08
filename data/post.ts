@@ -11,15 +11,33 @@ import { logger } from "@/client.js";
 import { slugify } from "@/handlers/util.js";
 const prisma = new PrismaClient();
 
+export type PostCreateType = {
+  message: Message<boolean> | PartialMessage;
+  title: string;
+  description: string;
+  tags: string[];
+  contentUrl: string;
+  embedImageUrl: string | null;
+  embedColor: number | null;
+  parentId?: string;
+};
+
 export const findOrCreatePost = async (
-  message: Message<boolean> | PartialMessage,
-  title: string,
-  description: string,
-  tags: string[],
-  contentUrl: string,
-  embedImageUrl: string | null,
-  embedColor: number | null
+  attributes: PostCreateType
 ): Promise<Post & { categories: Category[] & Tag[] }> => {
+  const {
+    message,
+    title,
+    description,
+    tags,
+    contentUrl,
+    embedImageUrl,
+    embedColor,
+  } = attributes;
+
+  if (!message) {
+    throw new Error("Message must be defined");
+  }
   if (!message.id) {
     throw new Error("Message must have an id");
   }
@@ -82,6 +100,32 @@ export const findOrCreatePost = async (
 
   return post;
 };
+
+/**
+ * Threads are just posts with a parentId
+ * @param message
+ * @param content
+ * @param url
+ * @returns
+ */
+export async function findOrCreateThreadPost(attributes: {
+  message: Message<boolean> | PartialMessage;
+  content: string;
+  url: string;
+}): Promise<Post & { categories: Category[] & Tag[] }> {
+  const { message, content, url } = attributes;
+  const threadPost = findOrCreatePost({
+    message,
+    title: "Thread",
+    description: content,
+    tags: [],
+    contentUrl: url,
+    embedImageUrl: null,
+    embedColor: null,
+    parentId: message.channel.id,
+  });
+  return threadPost;
+}
 
 export async function fetchPost(
   reaction: MessageReaction

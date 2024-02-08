@@ -32,7 +32,11 @@ import {
   isParentMessageFromMonitoredCategoryOrChannel,
   shouldIgnoreReaction,
 } from "./util.js";
-import { fetchPost } from "@/data/post.js";
+import {
+  fetchPost,
+  findOrCreatePost,
+  findOrCreateThreadPost,
+} from "@/data/post.js";
 import {
   logNewEmojiReceived,
   logNewRegularUserEmojiReceived,
@@ -77,7 +81,6 @@ export async function handleMessageReactionAdd(
 
   // reactions to threads
   if (isParentMessageFromMonitoredCategoryOrChannel(reaction.message)) {
-    console.log("🚨🚨🚨🚨🚨 THREAD 🚨🚨🚨🚨🚨🚨");
     if (userHasRole(guild, user, config.ROLES_WITH_POWER)) {
       if (!reaction.message.channel.isThread()) {
         logger.warn(
@@ -115,11 +118,17 @@ export async function handleMessageReactionAdd(
         return;
       }
 
+      const threadedPost = await findOrCreateThreadPost({
+        message: reaction.message,
+        content: reaction.message.content || "",
+        url: messageLink,
+      });
+
       const dbReaction = await prisma.reaction.create({
         data: {
           emojiId: dbEmoji.id,
           userDiscordId: dbUser.discordId,
-          postId: parentId,
+          postId: threadedPost.id,
         },
       });
 
@@ -129,6 +138,7 @@ export async function handleMessageReactionAdd(
           unit: paymentRule.paymentUnit,
           fundingSource: paymentRule.fundingSource,
           threadParentId: parentId,
+          postId: threadedPost.id,
           userId: dbUser.id,
           reactionId: dbReaction.id,
           status: "unknown", // TODO: implement payment status
