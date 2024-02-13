@@ -2,6 +2,7 @@ import { discordClient, logger } from "@/client";
 import * as config from "../config";
 import { TextChannel } from "discord.js";
 import { delay } from "./util";
+import { CHANNELS_TO_MONITOR } from "../config";
 
 export const handleOldMessagesAndReactions = async (limit: number) => {
   const delayBetweenMessages = 500; // Delay in milliseconds (e.g., 500ms = 0.5 seconds)
@@ -11,8 +12,12 @@ export const handleOldMessagesAndReactions = async (limit: number) => {
   let messageCount = 0;
   let reactionCount = 0;
 
+  const CHANNELS_TO_MONITOR = process.env.CHANNELS_TO_MONITOR
+    ? JSON.parse(process.env.CHANNELS_TO_MONITOR)
+    : [];
+
   try {
-    for (const channelId of config.CHANNELS_TO_MONITOR) {
+    for (const channelId of CHANNELS_TO_MONITOR) {
       const channel = (await discordClient.channels.fetch(
         channelId
       )) as TextChannel;
