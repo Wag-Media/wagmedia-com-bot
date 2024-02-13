@@ -24,11 +24,15 @@ discordClient.on(Events.ShardReconnecting, () => {
 });
 
 discordClient.on(Events.ClientReady, () => {
-  console.log("Bot is ready", config.GUILD_ID, config.CATEGORIES_TO_MONITOR);
-
+  if (!config.GUILD_ID) {
+    logger.error(
+      "GUILD_ID is not set in the environment variables. Please set it and try again."
+    );
+    process.exit(1);
+  }
   // Iterate over all guilds the bot is part of
   discordClient.guilds.cache.forEach(async (guild) => {
-    if (guild.id !== config.GUILD_ID) {
+    if (guild.id !== config.GUILD_ID.toString()) {
       logger.warn(
         `Guild is not configured as the guild the bot should work with. Leaving guild: ${guild.name}`
       );
