@@ -22,6 +22,8 @@ export const CHANNELS_ODD_JOBS = process.env.CHANNELS_ODD_JOBS
   ? JSON.parse(process.env.CHANNELS_ODD_JOBS)
   : [];
 
+export const CHANNEL_LOG = process.env.CHANNEL_LOG || "";
+
 // the emojis that trigger the add category action.
 
 // 🚨 The following values are only used for
