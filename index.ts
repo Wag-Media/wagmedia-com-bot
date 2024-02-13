@@ -25,7 +25,7 @@ discordClient.on(Events.ShardReconnecting, () => {
 
 discordClient.on(Events.ClientReady, () => {
   if (!config.GUILD_ID) {
-    logger.error(
+    console.error(
       "GUILD_ID is not set in the environment variables. Please set it and try again."
     );
     process.exit(1);
@@ -36,7 +36,7 @@ discordClient.on(Events.ClientReady, () => {
   // Iterate over all guilds the bot is part of
   discordClient.guilds.cache.forEach(async (guild) => {
     if (guild.id !== config.GUILD_ID.toString()) {
-      logger.warn(
+      console.warn(
         `Guild is not configured as the guild the bot should work with, guild: ${guild.name}`
       );
       // guild.leave();
@@ -47,7 +47,7 @@ discordClient.on(Events.ClientReady, () => {
   });
 
   if (!onCorrectGuild) {
-    logger.error(
+    console.error(
       `The bot is not part of the guild with the ID ${config.GUILD_ID}. Please add the bot to the correct guild and try again.`
     );
     process.exit(1);

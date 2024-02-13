@@ -36,7 +36,7 @@ export async function handlePost(
     title,
     description,
     tags,
-    embedImageUrl: embedUrl,
+    embedImageUrl: embedImage,
     contentUrl: embedUrl,
     embedColor,
   });
