@@ -5,7 +5,12 @@ import {
   shouldIgnoreMessage,
 } from "./util";
 import { Message, PartialMessage } from "discord.js";
-import { findOrCreatePost, flagDeletePost, unpublishPost } from "@/data/post";
+import {
+  findOrCreatePost,
+  flagDeletePost,
+  getPost,
+  unpublishPost,
+} from "@/data/post";
 import { handleOddJob } from "../utils/handle-odd-job";
 import { handlePost, parseMessage } from "../utils/handle-post";
 
@@ -43,7 +48,14 @@ export async function handleMessageUpdate(
     const oldPost = await parseMessage(oldMessage.content, oldMessage.embeds);
     const newPost = await parseMessage(newMessage.content, newMessage.embeds);
 
-    if (oldPost && newPost) {
+    const oldDbPost = await getPost(oldMessage.id);
+
+    if (oldDbPost?.isPublished) {
+      logger.logAndSend(
+        `The post ${messageLink} is already published and cannot be edited. If you want to change it, unpublish it first.`,
+        newMessage.author
+      );
+    } else if (oldPost && newPost) {
       await findOrCreatePost({
         message: newMessage,
         title: newPost.title,

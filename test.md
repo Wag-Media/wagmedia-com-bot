@@ -82,9 +82,11 @@ following fields is missing:
   published
 - 1️⃣⭕️ editing an complete post and it stays complete update it in the db
 - 1️⃣⭕️ editing an incomplete post and it stays incomplete is ignored
+- 😅 editing paid posts is not possible, user gets informed to unpublish first
 
 ### Odd Jobs
 
+- 😅 editing paid odd-jobs is not possible
 - 1️⃣ editing an incomplete odd-job to make it complete saves the oddjob
 - 1️⃣⭕️ editing an complete odd-job to make it incomplete will warn the creator
   but leave the odd job in the db

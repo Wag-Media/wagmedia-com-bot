@@ -220,3 +220,13 @@ export async function flagDeletePost(postId: string) {
 
   return post;
 }
+
+export async function getPost(postId: string) {
+  const post = await prisma.post.findUnique({
+    where: {
+      id: postId,
+    },
+  });
+
+  return post;
+}
