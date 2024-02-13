@@ -301,7 +301,10 @@ export async function processRegularUserPostReaction(
       `Ignoring user reaction to post ${messageLink}, as it is not valid.`
     );
     return;
-  } else if (reaction.emoji.name?.startsWith("WM")) {
+  } else if (
+    reaction.emoji.name?.startsWith("WM") ||
+    reaction.emoji.name?.includes("WM")
+  ) {
     // Remove WM emojis if the user does not have the power role
     logger.logAndSend(
       `You do not have permission to add WagMedia emojis in ${messageLink}`,

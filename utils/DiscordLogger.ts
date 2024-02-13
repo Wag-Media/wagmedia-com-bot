@@ -68,7 +68,6 @@ export class DiscordLogger {
       } else {
         console.error(`DiscordLogger Error: ${error}`);
       }
-      // Optionally log to an alternative system or file
     }
   }
 
