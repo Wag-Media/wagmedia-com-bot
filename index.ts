@@ -39,7 +39,7 @@ discordClient.on(Events.ClientReady, () => {
       logger.warn(
         `Guild is not configured as the guild the bot should work with, guild: ${guild.name}`
       );
-      guild.leave();
+      // guild.leave();
     } else {
       logIntroMessage(guild, discordClient);
       onCorrectGuild = true;
