@@ -24,6 +24,8 @@ discordClient.on(Events.ShardReconnecting, () => {
 });
 
 discordClient.on(Events.ClientReady, () => {
+  console.log("Bot is ready", config.GUILD_ID, config.CATEGORIES_TO_MONITOR);
+
   // Iterate over all guilds the bot is part of
   discordClient.guilds.cache.forEach(async (guild) => {
     if (guild.id !== config.GUILD_ID) {
