@@ -25,9 +25,8 @@ model Post {
   isFeatured  Boolean  @default(false)
   isDeleted   Boolean  @default(false)
 
-  discordLink   String? // Discord link to the original post, if applicable
-  contentUrl    String? // URL of the content, if applicable
-  embedImageUrl String? // URL of the image from the embed
+  discordLink String? // Discord link to the original post, if applicable
+  embeds      Embed[]
 
   // earnings associated with this post
   earnings ContentEarnings[]
@@ -202,4 +201,15 @@ model CategoryRule {
   emoji      Emoji    @relation(fields: [emojiId], references: [id])
   categoryId Int
   category   Category @relation(fields: [categoryId], references: [id])
+}
+
+model Embed {
+  id         String   @id @default(uuid())
+  embedUrl   String?
+  embedImage String?
+  embedColor Int?
+  postId     String
+  post       Post     @relation(fields: [postId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }

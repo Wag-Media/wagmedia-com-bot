@@ -4,8 +4,8 @@ import {
   OddJob,
   PaymentRule,
   Post,
-  PostEarnings,
   User as DbUser,
+  ContentEarnings,
 } from "@prisma/client";
 import {
   MessageReaction,
@@ -21,7 +21,13 @@ export interface ReactionContext {
   dbEmoji?: Emoji;
   dbUser?: DbUser;
   paymentRule?: PaymentRule;
-  post?: Post & { categories: Category[] } & { earnings: PostEarnings[] };
+  post?: Post & { categories: Category[] } & { earnings: ContentEarnings[] };
   oddJob?: OddJob;
   isSuperUser: boolean;
 }
+
+export type PostEmbed = {
+  url: string | null;
+  imageUrl: string | null;
+  color: number | null;
+};

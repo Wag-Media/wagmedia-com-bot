@@ -1,6 +1,7 @@
 import {
   Category,
   ContentEarnings,
+  Embed,
   Post,
   PrismaClient,
   Tag,
@@ -9,6 +10,7 @@ import { Message, MessageReaction, PartialMessage } from "discord.js";
 import { findOrCreateUser } from "./user.js";
 import { logger } from "@/client.js";
 import { slugify } from "@/handlers/util.js";
+import { PostEmbed } from "@/types.js";
 const prisma = new PrismaClient();
 
 export type PostCreateType = {
@@ -16,24 +18,16 @@ export type PostCreateType = {
   title: string;
   description: string;
   tags: string[];
-  contentUrl: string;
-  embedImageUrl: string | null;
-  embedColor: number | null;
+  embeds: PostEmbed[];
   parentId?: string;
 };
 
 export const findOrCreatePost = async (
   attributes: PostCreateType
-): Promise<Post & { categories: Category[] & Tag[] }> => {
-  const {
-    message,
-    title,
-    description,
-    tags,
-    contentUrl,
-    embedImageUrl,
-    embedColor,
-  } = attributes;
+): Promise<
+  Post & { categories: Category[] } & { tags: Tag[] } & { embeds: Embed[] }
+> => {
+  const { message, title, description, tags, embeds } = attributes;
 
   if (!message) {
     throw new Error("Message must be defined");
@@ -69,8 +63,6 @@ export const findOrCreatePost = async (
       title,
       content: description,
       discordLink: messageLink,
-      contentUrl,
-      embedImageUrl,
       slug: slugify(title),
       isDeleted: false,
       // Update tags connection
@@ -84,17 +76,23 @@ export const findOrCreatePost = async (
       title,
       content: description,
       discordLink: messageLink,
-      contentUrl,
-      embedImageUrl,
       slug: slugify(title),
       userId: user.id, // Assuming you have the user's ID
       tags: {
         connect: tagInstances.map((tag) => ({ id: tag.id })),
       },
+      embeds: {
+        create: embeds.map((embed) => ({
+          embedUrl: embed.url,
+          embedImage: embed.imageUrl,
+          embedColor: embed.color,
+        })),
+      },
     },
     include: {
       categories: true,
       tags: true, // Include tags in the returned object for verification
+      embeds: true,
     },
   });
 
@@ -119,9 +117,7 @@ export async function findOrCreateThreadPost(attributes: {
     title: "Thread",
     description: content,
     tags: [],
-    contentUrl: url,
-    embedImageUrl: null,
-    embedColor: null,
+    embeds: [],
     parentId: message.channel.id,
   });
   return threadPost;

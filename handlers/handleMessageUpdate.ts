@@ -5,14 +5,9 @@ import {
   shouldIgnoreMessage,
 } from "./util";
 import { Message, PartialMessage } from "discord.js";
-import {
-  findOrCreatePost,
-  flagDeletePost,
-  getPost,
-  unpublishPost,
-} from "@/data/post";
+import { findOrCreatePost, flagDeletePost, getPost } from "@/data/post";
 import { handleOddJob } from "../utils/handle-odd-job";
-import { handlePost, parseMessage } from "../utils/handle-post";
+import { parseMessage } from "../utils/handle-post";
 
 export async function handleMessageUpdate(
   oldMessage: Message<boolean> | PartialMessage,
@@ -48,6 +43,12 @@ export async function handleMessageUpdate(
     const oldPost = await parseMessage(oldMessage.content, oldMessage.embeds);
     const newPost = await parseMessage(newMessage.content, newMessage.embeds);
 
+    const oldPostValid =
+      oldPost?.title && oldPost?.description && oldPost?.embeds.length > 0;
+
+    const newPostValid =
+      newPost?.title && newPost?.description && newPost?.embeds.length > 0;
+
     const oldDbPost = await getPost(oldMessage.id);
 
     if (oldDbPost?.isPublished) {
@@ -55,35 +56,31 @@ export async function handleMessageUpdate(
         `The post ${messageLink} is already published and cannot be edited. If you want to change it, unpublish it first.`,
         newMessage.author
       );
-    } else if (oldPost && newPost) {
+    } else if (oldPostValid && newPostValid) {
       await findOrCreatePost({
         message: newMessage,
-        title: newPost.title,
-        description: newPost.description,
+        title: newPost.title!,
+        description: newPost.description!,
         tags: newPost.tags,
-        contentUrl: newPost.embedUrl,
-        embedImageUrl: newPost.embedImage,
-        embedColor: newPost.embedColor,
+        embeds: newPost.embeds,
       });
       logger.log(`Post updated in the channel ${messageLink}`);
-    } else if (oldPost && !newPost) {
+    } else if (oldPostValid && !newPostValid) {
       await flagDeletePost(newMessage.id);
       logger.logAndSend(
         `Your post in ${messageLink} is invalid and is unpublished until it is corrected.`,
         newMessage.author
       );
-    } else if (!oldPost && newPost) {
+    } else if (!oldPostValid && newPostValid) {
       await findOrCreatePost({
         message: newMessage,
-        title: newPost.title,
-        description: newPost.description,
+        title: newPost.title!,
+        description: newPost.description!,
         tags: newPost.tags,
-        contentUrl: newPost.embedUrl,
-        embedImageUrl: newPost.embedImage,
-        embedColor: newPost.embedColor,
+        embeds: newPost.embeds,
       });
       logger.log(`Post is valid and added to the db / updated: ${messageLink}`);
-    } else if (!oldPost && !newPost) {
+    } else if (!oldPostValid && !newPostValid) {
       return;
     }
   }
