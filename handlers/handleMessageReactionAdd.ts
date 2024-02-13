@@ -40,6 +40,7 @@ import {
 import {
   logNewEmojiReceived,
   logNewRegularUserEmojiReceived,
+  logOddjobEarnings,
   logPostEarnings,
 } from "./log-utils.js";
 import { findOrCreateUserFromDiscordUser } from "@/data/user.js";
@@ -490,13 +491,33 @@ async function handlePostIncomplete(
 }
 
 async function handleOddjobPaymentRule(
-  oddjob: OddJob,
+  oddjob: OddJob & { earnings: ContentEarnings[] },
   userId: number,
   paymentRule: PaymentRule,
   reactionId: number
 ) {
   const amount = paymentRule.paymentAmount;
   const unit = paymentRule.paymentUnit;
+
+  // add or update the post earnings (this is adding redundancy but makes querying easier)
+  await prisma.contentEarnings.upsert({
+    where: {
+      oddJobId_unit: {
+        oddJobId: oddjob.id,
+        unit,
+      },
+    },
+    update: {
+      totalAmount: {
+        increment: amount,
+      },
+    },
+    create: {
+      oddJobId: oddjob.id,
+      unit,
+      totalAmount: amount,
+    },
+  });
 
   // Insert a payment record
   await prisma.payment.create({
@@ -512,6 +533,8 @@ async function handleOddjobPaymentRule(
   });
 
   logger.log(`Payment rule processed for oddjob.`);
+
+  logOddjobEarnings(oddjob);
 }
 
 async function handlePostPaymentRule(

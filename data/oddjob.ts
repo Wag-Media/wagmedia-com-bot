@@ -1,4 +1,4 @@
-import { OddJob, PrismaClient } from "@prisma/client";
+import { ContentEarnings, OddJob, Payment, PrismaClient } from "@prisma/client";
 import { Message, MessageReaction, PartialMessage, User } from "discord.js";
 import { findOrCreateUser, findOrCreateUserFromDiscordUser } from "./user.js";
 import { logger } from "@/client.js";
@@ -61,7 +61,9 @@ export async function findOrCreateOddJob(
 
 export async function fetchOddjob(
   reaction: MessageReaction
-): Promise<OddJob | null> {
+): Promise<
+  (OddJob & { payments: Payment[]; earnings: ContentEarnings[] }) | null
+> {
   if (!reaction.message.id) {
     throw new Error("Message must have an id");
   }
@@ -71,7 +73,7 @@ export async function fetchOddjob(
 
   const oddjob = await prisma.oddJob.findUnique({
     where: { id: reaction.message.id },
-    include: { payments: true },
+    include: { payments: true, earnings: true },
   });
 
   if (!oddjob) {

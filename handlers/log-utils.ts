@@ -1,6 +1,6 @@
 import { logger } from "@/client";
 import { prisma } from "@/utils/prisma";
-import { Post } from "@prisma/client";
+import { OddJob, Post } from "@prisma/client";
 import { MessageReaction, User as DiscordUser, ChannelType } from "discord.js";
 import * as config from "@/config";
 
@@ -53,6 +53,26 @@ export async function logPostEarnings(post: Post) {
   );
   logger.log(
     `Total earnings for the above post: ${JSON.stringify(totalEarningsPerUnit)}`
+  );
+}
+
+export async function logOddjobEarnings(oddjob: OddJob) {
+  // Fetch all earnings for the post after the update
+  const allOddjobEarnings = await prisma.contentEarnings.findMany({
+    where: {
+      oddJobId: oddjob.id,
+    },
+  });
+
+  // log the total earnings of the post
+  const totalEarningsPerUnit = allOddjobEarnings.reduce(
+    (acc, curr) => ({ ...acc, [curr.unit]: curr.totalAmount }),
+    {}
+  );
+  logger.log(
+    `Total earnings for the above oddJob: ${JSON.stringify(
+      totalEarningsPerUnit
+    )}`
   );
 }
 
