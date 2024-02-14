@@ -19,9 +19,6 @@ discordClient.on(Events.Warn, logger.warn);
 discordClient.on("disconnect", () => {
   logger.info("Disconnected from discord.");
 });
-discordClient.on(Events.ShardReconnecting, () => {
-  logger.info("Reconnecting to discord.");
-});
 
 discordClient.on(Events.ClientReady, () => {
   if (!config.GUILD_ID) {
