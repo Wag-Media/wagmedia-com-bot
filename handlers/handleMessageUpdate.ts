@@ -13,7 +13,6 @@ export async function handleMessageUpdate(
   oldMessage: Message<boolean> | PartialMessage,
   newMessage: Message<boolean> | PartialMessage
 ) {
-  logger.log(`(edited) new relevant message in the channel`);
   newMessage = await ensureFullMessage(newMessage);
   if (shouldIgnoreMessage(newMessage, newMessage.author)) return;
 
@@ -50,6 +49,9 @@ export async function handleMessageUpdate(
       newPost?.title && newPost?.description && newPost?.embeds.length > 0;
 
     const oldDbPost = await getPost(oldMessage.id);
+    if (oldDbPost) {
+      logger.log(`(edited) new relevant message in the channel`);
+    }
 
     if (oldDbPost?.isPublished) {
       logger.logAndSend(
