@@ -62,6 +62,8 @@ model OddJob {
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
   earnings  ContentEarnings[]
+
+  attachments Attachment[]
 }
 
 model ContentEarnings {
@@ -212,4 +214,21 @@ model Embed {
   post       Post     @relation(fields: [postId], references: [id])
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+model Attachment {
+  id        String   @id @default(uuid())
+  oddJobId  String // Foreign key for OddJob
+  name      String // Original file name
+  url       String // URL to access the file, if stored externally
+  mimeType  String // MIME type of the file, e.g., "image/png"
+  size      Int // File size in bytes
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  data Bytes? // Optional: store the file data directly in the database
+
+  oddJob OddJob @relation(fields: [oddJobId], references: [id]) // Relation to OddJob
+
+  @@index([oddJobId]) // Optional: improve query performance
 }

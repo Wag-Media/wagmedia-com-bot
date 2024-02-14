@@ -1,13 +1,7 @@
 export type Role = "Director" | "Admin" | "Moderator" | "Member";
 
-// Define the discord roles that have the power to trigger actions from EmojiActions
-export const ROLES_WITH_POWER = ["Director"];
-
-// the emoji that marks a post as featured
-export const FEATURE_EMOJI = "WMFEATURED";
-
+/////// Discord Settings ///////
 // see .env
-
 export const CATEGORIES_TO_MONITOR = process.env.CATEGORIES_TO_MONITOR
   ? JSON.parse(process.env.CATEGORIES_TO_MONITOR)
   : [];
@@ -25,6 +19,16 @@ export const CHANNELS_ODD_JOBS = process.env.CHANNELS_ODD_JOBS
 export const CHANNEL_LOG = process.env.CHANNEL_LOG
   ? process.env.CHANNEL_LOG.toString()
   : "";
+
+// Define the discord roles that have the power to trigger actions from EmojiActions
+export const ROLES_WITH_POWER = ["Director"];
+
+/////// Emoji + DB Settings ///////
+// the emoji that marks a post as featured
+export const FEATURE_EMOJI = "WMFEATURED";
+
+// the max file size for oddjob attachments
+export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 // the emojis that trigger the add category action.
 

@@ -1,7 +1,16 @@
 import { logger } from "@/client";
 import { findOrCreateOddJob } from "@/data/oddjob";
-import { Message, MessageMentions, PartialMessage, User } from "discord.js";
+import {
+  Attachment,
+  Collection,
+  Message,
+  MessageMentions,
+  PartialMessage,
+  User,
+} from "discord.js";
 import { OddJob } from "@prisma/client";
+import { storeAttachment } from "@/data/attachment";
+import * as config from "@/config";
 
 export async function handleOddJob(
   message: Message<boolean> | PartialMessage,
@@ -10,7 +19,11 @@ export async function handleOddJob(
   let oddJob: OddJob | null = null;
 
   // content is not null because we checked for it in shouldIgnoreMessage
-  const parsedOddJob = parseOddjob(message.content!, message.mentions);
+  const parsedOddJob = parseOddjob(
+    message.content!,
+    message.mentions,
+    message.attachments
+  );
 
   if (!parsedOddJob) {
     logger.error(
@@ -36,6 +49,42 @@ export async function handleOddJob(
       payment?.unit,
       manager
     );
+
+    if (oddJob && message.author && message.attachments.size > 0) {
+      if (message.attachments.size > 5) {
+        logger.logAndSend(
+          `🚨 Only the first 5 attachments will be saved for ${messageLink}. ${message.attachments.size} were provided.`,
+          message.author!
+        );
+      }
+      // only consider the first 5 attachments
+      const attachments = Array.from(message.attachments.values()).slice(0, 5);
+
+      attachments.forEach(async (attachment) => {
+        if (attachment.size < config.MAX_FILE_SIZE) {
+          const attachmentData = {
+            url: attachment.url,
+            name: attachment.name,
+            mimeType: attachment.contentType || "application/octet-stream", // Default to a generic binary type if not provided
+            size: attachment.size,
+            oddJobId: oddJob!.id,
+          };
+
+          // Use the storeFile function to save the attachment
+          try {
+            await storeAttachment(attachmentData);
+            logger.log(`↪ Attachment ${attachment.name} saved successfully.`);
+          } catch (error) {
+            logger.error(`Error saving attachment ${attachment.name}:`, error);
+          }
+        } else {
+          logger.logAndSend(
+            `🚨 Attachment ${attachment.name} for ${messageLink} exceeds the 5MB size limit and won't be saved.`,
+            message.author!
+          );
+        }
+      });
+    }
   }
 
   return oddJob;
@@ -53,7 +102,8 @@ export async function handleOddJob(
  */
 export function parseOddjob(
   message: string,
-  mentions: MessageMentions
+  mentions: MessageMentions,
+  attachments: Collection<string, Attachment>
 ): {
   role: string;
   description: string;
