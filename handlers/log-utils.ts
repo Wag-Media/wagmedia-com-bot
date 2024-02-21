@@ -9,7 +9,7 @@ export function logNewEmojiReceived(
   user: DiscordUser,
   messageLink: string
 ) {
-  logger.log(
+  logger.info(
     `new emoji received on post ${messageLink} ${JSON.stringify(
       reaction.emoji.name
     )} by ${user.displayName}`
@@ -21,7 +21,7 @@ export function logNewRegularUserEmojiReceived(
   user: DiscordUser,
   messageLink: string
 ) {
-  logger.log(
+  logger.info(
     `new regular user emoji recorded on valid post ${messageLink} ${JSON.stringify(
       reaction.emoji.name
     )} by ${user.displayName}`
@@ -33,7 +33,7 @@ export function logEmojiRemoved(
   user: DiscordUser,
   messageLink: string
 ) {
-  logger.log(
+  logger.info(
     `Reaction ${reaction.emoji.name} removed from message ${messageLink} by user ${user.username}#${user.discriminator}.`
   );
 }

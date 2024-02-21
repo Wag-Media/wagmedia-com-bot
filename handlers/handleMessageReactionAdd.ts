@@ -51,6 +51,7 @@ import { parseOddjob } from "@/utils/handle-odd-job.js";
 import { isPaymentReactionValid } from "@/utils/payment-valid.js";
 
 import * as config from "../config.js";
+import { all } from "axios";
 
 const prisma = new PrismaClient();
 
@@ -355,7 +356,7 @@ export async function processSuperuserPostReaction(
     // 1. Check for Category Rule
     const categoryRule = await findEmojiCategoryRule(dbEmoji.id);
     if (categoryRule) {
-      await handleCategoryRule(postId, categoryRule);
+      await handleCategoryRule(reaction, postId, categoryRule, messageLink);
       return;
     }
 
@@ -617,19 +618,45 @@ async function handlePostPaymentRule(
 }
 
 async function handleCategoryRule(
+  reaction: MessageReaction,
   postId: string,
-  categoryRule: CategoryRule & { category: Category }
+  categoryRule: CategoryRule & { category: Category },
+  messageLink: string
 ) {
-  await prisma.post.update({
-    where: { id: postId },
-    data: {
-      categories: {
-        connect: { id: categoryRule.categoryId },
+  // make sure the message is cached
+  const message = reaction.message;
+
+  // fetch all category emojis from the message
+  const allCategories = await prisma.category.findMany();
+  const messageCategoryCount = message.reactions.cache.filter((r) =>
+    allCategories.some((c) => c.emojiId === r.emoji.name)
+  ).size;
+
+  // if the count of the post's categories is 1, we can connect the post with the added
+  // category and remove all other categories. This can happen in an edge case where the
+  // user removed the last category of a published post and then added a new category.
+  if (messageCategoryCount === 1) {
+    await prisma.post.update({
+      where: { id: postId },
+      data: {
+        categories: {
+          set: [{ id: categoryRule.categoryId }],
+        },
       },
-    },
-  });
+    });
+  } else {
+    // connect the post with the added category
+    await prisma.post.update({
+      where: { id: postId },
+      data: {
+        categories: {
+          connect: { id: categoryRule.categoryId },
+        },
+      },
+    });
+  }
 
   logger.log(
-    `Category rule processed for above post: added category ${categoryRule.category.name}`
+    `[category] Category ${categoryRule.category.name} added to ${messageLink}.`
   );
 }

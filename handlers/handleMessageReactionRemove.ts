@@ -12,6 +12,7 @@ import {
   PartialMessageReaction,
   PartialUser,
   Emoji,
+  Message,
 } from "discord.js";
 import * as config from "../config.js";
 import { logger } from "@/client.js";
@@ -127,17 +128,8 @@ export async function processSuperuserReactionRemove(
 
     const categoryRule = await findEmojiCategoryRule(dbEmoji.id!);
     if (categoryRule) {
-      // do not allow the removal if the post is published
-      if (post.isPublished) {
-        logger.logAndSend(
-          `🚨 You cannot remove a category from a published post.`,
-          discordUser
-        );
-        await reaction.message.react(reaction.emoji);
-        return;
-      }
-
       handleSuperUserCategoryRuleReactionRemove(
+        reaction,
         post,
         categoryRule,
         discordUser,
@@ -150,30 +142,33 @@ export async function processSuperuserReactionRemove(
 }
 
 export async function handleSuperUserCategoryRuleReactionRemove(
+  reaction: MessageReaction,
   post,
   categoryRule,
   discordUser,
   messageLink: string
 ) {
-  //1. Remove the category from the post
-  await removeCategoryFromPost(post.id, categoryRule.categoryId);
-
-  //2. Check if the post has any remaining categories
+  //1. Check if the post has any remaining categories
   const remainingCategories = await prisma.category.findMany({
     where: { posts: { some: { id: post.id } } },
   });
 
-  //3. If the post has no remaining categories, unpublish it
-  if (remainingCategories.length === 0) {
-    await prisma.post.update({
-      where: { id: post.id },
-      data: { isPublished: false },
-    });
-
-    logger.logAndSend(
-      `🚨 The category ${categoryRule.category.name} has been removed from the post ${messageLink}. The post has been unpublished.`,
-      discordUser
+  if (remainingCategories.length > 1) {
+    await removeCategoryFromPost(post.id, categoryRule.categoryId);
+    logger.log(
+      `[category] Category ${categoryRule.category.name} removed from ${messageLink}.`
     );
+    return;
+  } else if (remainingCategories.length === 1) {
+    if (post.isPublished) {
+      logger.logAndSend(
+        `🚨 The category ${categoryRule.category.name} has been removed from the post ${messageLink}. The post has no remaining but will keep its last category in the db / website until new categories are added.`,
+        discordUser,
+        "warn"
+      );
+    } else {
+      await removeCategoryFromPost(post.id, categoryRule.categoryId);
+    }
   }
 }
 
