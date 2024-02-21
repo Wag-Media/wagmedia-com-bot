@@ -5,7 +5,9 @@ const app_env = process.env.APP_ENV;
 const configPath = app_env ? `.env.${app_env}` : ".env";
 dotenv.config({ path: configPath });
 
-console.log(`Using ${configPath} file for environment variables`);
+if (process.env.NODE_ENV !== "production") {
+  console.log(`Using ${configPath} file for environment variables`);
+}
 
 export type Role = "Director" | "Admin" | "Moderator" | "Member";
 
