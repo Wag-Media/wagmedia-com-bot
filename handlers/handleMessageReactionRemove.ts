@@ -170,11 +170,9 @@ export async function handleSuperUserCategoryRuleReactionRemove(
       data: { isPublished: false },
     });
 
-    discordUser.send(
-      `🚨 The category ${categoryRule.category.name} has been removed from the post ${messageLink}`
-    );
-    logger.warn(
-      `Post ${post.id} has been unpublished due to no remaining categories.`
+    logger.logAndSend(
+      `🚨 The category ${categoryRule.category.name} has been removed from the post ${messageLink}. The post has been unpublished.`,
+      discordUser
     );
   }
 }

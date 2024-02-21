@@ -160,7 +160,7 @@ export async function handleMessageReactionAdd(
     // console.log("channel", reaction.message.channel);
     try {
       const post = await fetchPost(reaction);
-      if (!post || post.isDeleted) {
+      if (!post) {
         await user.send(
           `The post ${messageLink} you reacted to is not valid (e.g. no title / description).`
         );
@@ -341,6 +341,15 @@ export async function processSuperuserPostReaction(
   // 1. Category Rule
   // 2. Payment Rule
   // 3. Feature Rule
+
+  if (post.isDeleted) {
+    logger.logAndSend(
+      `The post ${messageLink} you reacted to is not valid, skipping processing superuser reactions.`,
+      discordUser
+    );
+    await reaction.users.remove(discordUser.id);
+    return;
+  }
 
   try {
     // 1. Check for Category Rule
