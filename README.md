@@ -138,3 +138,10 @@ Edit your `.env` file for configure bot token & Database url
 | ./commands | All application commands       |
 | .env       | Environment Variables          |
 | ./prisma   | Prisma folder                  |
+
+## FAQ
+
+- I am getting `DiscordAPIError[50001]: Missing Access`
+
+Probably the bot is setup to log but cannot access the log channel, give bot
+rights and restart bot.

@@ -207,7 +207,6 @@ export async function handleSuperUserPaymentRuleReactionRemove(
     logger.log(
       `Post ${post.id} has been unpublished due to no remaining payment emojis.`
     );
-    return;
   }
 
   // Aggregate the total payment amount for the specific unit
