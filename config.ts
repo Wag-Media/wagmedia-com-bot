@@ -1,3 +1,12 @@
+import dotenv from "dotenv";
+
+// use .env  without extension file if node_env is not defined otherwise use .env.${node_env}
+const app_env = process.env.APP_ENV;
+const configPath = app_env ? `.env.${app_env}` : ".env";
+dotenv.config({ path: configPath });
+
+console.log(`Using ${configPath} file for environment variables`);
+
 export type Role = "Director" | "Admin" | "Moderator" | "Member";
 
 /////// Discord Settings ///////

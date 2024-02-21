@@ -166,6 +166,7 @@ following fields is missing:
   amount of the post and store to the db
 - 1️⃣⭕️ if a superuser🦹 removes **the last** payment reaction from a post, also
   unpublish the post
+- a superuser🦹 cannot remove category emojis from published posts
 
 ### Odd Jobs
 

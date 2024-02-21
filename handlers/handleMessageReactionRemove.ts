@@ -127,6 +127,16 @@ export async function processSuperuserReactionRemove(
 
     const categoryRule = await findEmojiCategoryRule(dbEmoji.id!);
     if (categoryRule) {
+      // do not allow the removal if the post is published
+      if (post.isPublished) {
+        logger.logAndSend(
+          `🚨 You cannot remove a category from a published post.`,
+          discordUser
+        );
+        await reaction.message.react(reaction.emoji);
+        return;
+      }
+
       handleSuperUserCategoryRuleReactionRemove(
         post,
         categoryRule,
