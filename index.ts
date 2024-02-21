@@ -20,7 +20,7 @@ discordClient.on("disconnect", () => {
   logger.info("Disconnected from discord.");
 });
 
-discordClient.on(Events.ClientReady, () => {
+discordClient.once(Events.ClientReady, async () => {
   if (!config.GUILD_ID) {
     console.error(
       "GUILD_ID is not set in the environment variables. Please set it and try again."
@@ -49,6 +49,8 @@ discordClient.on(Events.ClientReady, () => {
     );
     process.exit(1);
   }
+
+  await discordClient.user?.setActivity(config.BOT_ACTIVITY);
 });
 
 discordClient.on(Events.MessageCreate, async (message) => {

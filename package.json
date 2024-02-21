@@ -5,6 +5,7 @@
   "main": "index.ts",
   "scripts": {
     "dev": "tsx watch ./index.ts",
+    "dev:wagmedia-demo": "APP_ENV=wagmedia  tsx watch ./index.ts",
     "start": "tsx ./index.ts",
     "test": "jest"
   },
@@ -25,6 +26,7 @@
     "ts-node": "^10.9.2",
     "tsx": "^3.12.2",
     "typescript": "^5.3.3",
+    "undici": ">=5.28.3",
     "viem": "^2.0.3"
   },
   "devDependencies": {

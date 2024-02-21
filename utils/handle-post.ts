@@ -21,7 +21,6 @@ export async function handlePost(
 
   if (!title) missingFields.push("title");
   if (!description) missingFields.push("description");
-  if (!embeds || embeds.length === 0) missingFields.push("embeds");
 
   if (missingFields.length > 0) {
     logger.warn(
