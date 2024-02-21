@@ -218,7 +218,8 @@ export async function handleMessageReactionAdd(
 
     const oddJob = parseOddjob(
       reaction.message.content || "",
-      reaction.message.mentions
+      reaction.message.mentions,
+      reaction.message.attachments
     );
 
     if (!oddJob) {
@@ -342,10 +343,22 @@ export async function processSuperuserPostReaction(
   // 3. Feature Rule
 
   try {
+    const isPostIncomplete = await handlePostIncomplete(
+      post,
+      discordUser,
+      reaction
+    );
+
     // 1. Check for Category Rule
     const categoryRule = await findEmojiCategoryRule(dbEmoji.id);
     if (categoryRule) {
-      await handleCategoryRule(postId, categoryRule);
+      if (!isPostIncomplete) {
+        await handleCategoryRule(postId, categoryRule);
+      } else {
+        logger.log(
+          `Post is incomplete, not processing category rule for ${messageLink}.`
+        );
+      }
       return;
     }
 
@@ -353,12 +366,6 @@ export async function processSuperuserPostReaction(
     const paymentRule = await findEmojiPaymentRule(dbEmoji.id);
     if (paymentRule) {
       // first check if the post is complete before publishing it by adding the payment emoji
-      const isPostIncomplete = await handlePostIncomplete(
-        post,
-        discordUser,
-        reaction
-      );
-
       // if the post is complete, process the payment rule (=add payment and publish post)
       if (!isPostIncomplete) {
         const valid = await isPaymentReactionValid(
@@ -380,20 +387,30 @@ export async function processSuperuserPostReaction(
           );
           await reaction.users.remove(discordUser.id);
         }
+      } else {
+        logger.log(
+          `Post is incomplete, not processing payment rule for ${messageLink}.`
+        );
       }
       return;
     }
 
     // 3. Check for Feature Rule
     if (dbEmoji.name === config.FEATURE_EMOJI) {
-      await prisma.post.update({
-        where: {
-          id: reaction.message.id,
-        },
-        data: {
-          isFeatured: true,
-        },
-      });
+      if (!isPostIncomplete) {
+        await prisma.post.update({
+          where: {
+            id: reaction.message.id,
+          },
+          data: {
+            isFeatured: true,
+          },
+        });
+      } else {
+        logger.log(
+          `Post is incomplete, not processing feature rule for ${messageLink}.`
+        );
+      }
       return;
     }
 
@@ -417,6 +434,16 @@ async function handlePostIncomplete(
 ) {
   const postCategories = post.categories;
   const messageLink = `https://discord.com/channels/${reaction.message.guild?.id}/${reaction.message.channel.id}/${reaction.message.id}`;
+
+  // 0. make sure the post is not flagged as deleted
+  if (post.isDeleted) {
+    await logger.logAndSend(
+      `The post ${messageLink} you reacted to is deleted and cannot be published. `,
+      discordUser
+    );
+    await reaction.users.remove(discordUser.id);
+    return true;
+  }
 
   // 0. make sure the post has a title and description
   if (!post.title || !post.content) {

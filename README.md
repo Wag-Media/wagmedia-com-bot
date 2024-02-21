@@ -121,6 +121,8 @@ After you made changes to the schema in `prisma/schema.prisma`
 - heroku is setup to rebuild when env variable change
 - the postgres db the bot uses is also setup in heroku
 
+More information about heroku setup can be found in [doc/heroku](doc/heroku.md).
+
 ## Configuration
 
 Since it's using `prisma` by default, you can use PostgreSQL, MySQL or any
