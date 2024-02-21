@@ -61,7 +61,7 @@ export function parseMessage(
   description: string | null;
   embeds: PostEmbed[];
   tags: string[];
-} | null {
+} {
   try {
     // Regular expressions to match title, description, and tags (case-insensitive)
     const titleRegex = /title:\s*(.*?)\s*\n/i;
@@ -107,6 +107,15 @@ export function parseMessage(
     return { title, description, tags, embeds: embedData };
   } catch (error) {
     logger.error("Something went wrong when parsing the message:", error);
-    return null;
+    return { title: null, description: null, embeds: [], tags: [] };
   }
+}
+
+export function isPostValid(post: {
+  title: string | null;
+  description: string | null;
+  embeds: PostEmbed[];
+  tags: string[];
+}): boolean {
+  return !!post.title && !!post.description;
 }

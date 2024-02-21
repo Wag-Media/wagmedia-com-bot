@@ -160,7 +160,7 @@ export async function handleMessageReactionAdd(
     // console.log("channel", reaction.message.channel);
     try {
       const post = await fetchPost(reaction);
-      if (!post) {
+      if (!post || post.isDeleted) {
         await user.send(
           `The post ${messageLink} you reacted to is not valid (e.g. no title / description).`
         );
@@ -343,22 +343,10 @@ export async function processSuperuserPostReaction(
   // 3. Feature Rule
 
   try {
-    const isPostIncomplete = await handlePostIncomplete(
-      post,
-      discordUser,
-      reaction
-    );
-
     // 1. Check for Category Rule
     const categoryRule = await findEmojiCategoryRule(dbEmoji.id);
     if (categoryRule) {
-      if (!isPostIncomplete) {
-        await handleCategoryRule(postId, categoryRule);
-      } else {
-        logger.log(
-          `Post is incomplete, not processing category rule for ${messageLink}.`
-        );
-      }
+      await handleCategoryRule(postId, categoryRule);
       return;
     }
 
@@ -366,6 +354,12 @@ export async function processSuperuserPostReaction(
     const paymentRule = await findEmojiPaymentRule(dbEmoji.id);
     if (paymentRule) {
       // first check if the post is complete before publishing it by adding the payment emoji
+      const isPostIncomplete = await handlePostIncomplete(
+        post,
+        discordUser,
+        reaction
+      );
+
       // if the post is complete, process the payment rule (=add payment and publish post)
       if (!isPostIncomplete) {
         const valid = await isPaymentReactionValid(
@@ -387,30 +381,20 @@ export async function processSuperuserPostReaction(
           );
           await reaction.users.remove(discordUser.id);
         }
-      } else {
-        logger.log(
-          `Post is incomplete, not processing payment rule for ${messageLink}.`
-        );
       }
       return;
     }
 
     // 3. Check for Feature Rule
     if (dbEmoji.name === config.FEATURE_EMOJI) {
-      if (!isPostIncomplete) {
-        await prisma.post.update({
-          where: {
-            id: reaction.message.id,
-          },
-          data: {
-            isFeatured: true,
-          },
-        });
-      } else {
-        logger.log(
-          `Post is incomplete, not processing feature rule for ${messageLink}.`
-        );
-      }
+      await prisma.post.update({
+        where: {
+          id: reaction.message.id,
+        },
+        data: {
+          isFeatured: true,
+        },
+      });
       return;
     }
 
