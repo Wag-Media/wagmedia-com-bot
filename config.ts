@@ -30,6 +30,9 @@ export const FEATURE_EMOJI = "WMFEATURED";
 // the max file size for oddjob attachments
 export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
+// the name of the activity that will be shown in discord for the bot
+export const BOT_ACTIVITY = "Managing Communications";
+
 // the emojis that trigger the add category action.
 
 // 🚨 The following values are only used for
