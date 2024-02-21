@@ -7,7 +7,7 @@ import {
 import { Message, PartialMessage } from "discord.js";
 import { findOrCreatePost, flagDeletePost, getPost } from "@/data/post";
 import { handleOddJob } from "../utils/handle-odd-job";
-import { parseMessage } from "../utils/handle-post";
+import { isPostValid, parseMessage } from "../utils/handle-post";
 
 export async function handleMessageUpdate(
   oldMessage: Message<boolean> | PartialMessage,
@@ -44,8 +44,8 @@ export async function handleMessageUpdate(
 
     console.log("oldpost newpost", oldPost, newPost);
 
-    const oldPostValid = !!oldPost?.title && !!oldPost?.description;
-    const newPostValid = !!newPost?.title && !!newPost?.description;
+    const oldPostValid = isPostValid(oldPost);
+    const newPostValid = isPostValid(newPost);
 
     console.log("oldpost newpost valid", oldPostValid, newPostValid);
 
