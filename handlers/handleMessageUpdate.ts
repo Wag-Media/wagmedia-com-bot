@@ -42,12 +42,8 @@ export async function handleMessageUpdate(
     const oldPost = await parseMessage(oldMessage.content, oldMessage.embeds);
     const newPost = await parseMessage(newMessage.content, newMessage.embeds);
 
-    console.log("oldpost newpost", oldPost, newPost);
-
     const oldPostValid = isPostValid(oldPost);
     const newPostValid = isPostValid(newPost);
-
-    console.log("oldpost newpost valid", oldPostValid, newPostValid);
 
     const oldDbPost = await getPost(oldMessage.id);
     if (oldDbPost) {
