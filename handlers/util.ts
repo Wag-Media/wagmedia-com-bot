@@ -44,10 +44,9 @@ export function slugify(text: string) {
  * @returns
  */
 export function shouldIgnoreReaction(
-  reaction: MessageReaction | PartialMessageReaction,
-  user: DiscordUser | PartialUser
+  reaction: MessageReaction | PartialMessageReaction
 ): boolean {
-  return shouldIgnoreMessage(reaction.message, user);
+  return shouldIgnoreMessage(reaction.message);
 }
 
 /**
@@ -56,22 +55,30 @@ export function shouldIgnoreReaction(
  * - bot reactions
  * - DMs
  * - from all other channels
+ * Except, allow messages from bots with a specific role ("The Concierge").
  * @param message
- * @param user
  * @returns
  */
 export function shouldIgnoreMessage(
-  message: Message<boolean> | PartialMessage,
-  user: DiscordUser | PartialUser | null
+  message: Message<boolean> | PartialMessage
 ) {
   // Ignore DMs
   if (!message.guild) return true;
 
-  // Ignore bot reactions
-  if (!user || user.bot) return true;
-
-  // Ignore bot messages
-  if (message.author?.bot) return true;
+  // Directly check if the message author is a bot and if so, check for "The Concierge" role
+  if (message.author?.bot) {
+    // Allow bot messages if the bot has "The Concierge" role
+    const member = message.member;
+    if (
+      member &&
+      !member.roles.cache.some((role) => role.name === "The Concierge")
+    ) {
+      return true; // Bot does not have the role, ignore the message
+    } else if (!member) {
+      return true; // If member information is not available, default to ignoring the bot message
+    }
+    // If the bot has the role, the function will continue and not return true here
+  }
 
   // Ignore reactions from other channels
   const channel = message.channel;

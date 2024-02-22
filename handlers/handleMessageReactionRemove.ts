@@ -44,9 +44,6 @@ export async function handleMessageReactionRemove(
   reaction: MessageReaction | PartialMessageReaction,
   user: DiscordUser | PartialUser
 ) {
-  // Similar checks as in handleMessageReactionAdd
-  if (shouldIgnoreReaction(reaction, user)) return;
-
   // guild is not null because we checked for it in shouldIgnoreReaction
   const guild = reaction.message.guild!;
   const messageLink = `https://discord.com/channels/${guild.id}/${reaction.message.channel.id}/${reaction.message.id}`;
@@ -63,6 +60,9 @@ export async function handleMessageReactionRemove(
     );
     return;
   }
+
+  // Similar checks as in handleMessageReactionAdd
+  if (shouldIgnoreReaction(reaction)) return;
 
   if (isMessageFromOddJobsChannel(reaction.message.channel)) {
     //TODO

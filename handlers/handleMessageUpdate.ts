@@ -14,7 +14,7 @@ export async function handleMessageUpdate(
   newMessage: Message<boolean> | PartialMessage
 ) {
   newMessage = await ensureFullMessage(newMessage);
-  if (shouldIgnoreMessage(newMessage, newMessage.author)) return;
+  if (shouldIgnoreMessage(newMessage)) return;
 
   const messageLink = `https://discord.com/channels/${newMessage.guild?.id}/${newMessage.channel.id}/${newMessage.id}`;
 

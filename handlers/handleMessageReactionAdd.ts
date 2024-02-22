@@ -75,7 +75,7 @@ export async function handleMessageReactionAdd(
     return;
   }
 
-  if (shouldIgnoreReaction(reaction, user)) return;
+  if (shouldIgnoreReaction(reaction)) return;
 
   // guild is not null because we checked for it in shouldIgnoreReaction
   const guild = reaction.message.guild!;
