@@ -71,13 +71,26 @@ export function shouldIgnoreMessage(
     const member = message.member;
     if (
       member &&
-      !member.roles.cache.some((role) => role.name === "The Concierge")
+      !member.roles.cache.some((role) =>
+        [
+          "The Concierge",
+          "WagMedia Com Bot Production",
+          "WagMedia Communication Bot",
+        ].includes(role.name)
+      )
     ) {
+      console.log("ignoreing bot message because it does not have the role");
       return true; // Bot does not have the role, ignore the message
     } else if (!member) {
+      console.log("ignoreing bot message because member is null");
       return true; // If member information is not available, default to ignoring the bot message
     }
     // If the bot has the role, the function will continue and not return true here
+
+    console.log(
+      "allowing bot message because it has the role",
+      member.roles.cache
+    );
   }
 
   // Ignore reactions from other channels
