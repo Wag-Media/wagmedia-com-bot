@@ -44,9 +44,10 @@ export function slugify(text: string) {
  * @returns
  */
 export function shouldIgnoreReaction(
-  reaction: MessageReaction | PartialMessageReaction
+  reaction: MessageReaction | PartialMessageReaction,
+  user: DiscordUser | PartialUser
 ): boolean {
-  return shouldIgnoreMessage(reaction.message);
+  return shouldIgnoreMessage(reaction.message, user);
 }
 
 /**
@@ -55,43 +56,29 @@ export function shouldIgnoreReaction(
  * - bot reactions
  * - DMs
  * - from all other channels
- * Except, allow messages from bots with a specific role ("The Concierge").
  * @param message
+ * @param user
  * @returns
  */
 export function shouldIgnoreMessage(
-  message: Message<boolean> | PartialMessage
+  message: Message<boolean> | PartialMessage,
+  user: DiscordUser | PartialUser | null
 ) {
   // Ignore DMs
   if (!message.guild) return true;
 
-  // Directly check if the message author is a bot and if so, check for "The Concierge" role
-  if (message.author?.bot) {
-    // Allow bot messages if the bot has "The Concierge" role
-    const member = message.member;
-    if (
-      member &&
-      !member.roles.cache.some((role) =>
-        [
-          "The Concierge",
-          "WagMedia Com Bot Production",
-          "WagMedia Communication Bot",
-        ].includes(role.name)
-      )
-    ) {
-      console.log("ignoreing bot message because it does not have the role");
-      return true; // Bot does not have the role, ignore the message
-    } else if (!member) {
-      console.log("ignoreing bot message because member is null");
-      return true; // If member information is not available, default to ignoring the bot message
-    }
-    // If the bot has the role, the function will continue and not return true here
-
-    console.log(
-      "allowing bot message because it has the role",
-      member.roles.cache
-    );
+  if (user?.bot || message.author?.bot) {
+    console.log("message is from bot");
+    console.log("user.bot", user?.bot);
+    console.log("message.author.bot", message.author?.bot);
   }
+  console.log("message ");
+
+  // Ignore bot reactions
+  if (!user || user.bot) return true;
+
+  // Ignore bot messages
+  if (message.author?.bot) return true;
 
   // Ignore reactions from other channels
   const channel = message.channel;
