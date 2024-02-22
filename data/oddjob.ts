@@ -78,7 +78,7 @@ export async function fetchOddjob(
 
   if (!oddjob) {
     logger.warn(
-      `Post with ID ${reaction.message.id} not found in the database.`
+      `[oddjob] Oddjob with ID ${reaction.message.id} not found in the database.`
     );
   }
   return oddjob;

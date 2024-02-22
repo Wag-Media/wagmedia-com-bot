@@ -44,10 +44,9 @@ export function slugify(text: string) {
  * @returns
  */
 export function shouldIgnoreReaction(
-  reaction: MessageReaction | PartialMessageReaction,
-  user: DiscordUser | PartialUser
+  reaction: MessageReaction | PartialMessageReaction
 ): boolean {
-  return shouldIgnoreMessage(reaction.message, user);
+  return shouldIgnoreMessage(reaction.message);
 }
 
 /**
@@ -61,9 +60,9 @@ export function shouldIgnoreReaction(
  * @returns
  */
 export function shouldIgnoreMessage(
-  message: Message<boolean> | PartialMessage,
-  user: DiscordUser | PartialUser | null
+  message: Message<boolean> | PartialMessage
 ) {
+  const user = message.author;
   // Ignore DMs
   if (!message.guild) return true;
 
