@@ -122,7 +122,7 @@ export async function processSuperuserReactionRemove(
 
     const paymentRule = await findEmojiPaymentRule(dbEmoji.id!);
     if (paymentRule) {
-      handleSuperUserPaymentRuleReactionRemove(post, paymentRule);
+      handleSuperUserPaymentRuleReactionRemove(post, paymentRule, messageLink);
       return;
     }
 
@@ -174,7 +174,8 @@ export async function handleSuperUserCategoryRuleReactionRemove(
 
 export async function handleSuperUserPaymentRuleReactionRemove(
   post: Post,
-  paymentRule: PaymentRule
+  paymentRule: PaymentRule,
+  messageLink: string
 ) {
   // Fetch all reactions for the post and filter in code to include only those with a PaymentRule
   const remainingReactions = await prisma.reaction.findMany({
@@ -200,7 +201,7 @@ export async function handleSuperUserPaymentRuleReactionRemove(
       data: { isPublished: false },
     });
     logger.log(
-      `Post ${post.id} has been unpublished due to no remaining payment emojis.`
+      `[post] Post ${messageLink} has been unpublished due to no remaining payment emojis.`
     );
   }
 
@@ -230,5 +231,5 @@ export async function handleSuperUserPaymentRuleReactionRemove(
     },
   });
 
-  logPostEarnings(post);
+  logPostEarnings(post, messageLink);
 }

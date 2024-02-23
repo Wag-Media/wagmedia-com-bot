@@ -38,7 +38,7 @@ export function logEmojiRemoved(
   );
 }
 
-export async function logPostEarnings(post: Post) {
+export async function logPostEarnings(post: Post, messageLink: string) {
   // Fetch all earnings for the post after the update
   const allPostEarnings = await prisma.contentEarnings.findMany({
     where: {
@@ -51,12 +51,18 @@ export async function logPostEarnings(post: Post) {
     (acc, curr) => ({ ...acc, [curr.unit]: curr.totalAmount }),
     {}
   );
+
+  // create a comma separated human readable string
+  const humanReadableTotalEarnings = Object.keys(totalEarningsPerUnit)
+    .map((key) => `${key}: ${totalEarningsPerUnit[key]}`)
+    .join(", ");
+
   logger.log(
-    `Total earnings for the above post: ${JSON.stringify(totalEarningsPerUnit)}`
+    `[post] New total earnings for ${messageLink}: ${humanReadableTotalEarnings}`
   );
 }
 
-export async function logOddjobEarnings(oddjob: OddJob) {
+export async function logOddjobEarnings(oddjob: OddJob, messageLink: string) {
   // Fetch all earnings for the post after the update
   const allOddjobEarnings = await prisma.contentEarnings.findMany({
     where: {
@@ -69,10 +75,14 @@ export async function logOddjobEarnings(oddjob: OddJob) {
     (acc, curr) => ({ ...acc, [curr.unit]: curr.totalAmount }),
     {}
   );
+
+  // create a comma separated human readable string
+  const humanReadableTotalEarnings = Object.keys(totalEarningsPerUnit)
+    .map((key) => `${key}: ${totalEarningsPerUnit[key]}`)
+    .join(", ");
+
   logger.log(
-    `Total earnings for the above oddJob: ${JSON.stringify(
-      totalEarningsPerUnit
-    )}`
+    `[oddjob] Total earnings for ${messageLink}: ${humanReadableTotalEarnings}`
   );
 }
 

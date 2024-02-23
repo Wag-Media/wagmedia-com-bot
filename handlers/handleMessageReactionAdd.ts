@@ -21,6 +21,7 @@ import {
   PartialMessageReaction,
   PartialUser,
   Message,
+  messageLink,
 } from "discord.js";
 
 import { logger } from "@/client.js";
@@ -110,11 +111,10 @@ export async function handleMessageReactionAdd(
       });
 
       if (!parentPost) {
-        logger.warn(
-          `Parent post is not in the database or not published yet. ${messageLink}. Payments are not possible for reviewers in this case`
-        );
-        await user.send(
-          `Parent post is not in the database or not published yet. ${messageLink}. Payments are not possible for reviewers in this case`
+        logger.logAndSend(
+          `Parent post is not in the database or not published yet. ${messageLink}. Payments are not possible for reviewers in this case`,
+          user,
+          "warn"
         );
         await reaction.users.remove(user.id);
         return;
@@ -134,6 +134,25 @@ export async function handleMessageReactionAdd(
         },
       });
 
+      await prisma.contentEarnings.upsert({
+        where: {
+          postId_unit: {
+            postId: threadedPost.id,
+            unit: paymentRule.paymentUnit,
+          },
+        },
+        update: {
+          totalAmount: {
+            increment: paymentRule.paymentAmount,
+          },
+        },
+        create: {
+          postId: threadedPost.id,
+          unit: paymentRule.paymentUnit,
+          totalAmount: paymentRule.paymentAmount,
+        },
+      });
+
       await prisma.payment.create({
         data: {
           amount: paymentRule.paymentAmount,
@@ -147,9 +166,7 @@ export async function handleMessageReactionAdd(
         },
       });
 
-      logger.log(
-        `Payment of ${paymentRule.paymentAmount} ${paymentRule.paymentUnit} processed on ${messageLink}.`
-      );
+      logPostEarnings(threadedPost, messageLink);
     }
   }
 
@@ -280,7 +297,13 @@ export async function processSuperuserOddJobReaction(
       messageLink
     );
     if (valid) {
-      handleOddjobPaymentRule(oddjob, dbUser.id, paymentRule, dbReaction.id);
+      handleOddjobPaymentRule(
+        oddjob,
+        dbUser.id,
+        paymentRule,
+        dbReaction.id,
+        messageLink
+      );
     } else {
       logger.logAndSend(
         `You do not have permission to add payment reactions in ${messageLink}, that differ from the first payment unit and funding source.`,
@@ -382,7 +405,8 @@ export async function processSuperuserPostReaction(
             post!,
             dbUser.id,
             paymentRule,
-            dbReaction.id
+            dbReaction.id,
+            messageLink
           );
         } else {
           logger.logAndSend(
@@ -515,7 +539,8 @@ async function handleOddjobPaymentRule(
   oddjob: OddJob & { earnings: ContentEarnings[] },
   userId: number,
   paymentRule: PaymentRule,
-  reactionId: number
+  reactionId: number,
+  messageLink
 ) {
   const amount = paymentRule.paymentAmount;
   const unit = paymentRule.paymentUnit;
@@ -555,14 +580,15 @@ async function handleOddjobPaymentRule(
 
   logger.log(`Payment rule processed for oddjob.`);
 
-  logOddjobEarnings(oddjob);
+  logOddjobEarnings(oddjob, messageLink);
 }
 
 async function handlePostPaymentRule(
   post: Post & { categories: Category[] } & { earnings: ContentEarnings[] },
   userId: number,
   paymentRule: PaymentRule,
-  reactionId: number
+  reactionId: number,
+  messageLink: string
 ) {
   const amount = paymentRule.paymentAmount;
   const unit = paymentRule.paymentUnit;
@@ -572,7 +598,7 @@ async function handlePostPaymentRule(
   )?.totalAmount;
 
   if (!postTotalEarningsInUnit) {
-    logger.log(`The above post has been published.`);
+    logger.log(`[post] The post ${messageLink} has been published.`);
   }
 
   // add or update the post earnings (this is adding redundancy but makes querying easier)
@@ -614,7 +640,7 @@ async function handlePostPaymentRule(
     data: { isPublished: true },
   });
 
-  logPostEarnings(post);
+  logPostEarnings(post, messageLink);
 }
 
 async function handleCategoryRule(
