@@ -58,7 +58,7 @@ export async function handleMessageUpdate(
         newMessage.author
       );
     } else if (oldPostValid && newPostValid) {
-      logger.log("new post after editing", newPost, newPost.embeds);
+      logger.log("new post after editing", newPost.embeds);
       await findOrCreatePost({
         message: newMessage,
         title: newPost.title!,
