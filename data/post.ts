@@ -56,17 +56,6 @@ export const findOrCreatePost = async (
     })
   );
 
-  // Find existing embeds for the message
-  const existingEmbeds = await prisma.embed.findMany({
-    where: {
-      OR: embeds.map((embed) => ({ embedUrl: embed.url })),
-    },
-  });
-
-  const newEmbeds = embeds.filter(
-    (embed) => !existingEmbeds.find((e) => e.embedUrl === embed.url)
-  );
-
   // Upsert the post
   const post = await prisma.post.upsert({
     where: { id: message.id },
@@ -81,15 +70,6 @@ export const findOrCreatePost = async (
         set: [], // Disconnect any existing tags
         connect: tagInstances.map((tag) => ({ id: tag.id })), // Connect new tags
       },
-      // Only add new embeds
-      embeds: {
-        set: [],
-        create: newEmbeds.map((embed) => ({
-          embedUrl: embed.url,
-          embedImage: embed.imageUrl,
-          embedColor: embed.color,
-        })),
-      },
     },
     create: {
       id: message.id,
@@ -101,13 +81,6 @@ export const findOrCreatePost = async (
       tags: {
         connect: tagInstances.map((tag) => ({ id: tag.id })),
       },
-      embeds: {
-        create: newEmbeds.map((embed) => ({
-          embedUrl: embed.url,
-          embedImage: embed.imageUrl,
-          embedColor: embed.color,
-        })),
-      },
     },
     include: {
       categories: true,
@@ -116,8 +89,39 @@ export const findOrCreatePost = async (
     },
   });
 
-  return post;
+  const createdEmbeds = await _manageEmbedsForPost(post.id, embeds);
+
+  return {
+    ...post,
+    embeds: createdEmbeds,
+  };
 };
+
+async function _manageEmbedsForPost(
+  postId: string,
+  embeds: PostEmbed[]
+): Promise<Embed[]> {
+  // Delete existing embeds - assuming this is still the desired behavior
+  await prisma.embed.deleteMany({
+    where: { postId: postId },
+  });
+
+  // Create new embeds and return the complete objects
+  const createdEmbeds = await Promise.all(
+    embeds.map((embed) =>
+      prisma.embed.create({
+        data: {
+          embedUrl: embed.url,
+          embedImage: embed.imageUrl,
+          embedColor: embed.color,
+          postId: postId,
+        },
+      })
+    )
+  );
+
+  return createdEmbeds;
+}
 
 /**
  * Threads are just posts with a parentId
