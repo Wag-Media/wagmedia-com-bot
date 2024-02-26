@@ -37,7 +37,7 @@ export class DiscordLogger {
       .map((message) =>
         typeof message === "object" ? JSON.stringify(message) : message
       )
-      .join(" ");
+      .join("");
 
     try {
       const channel = (await this.discordClient.channels.fetch(
@@ -50,7 +50,7 @@ export class DiscordLogger {
           permissions &&
           permissions.has(PermissionsBitField.Flags.SendMessages)
         ) {
-          channel.send(`[${level}] ${combinedMessage}`);
+          channel.send(`[${level}]${combinedMessage}`);
         } else {
           console.warn(
             `DiscordLogger: Missing 'SEND_MESSAGES' permission in channel ${this.channelId}.`

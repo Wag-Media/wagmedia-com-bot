@@ -17,6 +17,15 @@ Postgres. Choose the plan you want, pay attention to size and backups.
 In heroku app click `Resources`. Then click the edit icon to disable web dyno
 and choose a fitting worker dyno.
 
+## Seed the db
+
+The database in heroku should be seeded automatically, if there is an error you
+can seed it manually.
+
+```
+heroku run npx prisma db seed -a wagmedia-com-bot
+```
+
 ## See Logs
 
 First, make sure you have heroku cli installed and are logged in via

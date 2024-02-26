@@ -14,7 +14,7 @@ export async function handleMessageUpdate(
   newMessage: Message<boolean> | PartialMessage
 ) {
   newMessage = await ensureFullMessage(newMessage);
-  if (shouldIgnoreMessage(newMessage, newMessage.author)) return;
+  if (shouldIgnoreMessage(newMessage)) return;
 
   const messageLink = `https://discord.com/channels/${newMessage.guild?.id}/${newMessage.channel.id}/${newMessage.id}`;
 
@@ -42,12 +42,8 @@ export async function handleMessageUpdate(
     const oldPost = await parseMessage(oldMessage.content, oldMessage.embeds);
     const newPost = await parseMessage(newMessage.content, newMessage.embeds);
 
-    console.log("oldpost newpost", oldPost, newPost);
-
     const oldPostValid = isPostValid(oldPost);
     const newPostValid = isPostValid(newPost);
-
-    console.log("oldpost newpost valid", oldPostValid, newPostValid);
 
     const oldDbPost = await getPost(oldMessage.id);
     if (oldDbPost) {

@@ -88,11 +88,6 @@ export function parseMessage(
         .filter((tag) => tag.length > 0);
     }
 
-    console.log(
-      "found embeds",
-      embeds.map((embed) => embed.image)
-    );
-
     let embedData = embeds.map((embed) => ({
       url: embed.url || null,
       imageUrl:

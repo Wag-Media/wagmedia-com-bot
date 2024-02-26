@@ -120,7 +120,7 @@ export async function getPostUserEmojiFromReaction(
   });
   if (!post) {
     logger.warn(
-      `Post with ID ${reaction.message.id} not found in the database. Skipping.`
+      `[post] Post with ID ${reaction.message.id} not found in the database. Skipping.`
     );
     throw new Error(
       `Post with ID ${reaction.message.id} not found in the database. Skipping.`
@@ -129,14 +129,14 @@ export async function getPostUserEmojiFromReaction(
 
   const dbUser = await findUserById(discordUserId);
   if (!dbUser) {
-    logger.warn(`User  not found in the database. Skipping.`);
+    logger.warn(`[user] User not found in the database. Skipping.`);
     throw new Error(`User  not found in the database. Skipping.`);
   }
 
   const dbEmoji = await findEmoji(reaction.emoji);
   if (!dbEmoji) {
     logger.warn(
-      `Emoji ${reaction.emoji.name} not found in the database. Skipping.`
+      `[emoji] Emoji ${reaction.emoji.name} not found in the database. Skipping.`
     );
     throw new Error(
       `Emoji ${reaction.emoji.name} not found in the database. Skipping.`

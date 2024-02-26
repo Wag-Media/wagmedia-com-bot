@@ -142,7 +142,7 @@ export async function fetchPost(
 
   if (!post) {
     logger.warn(
-      `Post with ID ${reaction.message.id} not found in the database.`
+      `[post] Post with ID ${reaction.message.id} not found in the database.`
     );
   }
   return post;
