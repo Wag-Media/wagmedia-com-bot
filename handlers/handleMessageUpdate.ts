@@ -42,8 +42,6 @@ export async function handleMessageUpdate(
     const oldPost = await parseMessage(oldMessage.content, oldMessage.embeds);
     const newPost = await parseMessage(newMessage.content, newMessage.embeds);
 
-    console.log("newPost", newPost);
-
     const oldPostValid = isPostValid(oldPost);
     const newPostValid = isPostValid(newPost);
 
@@ -58,7 +56,6 @@ export async function handleMessageUpdate(
         newMessage.author
       );
     } else if (oldPostValid && newPostValid) {
-      logger.log("new post after editing", newPost.embeds);
       await findOrCreatePost({
         message: newMessage,
         title: newPost.title!,
