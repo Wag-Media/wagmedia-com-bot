@@ -22,6 +22,7 @@ export async function handlePost(
   if (!title) missingFields.push("title");
   if (!description) missingFields.push("description");
 
+  // Check if the message contains necessary information
   if (missingFields.length > 0) {
     logger.warn(
       `Post ${messageLink} is missing required fields: ${missingFields.join(
@@ -31,15 +32,15 @@ export async function handlePost(
     return;
   }
 
-  // Check if the message contains necessary information
-  logger.log(`[post] New relevant message in the channel ${messageLink}`);
-  logger.log(`↪ user: ${message.member?.displayName}`);
-  logger.log(`↪ title: ${title}`);
   logger.log(
-    `↪ description: ${description!.substring(0, 30) + "..." || description}`
+    `[post] recorded new relevant message by ${
+      message.member?.displayName
+    } with ${embeds.length} ${embeds.length === 1 ? "embed" : "embeds"} and ${
+      tags.length
+    } ${
+      tags.length === 1 ? "tag" : "tags"
+    } in the channel ${messageLink}: ${title} `
   );
-  logger.log(`↪ embeds: ${embeds.length}`);
-  logger.log(`↪ tags: ${tags}`);
 
   const post = findOrCreatePost({
     message,

@@ -58,6 +58,7 @@ export async function handleMessageUpdate(
         newMessage.author
       );
     } else if (oldPostValid && newPostValid) {
+      logger.log("new post after editing", newPost, newPost.embeds);
       await findOrCreatePost({
         message: newMessage,
         title: newPost.title!,
@@ -80,7 +81,9 @@ export async function handleMessageUpdate(
         tags: newPost.tags,
         embeds: newPost.embeds,
       });
-      logger.log(`Post is valid and added to the db / updated: ${messageLink}`);
+      logger.log(
+        `Post is now valid and added to the db / updated: ${messageLink}`
+      );
     } else if (!oldPostValid && !newPostValid) {
       return;
     }
