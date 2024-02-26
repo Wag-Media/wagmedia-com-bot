@@ -47,7 +47,7 @@ export async function handleMessageUpdate(
 
     const oldDbPost = await getPost(oldMessage.id);
     if (oldDbPost) {
-      logger.log(`(edited) new relevant message in the channel`);
+      logger.log(`[post] (edited) new relevant message in the channel`);
     }
 
     if (oldDbPost?.isPublished) {
@@ -63,7 +63,7 @@ export async function handleMessageUpdate(
         tags: newPost.tags,
         embeds: newPost.embeds,
       });
-      logger.log(`Post updated in the channel ${messageLink}`);
+      logger.log(`[post] Post updated: ${messageLink}`);
     } else if (oldPostValid && !newPostValid) {
       await flagDeletePost(newMessage.id);
       logger.logAndSend(
@@ -78,7 +78,9 @@ export async function handleMessageUpdate(
         tags: newPost.tags,
         embeds: newPost.embeds,
       });
-      logger.log(`Post is valid and added to the db / updated: ${messageLink}`);
+      logger.log(
+        `Post is now valid and added to the db / updated: ${messageLink}`
+      );
     } else if (!oldPostValid && !newPostValid) {
       return;
     }
