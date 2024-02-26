@@ -56,6 +56,17 @@ export const findOrCreatePost = async (
     })
   );
 
+  // Find existing embeds for the message
+  const existingEmbeds = await prisma.embed.findMany({
+    where: {
+      OR: embeds.map((embed) => ({ embedUrl: embed.url })),
+    },
+  });
+
+  const newEmbeds = embeds.filter(
+    (embed) => !existingEmbeds.find((e) => e.embedUrl === embed.url)
+  );
+
   // Upsert the post
   const post = await prisma.post.upsert({
     where: { id: message.id },
@@ -70,8 +81,10 @@ export const findOrCreatePost = async (
         set: [], // Disconnect any existing tags
         connect: tagInstances.map((tag) => ({ id: tag.id })), // Connect new tags
       },
+      // Only add new embeds
       embeds: {
-        create: embeds.map((embed) => ({
+        set: [],
+        create: newEmbeds.map((embed) => ({
           embedUrl: embed.url,
           embedImage: embed.imageUrl,
           embedColor: embed.color,
@@ -89,7 +102,7 @@ export const findOrCreatePost = async (
         connect: tagInstances.map((tag) => ({ id: tag.id })),
       },
       embeds: {
-        create: embeds.map((embed) => ({
+        create: newEmbeds.map((embed) => ({
           embedUrl: embed.url,
           embedImage: embed.imageUrl,
           embedColor: embed.color,
