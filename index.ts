@@ -10,6 +10,8 @@ import { Events } from "discord.js";
 import { logIntroMessage } from "./handlers/log-utils.js";
 
 import * as config from "./config.js";
+import { ensureFullMessage } from "./handlers/util.js";
+import { MessageCurator } from "./curators/message-curator.js";
 
 //store your token in environment variable in .env
 const token = process.env["DISCORD_BOT_TOKEN"];
@@ -18,6 +20,19 @@ discordClient.on(Events.Error, logger.error);
 discordClient.on(Events.Warn, logger.warn);
 discordClient.on("disconnect", () => {
   logger.info("Disconnected from discord.");
+});
+
+discordClient.on(Events.GuildCreate, async (joinedGuild) => {
+  // Check if the joined guild's ID matches the BOT_GUILD_ID from the environment variable
+
+  if (joinedGuild.id !== config.GUILD_ID) {
+    try {
+      await joinedGuild.leave();
+      logger.info(`Bot left the guild with ID: ${joinedGuild.id}`);
+    } catch (error) {
+      logger.error(`Error leaving the guild with ID: ${joinedGuild.id}`, error);
+    }
+  }
 });
 
 discordClient.once(Events.ClientReady, async () => {
@@ -55,7 +70,10 @@ discordClient.once(Events.ClientReady, async () => {
 
 discordClient.on(Events.MessageCreate, async (message) => {
   try {
-    await handleMessageCreate(message);
+    const { message: fullMessage, wasPartial } = await ensureFullMessage(
+      message
+    );
+    await MessageCurator.curate(fullMessage, wasPartial);
   } catch (error) {
     console.error("Error in messageCreate event handler:", error);
   }

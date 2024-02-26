@@ -12,11 +12,19 @@ import { OddJob } from "@prisma/client";
 import { storeAttachment } from "@/data/attachment";
 import * as config from "@/config";
 
+export type OddJobType = {
+  role: string;
+  description: string;
+  timeline: string;
+  payment: { amount: number; unit: string };
+  manager: User;
+};
+
 export async function handleOddJob(
   message: Message<boolean> | PartialMessage,
   messageLink: string
-) {
-  let oddJob: OddJob | null = null;
+): Promise<OddJob | null> {
+  let oddJob: OddJob | undefined;
 
   // content is not null because we checked for it in shouldIgnoreMessage
   const parsedOddJob = parseOddjob(
@@ -32,7 +40,6 @@ export async function handleOddJob(
   } else {
     const { description, manager, payment, role, timeline } = parsedOddJob;
     logger.log(`New odd job in the channel ${messageLink}`);
-    logger.log(`↪ id: ${message.id}`);
     logger.log(`↪ role: ${role}`);
     logger.log(`↪ description: ${description}`);
     logger.log(`↪ timeline: ${timeline}`);
@@ -104,13 +111,7 @@ export function parseOddjob(
   message: string,
   mentions: MessageMentions,
   attachments: Collection<string, Attachment>
-): {
-  role: string;
-  description: string;
-  timeline: string;
-  payment: { amount: number; unit: string };
-  manager: User;
-} | null {
+): OddJobType | null {
   try {
     const roleRegex = /Odd-Job Role:\s*(.+?)(?=\n|$)/;
     const descriptionRegex = /Odd-Job Description:\s*(.+?)(?=\n|$)/;

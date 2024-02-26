@@ -30,7 +30,7 @@ import {
   getPostUserEmojiFromReaction,
 } from "@/data/reaction.js";
 import { removeCategoryFromPost } from "@/data/post.js";
-import { isMessageFromOddJobsChannel } from "./util";
+import { isChannelMonitoredForOddJobs } from "./util";
 
 const prisma = new PrismaClient();
 
@@ -64,7 +64,7 @@ export async function handleMessageReactionRemove(
   // Similar checks as in handleMessageReactionAdd
   if (shouldIgnoreReaction(reaction)) return;
 
-  if (isMessageFromOddJobsChannel(reaction.message.channel)) {
+  if (isChannelMonitoredForOddJobs(reaction.message.channel)) {
     //TODO
     return;
   } else {

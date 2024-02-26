@@ -3,12 +3,19 @@ import { findOrCreatePost } from "@/data/post";
 import { PostEmbed } from "@/types";
 import { Embed, Message, PartialMessage } from "discord.js";
 
+export type PostType = {
+  title: string | null;
+  description: string | null;
+  embeds: PostEmbed[];
+  tags: string[];
+};
+
 export async function handlePost(
-  message: Message<boolean> | PartialMessage,
+  message: Message<boolean>,
   messageLink: string
 ) {
   // content is not null because we checked for it in shouldIgnoreMessage
-  const parsedMessage = parseMessage(message.content!, message.embeds);
+  const parsedMessage = parseMessage(message);
 
   if (!parsedMessage) {
     logger.error(`there was an error when parsing ${messageLink}`);
@@ -16,6 +23,7 @@ export async function handlePost(
   }
 
   const { title, description, embeds, tags } = parsedMessage;
+  console.log(embeds);
 
   const missingFields: string[] = [];
 
@@ -24,25 +32,25 @@ export async function handlePost(
 
   if (missingFields.length > 0) {
     logger.warn(
-      `Post ${messageLink} is missing required fields: ${missingFields.join(
+      `[post] Post is missing required fields: ${missingFields.join(
         ", "
-      )}`
+      )}: ${messageLink}`
     );
     return;
   }
 
   // Check if the message contains necessary information
-  logger.log(`New relevant message in the channel ${messageLink}`);
-  logger.log(`↪ id: ${message.id}`);
-  logger.log(`↪ user: ${message.member?.displayName}`);
-  logger.log(`↪ title: ${title}`);
   logger.log(
-    `↪ description: ${description!.substring(0, 30) + "..." || description}`
+    `[post] recorded new relevant message by ${
+      message.member?.displayName
+    } with ${embeds.length} ${embeds.length === 1 ? "embed" : "embeds"} and ${
+      tags.length
+    } ${
+      tags.length === 1 ? "tag" : "tags"
+    } in the channel ${messageLink}: ${title} `
   );
-  logger.log(`↪ embeds: ${embeds.length}`);
-  logger.log(`↪ tags: ${tags}`);
 
-  const post = findOrCreatePost({
+  const post = await findOrCreatePost({
     message,
     title: title!,
     description: description!,
@@ -53,15 +61,9 @@ export async function handlePost(
   return post;
 }
 
-export function parseMessage(
-  message: string,
-  embeds: Embed[]
-): {
-  title: string | null;
-  description: string | null;
-  embeds: PostEmbed[];
-  tags: string[];
-} {
+export function parseMessage(message: Message): PostType {
+  const { content, embeds } = message;
+
   try {
     // Regular expressions to match title, description, and tags (case-insensitive)
     const titleRegex = /title:\s*(.*?)\s*\n/i;
@@ -71,9 +73,9 @@ export function parseMessage(
     const tagsRegex = /(hashtags|tags):\s*([^\n]+)/i;
 
     // Extracting title, description, and tags using the regular expressions
-    const titleMatch = message.match(titleRegex);
-    const descriptionMatch = message.match(descriptionRegex);
-    const tagsMatch = message.match(tagsRegex);
+    const titleMatch = content.match(titleRegex);
+    const descriptionMatch = content.match(descriptionRegex);
+    const tagsMatch = content.match(tagsRegex);
 
     const title = titleMatch ? titleMatch[1].trim() : null;
     const description = descriptionMatch ? descriptionMatch[1].trim() : null;
@@ -99,6 +101,8 @@ export function parseMessage(
       color: embed.color || null,
     }));
 
+    console.log("embeds", embedData);
+
     return { title, description, tags, embeds: embedData };
   } catch (error) {
     logger.error("Something went wrong when parsing the message:", error);
@@ -106,11 +110,6 @@ export function parseMessage(
   }
 }
 
-export function isPostValid(post: {
-  title: string | null;
-  description: string | null;
-  embeds: PostEmbed[];
-  tags: string[];
-}): boolean {
+export function isPostValid(post: PostType): boolean {
   return !!post.title && !!post.description;
 }

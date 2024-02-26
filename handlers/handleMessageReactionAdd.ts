@@ -27,9 +27,9 @@ import {
 import { logger } from "@/client.js";
 import {
   ensureFullEntities,
-  isMessageFromMonitoredCategory,
-  isMessageFromMonitoredChannel,
-  isMessageFromOddJobsChannel,
+  isCategoryMonitoredForPosts,
+  isChannelMonitoredForPosts,
+  isChannelMonitoredForOddJobs,
   isParentMessageFromMonitoredCategoryOrChannel,
   shouldIgnoreReaction,
 } from "./util.js";
@@ -171,8 +171,8 @@ export async function handleMessageReactionAdd(
   }
 
   if (
-    isMessageFromMonitoredCategory(reaction.message.channel) ||
-    isMessageFromMonitoredChannel(reaction.message.channel)
+    isCategoryMonitoredForPosts(reaction.message.channel) ||
+    isChannelMonitoredForPosts(reaction.message.channel)
   ) {
     //TODO record the channel information of the message
     // console.log("channel", reaction.message.channel);
@@ -222,7 +222,7 @@ export async function handleMessageReactionAdd(
       logger.error("Error querying the database for the post:", error);
       return;
     }
-  } else if (isMessageFromOddJobsChannel(reaction.message.channel)) {
+  } else if (isChannelMonitoredForOddJobs(reaction.message.channel)) {
     if (!userHasRole(guild, user, config.ROLES_WITH_POWER)) {
       await user.send(
         `You do not have permission to add reactions to odd jobs in ${messageLink}`
@@ -327,10 +327,7 @@ export async function processRegularUserPostReaction(
       `Ignoring user reaction to post ${messageLink}, as it is not valid.`
     );
     return;
-  } else if (
-    reaction.emoji.name?.startsWith("WM") ||
-    reaction.emoji.name?.includes("WM")
-  ) {
+  } else if (reaction.emoji.name?.includes("WM")) {
     // Remove WM emojis if the user does not have the power role
     logger.logAndSend(
       `You do not have permission to add WagMedia emojis in ${messageLink}`,
@@ -362,6 +359,7 @@ export async function processSuperuserPostReaction(
   logNewEmojiReceived(reaction, discordUser, messageLink);
 
   // process possible rules for the emoji
+  // 0. Deleted Posts
   // 1. Category Rule
   // 2. Payment Rule
   // 3. Feature Rule

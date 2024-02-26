@@ -1,7 +1,7 @@
 import { logger } from "@/client";
 import {
   ensureFullMessage,
-  isMessageFromOddJobsChannel,
+  isChannelMonitoredForOddJobs,
   shouldIgnoreMessage,
 } from "./util";
 import { Message, PartialMessage } from "discord.js";
@@ -13,15 +13,15 @@ export async function handleMessageUpdate(
   oldMessage: Message<boolean> | PartialMessage,
   newMessage: Message<boolean> | PartialMessage
 ) {
-  newMessage = await ensureFullMessage(newMessage);
-  if (shouldIgnoreMessage(newMessage)) return;
+  const { message: newFullMessage } = await ensureFullMessage(newMessage);
+  if (shouldIgnoreMessage(newFullMessage)) return;
 
-  const messageLink = `https://discord.com/channels/${newMessage.guild?.id}/${newMessage.channel.id}/${newMessage.id}`;
+  const messageLink = `https://discord.com/channels/${newFullMessage.guild?.id}/${newFullMessage.channel.id}/${newFullMessage.id}`;
 
-  if (isMessageFromOddJobsChannel(newMessage.channel)) {
-    oldMessage = await ensureFullMessage(oldMessage);
-    const oldOddJob = await handleOddJob(oldMessage, messageLink);
-    const newOddJob = await handleOddJob(newMessage, messageLink);
+  if (isChannelMonitoredForOddJobs(newFullMessage.channel)) {
+    const { message: oldFullMessage } = await ensureFullMessage(oldMessage);
+    const oldOddJob = await handleOddJob(oldFullMessage, messageLink);
+    const newOddJob = await handleOddJob(newFullMessage, messageLink);
 
     if (oldOddJob && newOddJob) {
       logger.log(`Odd job updated in the channel ${messageLink}`);
@@ -29,7 +29,7 @@ export async function handleMessageUpdate(
       logger.log(
         `Odd job invalid in the channel ${messageLink}. Not updating.`
       );
-      newMessage.author.send(
+      newFullMessage.author.send(
         `Your odd job in ${messageLink} is invalid and is not being updated in the database. Please correct it.`
       );
     } else if (!oldOddJob && newOddJob) {
@@ -38,14 +38,14 @@ export async function handleMessageUpdate(
       );
     }
   } else {
-    oldMessage = await ensureFullMessage(oldMessage);
-    const oldPost = await parseMessage(oldMessage.content, oldMessage.embeds);
-    const newPost = await parseMessage(newMessage.content, newMessage.embeds);
+    const { message: oldFullMessage } = await ensureFullMessage(oldMessage);
+    const oldPost = await parseMessage(oldFullMessage);
+    const newPost = await parseMessage(newFullMessage);
 
     const oldPostValid = isPostValid(oldPost);
     const newPostValid = isPostValid(newPost);
 
-    const oldDbPost = await getPost(oldMessage.id);
+    const oldDbPost = await getPost(oldFullMessage.id);
     if (oldDbPost) {
       logger.log(`(edited) new relevant message in the channel`);
     }
@@ -53,11 +53,11 @@ export async function handleMessageUpdate(
     if (oldDbPost?.isPublished) {
       logger.logAndSend(
         `The post ${messageLink} is already published and cannot be edited. If you want to change it, unpublish it first.`,
-        newMessage.author
+        newFullMessage.author
       );
     } else if (oldPostValid && newPostValid) {
       await findOrCreatePost({
-        message: newMessage,
+        message: newFullMessage,
         title: newPost.title!,
         description: newPost.description!,
         tags: newPost.tags,
@@ -65,14 +65,14 @@ export async function handleMessageUpdate(
       });
       logger.log(`Post updated in the channel ${messageLink}`);
     } else if (oldPostValid && !newPostValid) {
-      await flagDeletePost(newMessage.id);
+      await flagDeletePost(newFullMessage.id);
       logger.logAndSend(
         `Your post in ${messageLink} is invalid and is unpublished until it is corrected.`,
-        newMessage.author
+        newFullMessage.author
       );
     } else if (!oldPostValid && newPostValid) {
       await findOrCreatePost({
-        message: newMessage,
+        message: newFullMessage,
         title: newPost.title!,
         description: newPost.description!,
         tags: newPost.tags,

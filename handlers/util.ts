@@ -50,18 +50,18 @@ export function shouldIgnoreReaction(
 }
 
 /**
+ *
+ * TODO can this be removed?
  * Check if a message should be ignored. Ignore:
  * - not from a monitored channel or category
  * - bot reactions
  * - DMs
- * - from all other channels
+ * - from not text or thread channels
  * @param message
  * @param user
  * @returns
  */
-export function shouldIgnoreMessage(
-  message: Message<boolean> | PartialMessage
-) {
+export function shouldIgnoreMessage(message: Message | PartialMessage) {
   const user = message.author;
   // Ignore DMs
   if (!message.guild) return true;
@@ -71,43 +71,72 @@ export function shouldIgnoreMessage(
     console.log("user.bot", user?.bot);
     console.log("message.author.bot", message.author?.bot);
   }
-  console.log("message ");
 
-  // Ignore bot reactions
-  if (!user || user.bot) return true;
+  // Ignore bot messages or reactions to bot messages
+  if (!user || user.bot || message.author?.bot) return true;
 
-  // Ignore bot messages
-  if (message.author?.bot) return true;
-
-  // Ignore reactions from other channels
+  // Ignore reactions from non text or thread channels
   const channel = message.channel;
   if (!(channel instanceof TextChannel || channel instanceof ThreadChannel))
-    return true;
-
-  if (
-    !isMessageFromMonitoredChannel(channel) &&
-    !isMessageFromOddJobsChannel(channel) &&
-    !isMessageFromMonitoredCategory(channel) &&
-    !isParentMessageFromMonitoredCategoryOrChannel(message)
-  )
     return true;
 
   return false;
 }
 
-export async function ensureFullMessage(
-  message: Message<boolean> | PartialMessage
-): Promise<Message> {
-  if (message.partial) {
-    try {
-      message = (await message.fetch()) as Message;
-    } catch (error) {
-      logger.error("Something went wrong when fetching the message:", error);
-      throw new Error("Something went wrong when fetching the message:");
+/**
+ *
+ * @param message classify
+ * @returns
+ */
+export function classifyMessage(message: Message | PartialMessage) {
+  const parentChannel = message.channel.isThread()
+    ? message.channel.parent!
+    : undefined;
+  const parentId = parentChannel?.id;
+
+  let messageChannelType: "post" | "oddjob" | undefined;
+
+  if (parentId) {
+    if (
+      isCategoryMonitoredForPosts(parentChannel) ||
+      isChannelMonitoredForPosts(parentChannel)
+    ) {
+      messageChannelType = "post";
+    }
+  } else {
+    if (isChannelMonitoredForPosts(message.channel)) {
+      messageChannelType = "post";
+    } else if (isChannelMonitoredForOddJobs(message.channel)) {
+      messageChannelType = "oddjob";
     }
   }
 
-  return message;
+  return {
+    messageChannelType,
+    parentId,
+  };
+}
+
+export async function ensureFullMessage(
+  message: Message<boolean> | PartialMessage
+): Promise<{ message: Message; wasPartial: boolean }> {
+  let wasPartial = false;
+  if (message.partial) {
+    wasPartial = true;
+    try {
+      message = (await message.fetch()) as Message;
+    } catch (error) {
+      logger.error(
+        "Something went wrong when fetching the partial message:",
+        error
+      );
+      throw new Error(
+        "Something went wrong when fetching the partial message:"
+      );
+    }
+  }
+
+  return { message, wasPartial };
 }
 
 /**
@@ -163,13 +192,13 @@ export async function ensureFullEntities(
   };
 }
 
-export const isMessageFromMonitoredChannel = (channel: Channel) =>
+export const isChannelMonitoredForPosts = (channel: Channel) =>
   config.CHANNELS_TO_MONITOR.includes(channel.id);
 
-export const isMessageFromOddJobsChannel = (channel: Channel) =>
+export const isChannelMonitoredForOddJobs = (channel: Channel) =>
   config.CHANNELS_ODD_JOBS.includes(channel.id);
 
-export const isMessageFromMonitoredCategory = (channel: Channel) =>
+export const isCategoryMonitoredForPosts = (channel: Channel) =>
   channel instanceof TextChannel &&
   channel.parentId &&
   config.CATEGORIES_TO_MONITOR.includes(channel.parentId);
@@ -182,8 +211,8 @@ export const isParentMessageFromMonitoredCategoryOrChannel = (
     const parent = message.channel.parent;
     return (
       parent &&
-      (isMessageFromMonitoredChannel(parent) ||
-        isMessageFromMonitoredCategory(parent))
+      (isChannelMonitoredForPosts(parent) ||
+        isCategoryMonitoredForPosts(parent))
     );
   }
   return false;
