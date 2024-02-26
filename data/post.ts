@@ -70,6 +70,13 @@ export const findOrCreatePost = async (
         set: [], // Disconnect any existing tags
         connect: tagInstances.map((tag) => ({ id: tag.id })), // Connect new tags
       },
+      embeds: {
+        create: embeds.map((embed) => ({
+          embedUrl: embed.url,
+          embedImage: embed.imageUrl,
+          embedColor: embed.color,
+        })),
+      },
     },
     create: {
       id: message.id,
