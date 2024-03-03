@@ -100,10 +100,12 @@ After you made changes to the schema in `prisma/schema.prisma`
 
 `npx prisma migrate dev` to update the database
 
-### Look in the database
+### Connecting to the database
 
-`npx prisma studio` will serve a local database client on
-[https://localhost:5555](https://localhost:5555)
+1. get the postgres database connection string (e.g. from heroku env or the
+   local db)
+2. `npx prisma studio` will serve a local database client on
+   [https://localhost:5555](https://localhost:5555)
 
 ### Run without watch
 
