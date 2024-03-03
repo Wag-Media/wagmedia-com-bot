@@ -11,6 +11,9 @@ import {
 } from "discord.js";
 import * as config from "../config.js";
 import { logger } from "@/client.js";
+import { findEmojiCategoryRule, findEmojiPaymentRule } from "@/data/emoji.js";
+import { Emoji } from "@prisma/client";
+import { emojiType } from "@/types.js";
 
 /**
  * Just a simple delay function.
@@ -64,13 +67,13 @@ export function shouldIgnoreReaction(
 export function shouldIgnoreMessage(message: Message | PartialMessage) {
   const user = message.author;
   // Ignore DMs
-  if (!message.guild) return true;
+  if (!message.guild && !message.guildId) return true;
 
-  if (user?.bot || message.author?.bot) {
-    console.log("message is from bot");
-    console.log("user.bot", user?.bot);
-    console.log("message.author.bot", message.author?.bot);
-  }
+  // if (user?.bot || message.author?.bot) {
+  //   console.log("message is from bot");
+  //   console.log("user.bot", user?.bot);
+  //   console.log("message.author.bot", message.author?.bot);
+  // }
 
   // Ignore bot messages or reactions to bot messages
   if (!user || user.bot || message.author?.bot) return true;
@@ -117,6 +120,27 @@ export function classifyMessage(message: Message | PartialMessage) {
   };
 }
 
+export async function classifyReaction(dbEmoji: Emoji): Promise<emojiType> {
+  // 1. Check for Feature Rule
+  if (dbEmoji.name === config.FEATURE_EMOJI) {
+    return "feature";
+  }
+
+  // 2. Check for Category Rule
+  const categoryRule = await findEmojiCategoryRule(dbEmoji.id);
+  if (categoryRule) {
+    return "category";
+  }
+
+  // 3. Check for Payment Rule
+  const paymentRule = await findEmojiPaymentRule(dbEmoji.id);
+  if (paymentRule) {
+    return "payment";
+  }
+
+  return "regular";
+}
+
 export async function ensureFullMessage(
   message: Message<boolean> | PartialMessage
 ): Promise<{ message: Message; wasPartial: boolean }> {
@@ -151,7 +175,14 @@ export async function ensureFullEntities(
 ): Promise<{
   reaction: MessageReaction;
   user: DiscordUser;
+  wasPartial: { reaction: boolean; message: boolean; user: boolean };
 }> {
+  let wasPartial = {
+    reaction: false,
+    message: false,
+    user: false,
+  };
+
   if (!reaction) {
     throw new Error("Reaction is null");
   }
@@ -159,16 +190,8 @@ export async function ensureFullEntities(
     throw new Error("User is null");
   }
 
-  if (reaction.message.partial) {
-    try {
-      await reaction.message.fetch();
-    } catch (error) {
-      logger.error("Something went wrong when fetching the message:", error);
-      throw new Error("Something went wrong when fetching the message:");
-    }
-  }
-
   if (reaction.partial) {
+    wasPartial.reaction = true;
     try {
       reaction = (await reaction.fetch()) as MessageReaction;
     } catch (error) {
@@ -177,7 +200,18 @@ export async function ensureFullEntities(
     }
   }
 
+  if (reaction.message.partial) {
+    wasPartial.message = true;
+    try {
+      await reaction.message.fetch();
+    } catch (error) {
+      logger.error("Something went wrong when fetching the message:", error);
+      throw new Error("Something went wrong when fetching the message:");
+    }
+  }
+
   if (user.partial) {
+    wasPartial.user = true;
     try {
       user = (await user.fetch()) as DiscordUser;
     } catch (error) {
@@ -189,6 +223,7 @@ export async function ensureFullEntities(
   return {
     reaction: reaction as MessageReaction,
     user: user as DiscordUser,
+    wasPartial,
   };
 }
 

@@ -1,6 +1,7 @@
 import { logger } from "@/client";
 import { findOrCreatePost } from "@/data/post";
 import { PostEmbed } from "@/types";
+import { Post } from "@prisma/client";
 import { Embed, Message, PartialMessage } from "discord.js";
 
 export type PostType = {
@@ -13,7 +14,7 @@ export type PostType = {
 export async function handlePost(
   message: Message<boolean>,
   messageLink: string
-) {
+): Promise<Post | undefined> {
   // content is not null because we checked for it in shouldIgnoreMessage
   const parsedMessage = parseMessage(message);
 
@@ -30,6 +31,7 @@ export async function handlePost(
   if (!title) missingFields.push("title");
   if (!description) missingFields.push("description");
 
+  // Check if the message contains necessary information
   if (missingFields.length > 0) {
     logger.warn(
       `[post] Post is missing required fields: ${missingFields.join(
@@ -39,7 +41,6 @@ export async function handlePost(
     return;
   }
 
-  // Check if the message contains necessary information
   logger.log(
     `[post] recorded new relevant message by ${
       message.member?.displayName

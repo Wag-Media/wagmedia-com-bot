@@ -178,7 +178,7 @@ export async function handleMessageReactionAdd(
     // console.log("channel", reaction.message.channel);
     try {
       const post = await fetchPost(reaction);
-      if (!post) {
+      if (!post || post.isDeleted) {
         await user.send(
           `The post ${messageLink} you reacted to is not valid (e.g. no title / description).`
         );

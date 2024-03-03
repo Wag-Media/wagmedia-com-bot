@@ -10,8 +10,9 @@ import { Events } from "discord.js";
 import { logIntroMessage } from "./handlers/log-utils.js";
 
 import * as config from "./config.js";
-import { ensureFullMessage } from "./handlers/util.js";
+import { ensureFullEntities, ensureFullMessage } from "./handlers/util.js";
 import { MessageCurator } from "./curators/message-curator.js";
+import { ReactionCurator } from "./curators/reaction-curator.js";
 
 //store your token in environment variable in .env
 const token = process.env["DISCORD_BOT_TOKEN"];
@@ -89,7 +90,21 @@ discordClient.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
 
 discordClient.on(Events.MessageReactionAdd, async (reaction, user) => {
   try {
-    await handleMessageReactionAdd(reaction, user);
+    const {
+      reaction: fullReaction,
+      user: fullUser,
+      wasPartial,
+    } = await ensureFullEntities(reaction, user);
+
+    console.log(
+      "received a message reaction add event. WasPartial:",
+      wasPartial,
+      reaction
+    );
+
+    await ReactionCurator.curate(fullReaction, fullUser, wasPartial);
+
+    // await handleMessageReactionAdd(reaction, user);
   } catch (error) {
     console.error("Error in messageReactionAdd event handler:", error);
   }

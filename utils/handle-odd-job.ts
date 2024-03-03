@@ -21,9 +21,9 @@ export type OddJobType = {
 };
 
 export async function handleOddJob(
-  message: Message<boolean> | PartialMessage,
+  message: Message<boolean>,
   messageLink: string
-): Promise<OddJob | null> {
+): Promise<OddJob | undefined> {
   let oddJob: OddJob | undefined;
 
   // content is not null because we checked for it in shouldIgnoreMessage

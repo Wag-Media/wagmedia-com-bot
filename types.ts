@@ -31,3 +31,5 @@ export type PostEmbed = {
   imageUrl: string | null;
   color: number | null;
 };
+
+export type emojiType = "regular" | "feature" | "category" | "payment";
