@@ -1,6 +1,6 @@
 import { logger } from "@/client";
 import { findOrCreatePost } from "@/data/post";
-import { PostEmbed } from "@/types";
+import { PostEmbed, PostWithCategories } from "@/types";
 import { Post } from "@prisma/client";
 import { Embed, Message, PartialMessage } from "discord.js";
 
@@ -14,7 +14,7 @@ export type PostType = {
 export async function handlePost(
   message: Message<boolean>,
   messageLink: string
-): Promise<Post | undefined> {
+): Promise<PostWithCategories | undefined> {
   // content is not null because we checked for it in shouldIgnoreMessage
   const parsedMessage = parseMessage(message);
 
@@ -24,7 +24,7 @@ export async function handlePost(
   }
 
   const { title, description, embeds, tags } = parsedMessage;
-  console.log(embeds);
+  // console.log(embeds);
 
   const missingFields: string[] = [];
 
@@ -102,7 +102,7 @@ export function parseMessage(message: Message): PostType {
       color: embed.color || null,
     }));
 
-    console.log("embeds", embedData);
+    // console.log("embeds", embedData);
 
     return { title, description, tags, embeds: embedData };
   } catch (error) {

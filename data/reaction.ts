@@ -18,6 +18,18 @@ export async function findReaction(postId, userId, emojiId) {
   return dbReaction;
 }
 
+export async function getPostReactions(postId: string) {
+  const dbReactions = await prisma.reaction.findMany({
+    where: {
+      postId,
+    },
+    include: {
+      emoji: true,
+    },
+  });
+  return dbReactions;
+}
+
 /**
  * Upsert a reaction
  * @param post
@@ -45,7 +57,6 @@ export async function upsertReaction(post: Post, dbUser: User, emoji: Emoji) {
   if (!dbReaction) {
     throw new Error("Reaction could not be upserted");
   }
-
   return dbReaction;
 }
 

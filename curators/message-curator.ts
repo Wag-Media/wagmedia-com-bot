@@ -5,6 +5,7 @@ import {
   isParentMessageFromMonitoredCategoryOrChannel,
   shouldIgnoreMessage,
 } from "@/handlers/util";
+import { PostWithCategories } from "@/types";
 import { handleOddJob } from "@/utils/handle-odd-job";
 import { PostType, handlePost } from "@/utils/handle-post";
 import { OddJob, Post } from "@prisma/client";
@@ -20,7 +21,7 @@ export class MessageCurator {
   static async curate(
     message: Message,
     wasPartial: boolean
-  ): Promise<Post | OddJob | undefined> {
+  ): Promise<PostWithCategories | OddJob | undefined> {
     if (shouldIgnoreMessage(message)) {
       return;
     }

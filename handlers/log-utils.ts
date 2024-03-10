@@ -90,7 +90,7 @@ export async function logIntroMessage(guild, discordClient) {
   logger.info(`⚡️ Connected to guild: ${guild.name} (${guild.id})`);
   logger.info(`🤖 Logged in as ${discordClient.user?.tag}!`);
 
-  let monitoredChannelCount = config.CATEGORIES_TO_MONITOR.length;
+  let monitoredChannelCount = config.CHANNELS_TO_MONITOR.length;
 
   const guildChannels = await guild.channels.fetch();
   const monitoredCategoriesChannels = guildChannels.filter(
@@ -107,28 +107,24 @@ export async function logIntroMessage(guild, discordClient) {
     } channels in guild ${guild.name}:`
   );
 
-  logger.info(
-    config.CHANNELS_TO_MONITOR.map((channelId) => {
-      const channel = guild.channels.cache.get(channelId);
-      return `   ↪ #${channel?.name} (${channel?.id})`;
-    }).join("\n")
-  );
+  config.CHANNELS_TO_MONITOR.map((channelId) => {
+    const channel = guild.channels.cache.get(channelId);
+    logger.info(`↪ #${channel?.name} (${channel?.id})`);
+  });
 
   monitoredCategoriesChannels?.forEach((channel) => {
     logger.info(
-      `   ↪ ${channel?.parent?.name} ↪ #${channel?.name} (${channel?.id})`
+      `↪ ${channel?.parent?.name} ↪ #${channel?.name} (${channel?.id})`
     );
   });
 
   logger.info(
     `🦻 Listening for oddjobs and oddjob reactions in ${config.CHANNELS_ODD_JOBS.length} channels in guild ${guild.name}:`
   );
-  logger.info(
-    config.CHANNELS_ODD_JOBS.map((channelId) => {
-      const channel = guild.channels.cache.get(channelId);
-      return `   ↪ #${channel?.name} (${channel?.id})`;
-    }).join("\n")
-  );
+  config.CHANNELS_ODD_JOBS.map((channelId) => {
+    const channel = guild.channels.cache.get(channelId);
+    logger.info(`↪ #${channel?.name} (${channel?.id})`);
+  });
 }
 
 export async function logAndSend(message, user) {}

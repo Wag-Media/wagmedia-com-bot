@@ -59,6 +59,12 @@ export async function findOrCreateOddJob(
   });
 }
 
+export async function getOddJob(id: string): Promise<OddJob | null> {
+  return prisma.oddJob.findUnique({
+    where: { id },
+  });
+}
+
 export async function fetchOddjob(
   reaction: MessageReaction
 ): Promise<

@@ -82,7 +82,7 @@ discordClient.on(Events.MessageCreate, async (message) => {
 
 discordClient.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
   try {
-    await handleMessageUpdate(oldMessage, newMessage);
+    // await handleMessageUpdate(oldMessage, newMessage);
   } catch (error) {
     console.error("Error in messageUpdate event handler:", error);
   }
@@ -96,11 +96,11 @@ discordClient.on(Events.MessageReactionAdd, async (reaction, user) => {
       wasPartial,
     } = await ensureFullEntities(reaction, user);
 
-    console.log(
-      "received a message reaction add event. WasPartial:",
-      wasPartial,
-      reaction
-    );
+    // console.log(
+    //   "received a message reaction add event. WasPartial:",
+    //   wasPartial,
+    //   reaction
+    // );
 
     await ReactionCurator.curate(fullReaction, fullUser, wasPartial);
 
@@ -112,7 +112,7 @@ discordClient.on(Events.MessageReactionAdd, async (reaction, user) => {
 
 discordClient.on(Events.MessageReactionRemove, async (reaction, user) => {
   try {
-    await handleMessageReactionRemove(reaction, user);
+    // await handleMessageReactionRemove(reaction, user);
   } catch (error) {
     console.error("Error in messageReactionRemove event handler:", error);
   }
@@ -120,7 +120,7 @@ discordClient.on(Events.MessageReactionRemove, async (reaction, user) => {
 
 discordClient.on(Events.MessageDelete, async (message) => {
   try {
-    await handleMessageDelete(message);
+    // await handleMessageDelete(message);
   } catch (error) {
     console.error("Error in messageDelete event handler:", error);
   }

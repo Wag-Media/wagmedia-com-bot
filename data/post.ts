@@ -10,7 +10,12 @@ import { Message, MessageReaction, PartialMessage } from "discord.js";
 import { findOrCreateUser } from "./user.js";
 import { logger } from "@/client.js";
 import { slugify } from "@/handlers/util.js";
-import { PostEmbed } from "@/types.js";
+import {
+  PostEmbed,
+  PostWithCategories,
+  PostWithCategoriesTagsEmbeds,
+  PostWithEarnings,
+} from "@/types.js";
 const prisma = new PrismaClient();
 
 export type PostCreateType = {
@@ -24,9 +29,7 @@ export type PostCreateType = {
 
 export const findOrCreatePost = async (
   attributes: PostCreateType
-): Promise<
-  Post & { categories: Category[] } & { tags: Tag[] } & { embeds: Embed[] }
-> => {
+): Promise<PostWithCategoriesTagsEmbeds> => {
   const { message, title, description, tags, embeds } = attributes;
 
   if (!message) {
@@ -147,6 +150,16 @@ export async function findOrCreateThreadPost(attributes: {
   return threadPost;
 }
 
+export async function getPostReactionCount(postId: string) {
+  const count = await prisma.reaction.count({
+    where: {
+      postId: postId,
+    },
+  });
+
+  return count;
+}
+
 export async function fetchPost(
   reaction: MessageReaction
 ): Promise<
@@ -241,10 +254,48 @@ export async function flagDeletePost(postId: string) {
   return post;
 }
 
-export async function getPost(postId: string) {
+export async function getPost(
+  postId: string
+): Promise<PostWithCategories | null> {
   const post = await prisma.post.findUnique({
     where: {
       id: postId,
+    },
+    include: {
+      categories: true,
+    },
+  });
+
+  return post;
+}
+
+export async function getPostWithEarnings(
+  postId: string
+): Promise<PostWithEarnings | null> {
+  const post = await prisma.post.findUnique({
+    where: {
+      id: postId,
+    },
+    include: {
+      earnings: true,
+    },
+  });
+
+  return post;
+}
+
+export async function addCategory(postId: string, categoryId: number) {
+  const post = await prisma.post.update({
+    where: {
+      id: postId,
+    },
+    include: {
+      categories: true,
+    },
+    data: {
+      categories: {
+        connect: [{ id: categoryId }],
+      },
     },
   });
 

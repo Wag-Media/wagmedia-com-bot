@@ -76,6 +76,10 @@ export const categoryEmojiMap: {
 export const paymentEmojiMap: {
   [key in string]: { amount: number; currency: string; fundingSource: string };
 } = {
+  "0005WMDOT": { amount: 0.005, currency: "DOT", fundingSource: "OpenGov-365" },
+  "001WMDOT": { amount: 0.01, currency: "DOT", fundingSource: "OpenGov-365" },
+  "002WMDOT": { amount: 0.02, currency: "DOT", fundingSource: "OpenGov-365" },
+  "003WMDOT": { amount: 0.03, currency: "DOT", fundingSource: "OpenGov-365" },
   "005WMDOT": { amount: 0.05, currency: "DOT", fundingSource: "OpenGov-365" },
   "01WMDOT": { amount: 0.1, currency: "DOT", fundingSource: "OpenGov-365" },
   "02WMDOT": { amount: 0.2, currency: "DOT", fundingSource: "OpenGov-365" },
@@ -94,6 +98,10 @@ export const paymentEmojiMap: {
   "300WMDOT": { amount: 300, currency: "DOT", fundingSource: "OpenGov-365" },
   "500WMDOT": { amount: 500, currency: "DOT", fundingSource: "OpenGov-365" },
 
+  "01WMUSD": { amount: 0.1, currency: "USD", fundingSource: "OpenGov-365" },
+  "02WMUSD": { amount: 0.2, currency: "USD", fundingSource: "OpenGov-365" },
+  "03WMUSD": { amount: 0.3, currency: "USD", fundingSource: "OpenGov-365" },
+  "05WMUSD": { amount: 0.5, currency: "USD", fundingSource: "OpenGov-365" },
   "1WMUSD": { amount: 1, currency: "USD", fundingSource: "OpenGov-365" },
   "2WMUSD": { amount: 2, currency: "USD", fundingSource: "OpenGov-365" },
   "3WMUSD": { amount: 3, currency: "USD", fundingSource: "OpenGov-365" },
