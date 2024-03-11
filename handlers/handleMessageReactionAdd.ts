@@ -45,7 +45,7 @@ import {
   logPostEarnings,
 } from "./log-utils.js";
 import { findOrCreateUserFromDiscordUser } from "@/data/user";
-import { upsertOddjobReaction, upsertReaction } from "@/data/reaction";
+import { upsertOddjobReaction, upsertPostReaction } from "@/data/reaction";
 import { isCountryFlag } from "../utils/is-country-flag";
 import { fetchOddjob } from "@/data/oddjob";
 import { parseOddjob } from "@/utils/handle-odd-job";
@@ -341,7 +341,7 @@ export async function processRegularUserPostReaction(
     );
     await reaction.users.remove(discordUser.id);
   } else {
-    await upsertReaction(post, dbUser, dbEmoji);
+    await upsertPostReaction(post, dbUser, dbEmoji);
     logNewRegularUserEmojiReceived(reaction, discordUser, messageLink);
   }
 }
@@ -355,7 +355,7 @@ export async function processSuperuserPostReaction(
   messageLink: string
 ) {
   const postId = reaction.message.id;
-  const dbReaction = await upsertReaction(post, dbUser, dbEmoji);
+  const dbReaction = await upsertPostReaction(post, dbUser, dbEmoji);
   logNewEmojiReceived(reaction, discordUser, messageLink);
 
   // process possible rules for the emoji

@@ -42,7 +42,7 @@ import {
 import { Type } from "typescript";
 import { discordClient, logger } from "@/client";
 import { PostWithCategories, ReactionEvent, emojiType } from "@/types";
-import { getPostReactions, upsertReaction } from "@/data/reaction";
+import { getPostReactions, upsertPostReaction } from "@/data/reaction";
 import { findOrCreateUserFromDiscordUser } from "@/data/user";
 import { MessageCurator } from "@/curators/message-curator";
 import { prisma } from "@/utils/prisma";
@@ -252,13 +252,21 @@ export class ReactionCurator {
   }
 
   static async curateOddJobReaction() {
-    // TODO
+    if (!this.dbUser) {
+      throw new Error("dbUser is not defined");
+    }
+    if (!this.dbEmoji) {
+      throw new Error("dbEmoji is not defined");
+    }
+    if (!this.dbMessage) {
+      throw new Error("post is not defined");
+    }
   }
 
   static async curatePowerUserPostReaction() {
     if (this.eventType === "reactionAdd") {
       let dbPost = this.dbMessage as Post;
-      this.dbReaction = await upsertReaction(
+      this.dbReaction = await upsertPostReaction(
         dbPost,
         this.dbUser!,
         this.dbEmoji
@@ -316,7 +324,11 @@ export class ReactionCurator {
 
   static async curateRegularUserPostReaction() {
     let dbPost = this.dbMessage as Post;
-    this.dbReaction = await upsertReaction(dbPost, this.dbUser!, this.dbEmoji);
+    this.dbReaction = await upsertPostReaction(
+      dbPost,
+      this.dbUser!,
+      this.dbEmoji
+    );
   }
 
   static async handleDiscrepancies(

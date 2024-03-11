@@ -2,6 +2,7 @@ import {
   Category,
   ContentEarnings,
   Embed,
+  OddJob,
   Post,
   PrismaClient,
   Tag,
@@ -155,6 +156,24 @@ export async function getPostReactionCount(postId: string) {
     where: {
       postId: postId,
     },
+  });
+
+  return count;
+}
+
+export async function getPostOrOddjobReactionCount(
+  entityId: string,
+  entityType: "post" | "oddjob" | undefined
+) {
+  if (!entityType) {
+    return;
+  }
+
+  const whereCondition =
+    entityType === "post" ? { postId: entityId } : { oddJobId: entityId };
+
+  const count = await prisma.reaction.count({
+    where: whereCondition,
   });
 
   return count;
@@ -324,4 +343,104 @@ export async function resetPostReactions(postId: string) {
   });
 
   return post;
+}
+
+export async function resetPostOrOddjobReactions(
+  entityId: string,
+  entityType: "oddjob" | "post" | undefined
+): Promise<Post | OddJob | null | undefined> {
+  if (!entityType) {
+    return;
+  }
+
+  if (entityType === "post") {
+    return prisma.post.update({
+      where: {
+        id: entityId,
+      },
+      data: {
+        reactions: {
+          deleteMany: {},
+        },
+        payments: {
+          deleteMany: {},
+        },
+        earnings: {
+          deleteMany: {},
+        },
+        categories: {
+          connect: [],
+        },
+      },
+    });
+  } else {
+    return prisma.oddJob.update({
+      where: {
+        id: entityId,
+      },
+      data: {
+        reactions: {
+          deleteMany: {},
+        },
+        payments: {
+          deleteMany: {},
+        },
+        earnings: {
+          deleteMany: {},
+        },
+      },
+    });
+  }
+}
+
+export async function featurePost(postId: string) {
+  const post = await prisma.post.update({
+    where: {
+      id: postId,
+    },
+    data: {
+      isFeatured: true,
+    },
+  });
+
+  return post;
+}
+
+export async function unfeaturePost(postId: string) {
+  const post = await prisma.post.update({
+    where: {
+      id: postId,
+    },
+    data: {
+      isFeatured: false,
+    },
+  });
+
+  return post;
+}
+
+export async function getPostOrOddjob(
+  entityId: string,
+  entityType: "post" | "oddjob" | undefined
+): Promise<PostWithCategories | OddJob | null | undefined> {
+  if (!entityType) {
+    return;
+  }
+
+  if (entityType === "post") {
+    return prisma.post.findUnique({
+      where: {
+        id: entityId,
+      },
+      include: {
+        categories: true,
+      },
+    });
+  } else {
+    return prisma.oddJob.findUnique({
+      where: {
+        id: entityId,
+      },
+    });
+  }
 }

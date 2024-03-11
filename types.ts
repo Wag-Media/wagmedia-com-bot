@@ -8,6 +8,7 @@ import {
   ContentEarnings,
   Tag,
   Embed,
+  Payment,
 } from "@prisma/client";
 import {
   MessageReaction,
@@ -36,6 +37,10 @@ export type PostEmbed = {
 
 export type PostWithCategories = Post & { categories: Category[] };
 export type PostWithEarnings = Post & { earnings: ContentEarnings[] };
+
+export type OddjobWithEarnings = OddJob & {
+  earnings: ContentEarnings[];
+};
 
 export type PostWithCategoriesTagsEmbeds = Post & {
   categories: Category[];

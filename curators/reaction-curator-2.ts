@@ -33,13 +33,18 @@ import {
 } from "@/data/emoji";
 import {
   addCategory,
+  featurePost,
   fetchPost,
   findOrCreatePost,
   getPost,
+  getPostOrOddjob,
+  getPostOrOddjobReactionCount,
   getPostReactionCount,
   getPostWithEarnings,
   removeCategoryFromPost,
+  resetPostOrOddjobReactions,
   resetPostReactions,
+  unfeaturePost,
 } from "@/data/post";
 import { Type } from "typescript";
 import { discordClient, logger } from "@/client";
@@ -47,14 +52,16 @@ import { PostWithCategories, ReactionEvent, emojiType } from "@/types";
 import {
   deleteReaction,
   getPostReactions,
-  upsertReaction,
+  upsertEntityReaction,
+  upsertOddjobReaction,
+  upsertPostReaction,
 } from "@/data/reaction";
 import { findOrCreateUserFromDiscordUser } from "@/data/user";
 import { MessageCurator } from "@/curators/message-curator";
 import { prisma } from "@/utils/prisma";
 import { isCountryFlag } from "@/utils/is-country-flag";
-import { getOddJob } from "@/data/oddjob";
-import { logPostEarnings } from "@/handlers/log-utils";
+import { getOddJob, getOddjobWithEarnings } from "@/data/oddjob";
+import { logContentEarnings } from "@/handlers/log-utils";
 import { ReactionTracker } from "@/reaction-tracker";
 
 export class ReactionCurator {
@@ -90,6 +97,8 @@ export class ReactionCurator {
       this.guild = await getGuildFromMessage(this.message);
       this.messageLink = `https://discord.com/channels/${this.guild.id}/${reaction.message.channel.id}/${reaction.message.id}`;
       const classifiedMessage = classifyMessage(this.message);
+
+      console.log("classifiedMessage", classifiedMessage);
       this.messageChannelType = classifiedMessage.messageChannelType;
       this.parentId = classifiedMessage.parentId;
 
@@ -109,7 +118,10 @@ export class ReactionCurator {
     this.dbUser = await findOrCreateUserFromDiscordUser(this.discordUser);
     this.dbEmoji = await findOrCreateEmoji(reaction.emoji);
     this.emojiType = await classifyReaction(this.dbEmoji);
-    this.dbMessage = await fetchPost(this.reaction);
+    this.dbMessage = await getPostOrOddjob(
+      this.message.id,
+      this.messageChannelType
+    );
 
     if (!this.guild) {
       throw new Error("Guild is not defined");
@@ -187,14 +199,14 @@ export class ReactionCurator {
     }
 
     if (this.isReactionFromPowerUser) {
-      await this.curatePowerUserPostReactionAdd();
+      await this.curatePowerUserReactionAdd();
     } else {
       await this.curateRegularUserPostReactionAdd();
     }
   }
 
   static async curateOddJobReactionAdd() {
-    // TODO
+    return this.curatePostReactionAdd();
   }
 
   static async curateThreadReactionAdd() {
@@ -203,10 +215,19 @@ export class ReactionCurator {
     }
   }
 
-  static async curatePowerUserPostReactionAdd() {
-    let dbPost = this.dbMessage as Post;
-    this.dbReaction = await upsertReaction(dbPost, this.dbUser!, this.dbEmoji);
+  /**
+   * Handles the addition of a reaction by a power user to either a post or an odd job
+   */
+  static async curatePowerUserReactionAdd() {
+    // 1. insert the reaction to the db
+    this.dbReaction = await upsertEntityReaction(
+      this.dbMessage,
+      this.messageChannelType,
+      this.dbUser!,
+      this.dbEmoji
+    );
 
+    // 2. handle specific emoji types to update relevant other db schemas
     switch (this.emojiType) {
       case "category":
         await this.handleAddCategoryRule();
@@ -218,7 +239,6 @@ export class ReactionCurator {
         await this.handleAddFeatureRule();
         break;
       default:
-        //nothing special to do for regular emojis as already handled in curatePostReaction
         break;
     }
   }
@@ -257,34 +277,42 @@ export class ReactionCurator {
     const amount = paymentRule.paymentAmount;
     const unit = paymentRule.paymentUnit;
 
-    const post = await getPostWithEarnings(this.message.id);
-    if (!post) {
-      throw new Error(`Post for ${this.messageLink} not found.`);
+    const dbPostOrOddjob =
+      this.messageChannelType === "post"
+        ? await getPostWithEarnings(this.message.id)
+        : await getOddjobWithEarnings(this.message.id);
+
+    if (!dbPostOrOddjob) {
+      throw new Error(
+        `${this.messageChannelType} for ${this.messageLink} not found.`
+      );
     }
 
-    const postTotalEarningsInUnit = post.earnings.find(
-      (e) => e.unit === unit
-    )?.totalAmount;
+    // const entityTotalEarnings = dbPostOrOddjob.earnings.find(
+    //   (e) => e.unit === unit
+    // )?.totalAmount;
 
-    // if (!postTotalEarningsInUnit) {
-    //   logger.log(`[post] The post ${this.messageLink} has been published.`);
-    // }
+    const earningsCondition =
+      this.messageChannelType === "post"
+        ? { postId: dbPostOrOddjob.id }
+        : { oddJobId: dbPostOrOddjob.id };
+
+    const whereEarningsCondition =
+      this.messageChannelType === "post"
+        ? { postId_unit: { postId: dbPostOrOddjob.id, unit } }
+        : { oddJobId_unit: { oddJobId: dbPostOrOddjob.id, unit } };
 
     // add or update the post earnings (this is adding redundancy but makes querying easier)
     await prisma.contentEarnings.upsert({
-      where: {
-        postId_unit: {
-          postId: post.id,
-          unit,
-        },
-      },
+      //todo
+      where: whereEarningsCondition,
       update: {
         totalAmount: {
           increment: amount,
         },
       },
       create: {
-        postId: post.id,
+        ...earningsCondition,
         unit,
         totalAmount: amount,
       },
@@ -297,38 +325,53 @@ export class ReactionCurator {
       throw new Error("dbReaction is not defined");
     }
 
+    const paymentData = {
+      amount,
+      unit,
+      [this.messageChannelType === "post" ? "postId" : "oddJobId"]:
+        dbPostOrOddjob.id,
+      fundingSource: paymentRule.fundingSource,
+      userId: this.dbUser.id,
+      reactionId: this.dbReaction.id,
+      status: "unknown", // TODO: implement payment status
+    };
+
     // Insert a payment record
     await prisma.payment.create({
-      data: {
-        amount: amount,
-        unit: unit,
-        fundingSource: paymentRule.fundingSource,
-        postId: post.id,
-        userId: this.dbUser.id,
-        reactionId: this.dbReaction.id,
-        status: "unknown", // TODO: implement payment status
-      },
+      data: paymentData,
     });
 
     // Update the post to set isPublished to true
-    if (!post.isPublished) {
+    if (
+      this.messageChannelType === "post" &&
+      !(dbPostOrOddjob as Post).isPublished
+    ) {
       await prisma.post.update({
-        where: { id: post.id },
+        where: { id: dbPostOrOddjob.id },
         data: { isPublished: true },
       });
       logger.log(`[post] The post ${this.messageLink} has been published.`);
     }
 
-    await logPostEarnings(post, this.messageLink || "");
+    await logContentEarnings(
+      dbPostOrOddjob,
+      this.messageChannelType,
+      this.messageLink || ""
+    );
   }
 
   static async handleAddFeatureRule() {
-    logger.log(`[feature] TODO Feature rule added to ${this.messageLink}.`);
+    await featurePost(this.message.id);
+    logger.log(`[post][feature] Post is now featured ${this.messageLink}.`);
   }
 
   private static async curateRegularUserPostReactionAdd() {
     let dbPost = this.dbMessage as Post;
-    this.dbReaction = await upsertReaction(dbPost, this.dbUser!, this.dbEmoji);
+    this.dbReaction = await upsertPostReaction(
+      dbPost,
+      this.dbUser!,
+      this.dbEmoji
+    );
   }
 
   public static async curateRemove(
@@ -384,6 +427,7 @@ export class ReactionCurator {
       throw new Error("post is not defined");
     }
 
+    //todo maybe the deletion can be put here?
     if (this.isReactionFromPowerUser) {
       await this.curatePowerUserPostReactionRemove();
     } else {
@@ -393,17 +437,33 @@ export class ReactionCurator {
     // Additional tasks for special emojis can be handled here
   }
 
+  private static async curateOddJobReactionRemove() {
+    return this.curatePostReactionRemove();
+  }
+
+  private static async curateThreadReactionRemove() {
+    // TODO
+  }
+
   private static async curatePowerUserPostReactionRemove() {
+    // 1. delete the reaction from the db
+    const whereCondition =
+      this.messageChannelType === "post"
+        ? { postId: this.dbMessage!.id }
+        : { oddJobId: this.dbMessage!.id };
+
     this.dbReaction = await prisma.reaction.findFirst({
       where: {
+        ...whereCondition,
         userDiscordId: this.dbUser!.discordId,
-        postId: this.dbMessage!.id,
         emojiId: this.dbEmoji.id,
       },
     });
 
     if (!this.dbReaction) {
-      throw new Error("Reaction to remove not found in the db");
+      throw new Error(
+        `[${this.messageChannelType}] Reaction for ${this.messageLink} not found in the db.`
+      );
     }
 
     await prisma.reaction.delete({
@@ -412,6 +472,7 @@ export class ReactionCurator {
       },
     });
 
+    // 2. handle specific emoji types to update relevant other db schemas
     switch (this.emojiType) {
       case "category":
         await this.handleRemoveCategoryRule();
@@ -423,9 +484,23 @@ export class ReactionCurator {
         await this.handleRemoveFeatureRule();
         break;
       default:
-        //nothing special to do for regular emojis as already handled
         break;
     }
+  }
+
+  /**
+   * power user oddjob reaction removes are the same as post reaction removes
+   * @returns
+   */
+  private static curatePowerUserOddJobReactionRemove() {
+    return this.curatePowerUserPostReactionRemove();
+  }
+
+  /**
+   * regular user oddjob reaction removes are the same as post reaction removes
+   */
+  private static curateRegularUserOddJobReactionRemove() {
+    return this.curateRegularUserPostReactionRemove();
   }
 
   private static async handleRemoveCategoryRule() {
@@ -467,21 +542,35 @@ export class ReactionCurator {
   private static async handleRemovePaymentRule() {
     console.log("handling remove payment rule", this.dbEmoji.id);
 
-    const post = await getPostWithEarnings(this.message.id);
-    if (!post) {
+    const dbPostOrOddjob =
+      this.messageChannelType === "post"
+        ? await getPostWithEarnings(this.message.id)
+        : await getOddjobWithEarnings(this.message.id);
+
+    if (!dbPostOrOddjob) {
       throw new Error(`Post for ${this.messageLink} not found.`);
     }
 
     // Retrieve the payment rule for the reaction emoji
     const paymentRule = await findEmojiPaymentRule(this.dbEmoji.id);
+    if (!paymentRule) {
+      throw new Error(`Payment rule for ${this.messageLink} not found.`);
+    }
+    const amount = paymentRule.paymentAmount;
+    const unit = paymentRule.paymentUnit;
 
     if (!paymentRule) {
       throw new Error(`Payment rule for ${this.messageLink} not found.`);
     }
 
+    const whereCondition =
+      this.messageChannelType === "post"
+        ? { postId: dbPostOrOddjob.id }
+        : { oddJobId: dbPostOrOddjob.id };
+
     // Fetch all reactions for the post and filter in code to include only those with a PaymentRule
     const remainingReactions = await prisma.reaction.findMany({
-      where: { postId: post.id },
+      where: whereCondition,
       include: {
         emoji: {
           include: {
@@ -497,9 +586,12 @@ export class ReactionCurator {
     );
 
     // If no payment emojis are left, unpublish the post
-    if (remainingPaymentEmojis.length === 0) {
+    if (
+      this.messageChannelType === "post" &&
+      remainingPaymentEmojis.length === 0
+    ) {
       await prisma.post.update({
-        where: { id: post.id },
+        where: { id: dbPostOrOddjob.id },
         data: { isPublished: false },
       });
       logger.log(
@@ -515,29 +607,40 @@ export class ReactionCurator {
       return total + (rule?.paymentAmount || 0);
     }, 0);
 
+    const earningsCondition =
+      this.messageChannelType === "post"
+        ? { postId: dbPostOrOddjob.id }
+        : { oddJobId: dbPostOrOddjob.id };
+
+    const whereEarningsCondition =
+      this.messageChannelType === "post"
+        ? { postId_unit: { postId: dbPostOrOddjob.id, unit } }
+        : { oddJobId_unit: { oddJobId: dbPostOrOddjob.id, unit } };
+
     // Update the post's total earnings for the specific unit
     await prisma.contentEarnings.upsert({
-      where: {
-        postId_unit: {
-          postId: post.id,
-          unit: paymentRule.paymentUnit,
-        },
-      },
+      where: whereEarningsCondition,
       update: {
         totalAmount: updatedTotalEarnings,
       },
       create: {
-        postId: post.id,
+        ...earningsCondition,
         unit: paymentRule.paymentUnit,
         totalAmount: updatedTotalEarnings,
       },
     });
 
-    await logPostEarnings(post, this.messageLink || "");
+    //todo make this odd job valid too
+    await logContentEarnings(
+      dbPostOrOddjob,
+      this.messageChannelType,
+      this.messageLink || ""
+    );
   }
 
   private static async handleRemoveFeatureRule() {
-    logger.log(`[feature] TODO Feature rule removed from ${this.messageLink}.`);
+    await unfeaturePost(this.message.id);
+    logger.log(`[feature] Feature rule removed from ${this.messageLink}.`);
   }
 
   private static async curateRegularUserPostReactionRemove() {
@@ -554,21 +657,17 @@ export class ReactionCurator {
     }
   }
 
-  private static async curateOddJobReactionRemove() {
-    // TODO
-  }
-
-  private static async curateThreadReactionRemove() {
-    // TODO
-  }
-
   private static async removeReaction(
     reaction: MessageReaction,
     user: DiscordUser
   ): Promise<void> {
     // Add logic to handle a reaction removal
     let dbPost = this.dbMessage as Post;
-    this.dbReaction = await upsertReaction(dbPost, this.dbUser!, this.dbEmoji);
+    this.dbReaction = await upsertPostReaction(
+      dbPost,
+      this.dbUser!,
+      this.dbEmoji
+    );
 
     // Additional tasks for special emojis can be handled here
   }
@@ -577,7 +676,7 @@ export class ReactionCurator {
     messageReactions: Collection<string, MessageReaction>
   ): Promise<void> {
     // 1. remove all reactions and payments and soon to start fresh
-    await resetPostReactions(this.message.id);
+    await resetPostOrOddjobReactions(this.message.id, this.messageChannelType);
 
     // 2. iterate over all reactions and re-add them
     for (const [, messageReaction] of messageReactions) {
@@ -600,29 +699,36 @@ export class ReactionCurator {
       return true;
     }
 
-    const dbPost = await fetchPost(this.reaction);
-    if (!dbPost) {
+    const dbPostOrOddjob = await getPostOrOddjob(
+      this.message.id,
+      this.messageChannelType
+    );
+
+    if (!dbPostOrOddjob) {
       logger.warn(
-        `[post] Post with ID ${this.reaction.message.id} not found in the database.`
+        `[${this.messageChannelType}] ${this.messageChannelType} with id ${this.reaction.message.id} not found in the database.`
       );
       return true;
     }
 
-    const dbPostReactionCount = await getPostReactionCount(this.message.id);
-    if (dbPostReactionCount === undefined) {
+    const dbPostOrOddjobReactionCount = await getPostOrOddjobReactionCount(
+      this.message.id,
+      this.messageChannelType
+    );
+    if (!dbPostOrOddjobReactionCount) {
       logger.warn(
-        `[post] Post with ID ${this.reaction.message.id} has no reactions in the database.`
+        `[${this.messageChannelType}] ${this.messageChannelType} with id ${this.reaction.message.id} has no reactions in the database.`
       );
       return true;
     }
 
-    const postReactionCount = this.reaction.message.reactions.cache.size;
+    const discordReactionCount = this.reaction.message.reactions.cache.size;
 
-    if (postReactionCount !== dbPostReactionCount + 1) {
+    if (discordReactionCount !== dbPostOrOddjobReactionCount + 1) {
       logger.warn(
-        `[post] Post with ID ${this.reaction.message.id} has a different number of reactions in the database.`,
-        ` discord: ${postReactionCount - 1}`,
-        ` db: ${dbPostReactionCount}`
+        `[${this.messageChannelType}] ${this.messageChannelType} with ID ${this.reaction.message.id} has a different number of reactions in the database.`,
+        ` discord: ${discordReactionCount - 1}`,
+        ` db: ${dbPostOrOddjobReactionCount}`
       );
       return true;
     }
@@ -714,7 +820,11 @@ export class ReactionCurator {
       }
 
       // when adding non anglo emoji, make sure the post has a flag
-      if (post.isPublished && this.reaction.emoji.name === "WMNAO") {
+      if (
+        post.isPublished &&
+        (this.reaction.emoji.name === config.categoryEmojiMap["Non Anglo"] ||
+          this.reaction.emoji.name === config.categoryEmojiMap.Translations)
+      ) {
         //get post reactions
         const postReactions = await getPostReactions(this.message.id);
 
@@ -725,12 +835,25 @@ export class ReactionCurator {
 
         if (!hasFlag) {
           logger.logAndSend(
-            `Before you can add the non anglo emoji to the published post ${this.messageLink}, make sure it has a flag.`,
+            `Before you can add the non anglo or translation emoji to the published post ${this.messageLink}, make sure it has a flag.`,
             this.discordUser
           );
 
           throw new Error("Post is non anglo and has no flag");
         }
+      }
+    }
+
+    if (this.messageChannelType === "oddjob") {
+      const oddJob = this.dbMessage as OddJob;
+      if (!oddJob) {
+        logger.warn("Odd job not found in the database.");
+        throw new Error("Odd job not found");
+      }
+
+      // cannot add category emojis or featured emojis to odd jobs
+      if (this.emojiType === "category" || this.emojiType === "feature") {
+        throw new Error(`You cannot add ${this.emojiType} emojis to odd jobs.`);
       }
     }
 

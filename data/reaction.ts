@@ -30,6 +30,31 @@ export async function getPostReactions(postId: string) {
   return dbReactions;
 }
 
+export async function upsertEntityReaction(
+  entity: Post | OddJob | undefined | null,
+  entityType: "post" | "oddjob" | undefined,
+  dbUser: User,
+  dbEmoji: Emoji
+) {
+  if (!entityType || !entity) {
+    logger.warn("Invalid content entityType in upsertEntityReaction");
+    return;
+  }
+
+  let dbReaction;
+
+  if (entityType == "post") {
+    dbReaction = await upsertPostReaction(entity as Post, dbUser, dbEmoji);
+  } else {
+    dbReaction = await upsertOddjobReaction(entity as OddJob, dbUser, dbEmoji);
+  }
+
+  if (!dbReaction) {
+    throw new Error("Reaction could not be upserted");
+  }
+  return dbReaction;
+}
+
 /**
  * Upsert a reaction
  * @param post
@@ -37,19 +62,23 @@ export async function getPostReactions(postId: string) {
  * @param emoji
  * @returns
  */
-export async function upsertReaction(post: Post, dbUser: User, emoji: Emoji) {
+export async function upsertPostReaction(
+  post: Post,
+  dbUser: User,
+  dbEmoji: Emoji
+) {
   const dbReaction = await prisma.reaction.upsert({
     where: {
       postId_userDiscordId_emojiId: {
         postId: post.id,
-        emojiId: emoji.id,
+        emojiId: dbEmoji.id,
         userDiscordId: dbUser.discordId,
       },
     },
     update: {},
     create: {
       postId: post.id,
-      emojiId: emoji.id,
+      emojiId: dbEmoji.id,
       userDiscordId: dbUser.discordId,
     },
   });

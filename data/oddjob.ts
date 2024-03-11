@@ -1,7 +1,14 @@
-import { ContentEarnings, OddJob, Payment, PrismaClient } from "@prisma/client";
+import {
+  ContentEarnings,
+  Emoji,
+  OddJob,
+  Payment,
+  PrismaClient,
+} from "@prisma/client";
 import { Message, MessageReaction, PartialMessage, User } from "discord.js";
 import { findOrCreateUser, findOrCreateUserFromDiscordUser } from "@/data/user";
 import { logger } from "@/client";
+import { OddjobWithEarnings } from "@/types";
 const prisma = new PrismaClient();
 
 // id              String    @id
@@ -59,10 +66,60 @@ export async function findOrCreateOddJob(
   });
 }
 
+/**
+ * Upsert an oddjob reaction
+ * @param oddjob
+ * @param dbUser
+ * @param emoji
+ * @returns
+ */
+export async function upsertOddjobReaction(
+  oddjob: OddJob,
+  dbUser: User,
+  dbEmoji: Emoji
+) {
+  const dbReaction = await prisma.reaction.upsert({
+    where: {
+      oddJobId_userDiscordId_emojiId: {
+        oddJobId: oddjob.id,
+        emojiId: dbEmoji.id,
+        userDiscordId: dbUser.id,
+      },
+    },
+    update: {},
+    create: {
+      oddJobId: oddjob.id,
+      emojiId: dbEmoji.id,
+      userDiscordId: dbUser.id,
+    },
+  });
+
+  if (!dbReaction) {
+    throw new Error("Reaction could not be upserted");
+  }
+  return dbReaction;
+}
+
 export async function getOddJob(id: string): Promise<OddJob | null> {
   return prisma.oddJob.findUnique({
     where: { id },
   });
+}
+
+export async function getOddjobWithEarnings(
+  oddJobId: string
+): Promise<OddjobWithEarnings | null> {
+  const oddjob = await prisma.oddJob.findUnique({
+    where: { id: oddJobId },
+    include: { earnings: true },
+  });
+
+  if (!oddjob) {
+    logger.warn(
+      `[oddjob] Oddjob with ID ${oddJobId} not found in the database.`
+    );
+  }
+  return oddjob;
 }
 
 export async function fetchOddjob(

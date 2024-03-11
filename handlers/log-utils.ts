@@ -38,12 +38,21 @@ export function logEmojiRemoved(
   );
 }
 
-export async function logPostEarnings(post: Post, messageLink: string) {
+export async function logContentEarnings(
+  entity: Post | OddJob,
+  entityType: "post" | "oddjob" | undefined,
+  messageLink: string
+) {
+  if (entityType !== "post" && entityType !== "oddjob") {
+    logger.error("Invalid content entityType in logContentEarnings");
+  }
+
+  const earningsCondition =
+    entityType === "post" ? { postId: entity.id } : { oddJobId: entity.id };
+
   // Fetch all earnings for the post after the update
   const allPostEarnings = await prisma.contentEarnings.findMany({
-    where: {
-      postId: post.id,
-    },
+    where: earningsCondition,
   });
 
   // log the total earnings of the post
@@ -58,7 +67,7 @@ export async function logPostEarnings(post: Post, messageLink: string) {
     .join(", ");
 
   logger.log(
-    `[post] New total earnings for ${messageLink}: ${humanReadableTotalEarnings}`
+    `[${entityType}] New total earnings for ${messageLink}: ${humanReadableTotalEarnings}`
   );
 }
 
