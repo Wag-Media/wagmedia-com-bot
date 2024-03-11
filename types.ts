@@ -48,6 +48,7 @@ export type PostWithCategoriesTagsEmbeds = Post & {
   embeds: Embed[];
 };
 
-export type emojiType = "regular" | "feature" | "category" | "payment";
-
-export type ReactionEvent = "reactionAdd" | "reactionRemove";
+export type UserRole = "superuser" | "regular";
+export type ContentType = "oddjob" | "post" | "thread" | undefined;
+export type EmojiType = "regular" | "feature" | "category" | "payment";
+export type ReactionEventType = "reactionAdd" | "reactionRemove";
