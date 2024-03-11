@@ -86,7 +86,8 @@ discordClient.on(Events.MessageCreate, async (message) => {
 
 discordClient.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
   try {
-    // await handleMessageUpdate(oldMessage, newMessage);
+    const { message: oldFullMessage } = await ensureFullMessage(oldMessage);
+    await MessageCurator.curateUpdate(oldFullMessage, newMessage);
   } catch (error) {
     console.error("Error in messageUpdate event handler:", error);
   }

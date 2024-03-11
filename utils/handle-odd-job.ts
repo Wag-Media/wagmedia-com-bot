@@ -77,7 +77,6 @@ export async function handleOddJob(
             oddJobId: oddJob!.id,
           };
 
-          // Use the storeFile function to save the attachment
           try {
             await storeAttachment(attachmentData);
             logger.log(`↪ Attachment ${attachment.name} saved successfully.`);
@@ -86,7 +85,9 @@ export async function handleOddJob(
           }
         } else {
           logger.logAndSend(
-            `🚨 Attachment ${attachment.name} for ${messageLink} exceeds the 5MB size limit and won't be saved.`,
+            `🚨 Attachment ${attachment.name} for ${messageLink} exceeds the ${
+              config.MAX_FILE_SIZE / 1024 / 1024
+            }MB size limit and won't be saved.`,
             message.author!
           );
         }

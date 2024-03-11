@@ -102,11 +102,6 @@ export function classifyMessage(message: Message | PartialMessage) {
     parentId = message.channelId;
   }
 
-  if (message.channel.isThread()) {
-    console.log("message.channel.isThread()", message.channel.isThread());
-    console.log("message.channel.parent", message);
-  }
-
   if (parentId) {
     if (
       isCategoryMonitoredForPosts(parentChannel) ||

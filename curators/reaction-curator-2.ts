@@ -96,6 +96,12 @@ export class ReactionCurator {
       throw new Error("Message is to be ignored");
     }
 
+    console.log(
+      "initialize",
+      reaction.emoji.name || reaction.emoji.id,
+      this.message.content
+    );
+
     if (!this.handlingDiscrepancy) {
       this.guild = await getGuildFromMessage(this.message);
       this.messageLink = `https://discord.com/channels/${this.guild.id}/${reaction.message.channel.id}/${reaction.message.id}`;
@@ -629,7 +635,6 @@ export class ReactionCurator {
       },
     });
 
-    //todo make this odd job valid too
     await logContentEarnings(
       dbPostOrOddjob,
       this.messageChannelType,

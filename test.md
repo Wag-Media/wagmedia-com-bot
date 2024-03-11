@@ -104,6 +104,8 @@ following fields is missing:
 - 1️⃣⭕️ if an oddjob message that is paid gets deleted, it stays in the db and
   gets flagged as deleted
 
+- ??? if a post message with threads gets deleted?
+
 ## add reactions
 
 ### Posts
@@ -172,7 +174,7 @@ following fields is missing:
 
 ### Odd Jobs
 
-- ?
+- same as in posts for payments
 
 ## Old Messages
 
