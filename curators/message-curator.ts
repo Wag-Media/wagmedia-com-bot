@@ -1,3 +1,4 @@
+import { logger } from "@/client";
 import {
   classifyMessage,
   isCategoryMonitoredForPosts,
@@ -16,7 +17,9 @@ import { Channel, Message } from "discord.js";
  * and other logics related to message parsing
  */
 export class MessageCurator {
-  messageChannelType: "post" | "oddjob" | undefined;
+  private static messageChannelType: "post" | "oddjob" | undefined;
+  private static parentId: string | undefined;
+  private static messageLink: string;
 
   static async curate(
     message: Message,
@@ -26,15 +29,26 @@ export class MessageCurator {
       return;
     }
 
-    const messageLink = `https://discord.com/channels/${message.guild?.id}/${message.channel.id}/${message.id}`;
+    this.messageLink = `https://discord.com/channels/${message.guild?.id}/${message.channel.id}/${message.id}`;
 
     const classifiedMessage = classifyMessage(message);
-    const messageChannelType = classifiedMessage.messageChannelType;
+    this.messageChannelType = classifiedMessage.messageChannelType;
+    this.parentId = classifiedMessage.parentId;
 
-    if (messageChannelType === "post") {
-      return await handlePost(message, messageLink);
-    } else if (messageChannelType === "oddjob") {
-      return await handleOddJob(message, messageLink);
+    if (this.messageChannelType === "post" && !this.parentId) {
+      return await handlePost(message, this.messageLink);
+    } else if (this.messageChannelType === "oddjob") {
+      return await handleOddJob(message, this.messageLink);
+    } else if (this.messageChannelType === "post" && this.parentId) {
+      // skip thread messages, they will only be added to the db after they received an emoji
+      // check the reaction curator
+      logger.info(
+        `[post] Thread message detected: ${this.messageLink}, skipping`
+      );
+    } else {
+      logger.error(
+        `[post] Message type not recognized: ${this.messageLink}, skipping`
+      );
     }
   }
 }

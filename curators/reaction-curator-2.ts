@@ -36,6 +36,7 @@ import {
   featurePost,
   fetchPost,
   findOrCreatePost,
+  findOrCreateThreadPost,
   getPost,
   getPostOrOddjob,
   getPostOrOddjobReactionCount,
@@ -50,6 +51,7 @@ import { Type } from "typescript";
 import { discordClient, logger } from "@/client";
 import { PostWithCategories, ReactionEvent, emojiType } from "@/types";
 import {
+  deleteEntityReaction,
   deleteReaction,
   getPostReactions,
   upsertEntityReaction,
@@ -63,6 +65,7 @@ import { isCountryFlag } from "@/utils/is-country-flag";
 import { getOddJob, getOddjobWithEarnings } from "@/data/oddjob";
 import { logContentEarnings } from "@/handlers/log-utils";
 import { ReactionTracker } from "@/reaction-tracker";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 export class ReactionCurator {
   private static handlingDiscrepancy: boolean = false;
@@ -76,7 +79,7 @@ export class ReactionCurator {
   private static messageLink: string | undefined;
   private static messageChannelType: "post" | "oddjob" | undefined;
   private static dbMessage: PostWithCategories | OddJob | null | undefined;
-  private static parentId: string | undefined;
+  private static parentId: string | null | undefined;
   private static isReactionFromPowerUser: boolean = false;
   private static guild: Guild | null;
 
@@ -109,7 +112,9 @@ export class ReactionCurator {
         this.dbMessage = await getOddJob(this.message.id);
       }
 
-      if (!this.dbMessage) {
+      // If the message is not found in the database, curate it = insert it
+      // but only if it is not a thread, threads are only inserted when they get a payment reaction
+      if (!this.dbMessage && !this.parentId) {
         logger.warn("Message not found in the database.");
         //todo remove the waspartial logic here
         this.dbMessage = await MessageCurator.curate(this.message, false);
@@ -159,11 +164,11 @@ export class ReactionCurator {
     try {
       await this.isReactionAddPermitted();
 
-      if (this.messageChannelType === "post") {
+      if (this.messageChannelType === "post" && !this.parentId) {
         await this.curatePostReactionAdd();
       } else if (this.messageChannelType === "oddjob") {
         await this.curateOddJobReactionAdd();
-      } else if (this.parentId) {
+      } else if (this.messageChannelType === "post" && this.parentId) {
         await this.curateThreadReactionAdd();
       } else {
         logger.warn("Message type not recognized. Skipping reaction curation.");
@@ -177,8 +182,9 @@ export class ReactionCurator {
 
       // If any error occurs, remove the reaction from from discord
       console.log(
-        "because an error occored, bot will remove the reaction",
-        this.reaction.emoji.name || this.reaction.emoji.id
+        `because an error occored, bot will remove the reaction ${
+          this.reaction.emoji.name || this.reaction.emoji.id
+        } by ${this.discordUser.username}`
       );
 
       ReactionTracker.addReactionToTrack(reaction);
@@ -201,7 +207,7 @@ export class ReactionCurator {
     if (this.isReactionFromPowerUser) {
       await this.curatePowerUserReactionAdd();
     } else {
-      await this.curateRegularUserPostReactionAdd();
+      await this.curateRegularUserReactionAdd();
     }
   }
 
@@ -210,9 +216,25 @@ export class ReactionCurator {
   }
 
   static async curateThreadReactionAdd() {
-    if (!this.isReactionFromPowerUser) {
+    // only consider payment reactions
+    if (this.emojiType !== "payment") {
       return;
     }
+
+    // 1. insert the thread as a post into the db
+    console.log("this db message before", this.dbMessage);
+    if (!this.dbMessage) {
+      this.dbMessage = await findOrCreateThreadPost({
+        message: this.message,
+        content: this.message.content,
+        url: this.messageLink || "",
+      });
+
+      console.log("this db message now", this.dbMessage);
+    }
+
+    // 2. continue handling the reaction as a post reaction
+    this.curatePostReactionAdd();
   }
 
   /**
@@ -220,12 +242,7 @@ export class ReactionCurator {
    */
   static async curatePowerUserReactionAdd() {
     // 1. insert the reaction to the db
-    this.dbReaction = await upsertEntityReaction(
-      this.dbMessage,
-      this.messageChannelType,
-      this.dbUser!,
-      this.dbEmoji
-    );
+    await this.curateRegularUserReactionAdd();
 
     // 2. handle specific emoji types to update relevant other db schemas
     switch (this.emojiType) {
@@ -334,7 +351,10 @@ export class ReactionCurator {
       userId: this.dbUser.id,
       reactionId: this.dbReaction.id,
       status: "unknown", // TODO: implement payment status
+      threadParentId: this.parentId,
     };
+
+    console.log("payment data", paymentData);
 
     // Insert a payment record
     await prisma.payment.create({
@@ -344,6 +364,7 @@ export class ReactionCurator {
     // Update the post to set isPublished to true
     if (
       this.messageChannelType === "post" &&
+      !this.parentId &&
       !(dbPostOrOddjob as Post).isPublished
     ) {
       await prisma.post.update({
@@ -365,10 +386,11 @@ export class ReactionCurator {
     logger.log(`[post][feature] Post is now featured ${this.messageLink}.`);
   }
 
-  private static async curateRegularUserPostReactionAdd() {
-    let dbPost = this.dbMessage as Post;
-    this.dbReaction = await upsertPostReaction(
-      dbPost,
+  private static async curateRegularUserReactionAdd() {
+    // just insert the reaction to the db
+    this.dbReaction = await upsertEntityReaction(
+      this.dbMessage,
+      this.messageChannelType,
       this.dbUser!,
       this.dbEmoji
     );
@@ -431,7 +453,7 @@ export class ReactionCurator {
     if (this.isReactionFromPowerUser) {
       await this.curatePowerUserPostReactionRemove();
     } else {
-      await this.curateRegularUserPostReactionRemove();
+      await this.curateRegularUserReactionRemove();
     }
 
     // Additional tasks for special emojis can be handled here
@@ -447,30 +469,7 @@ export class ReactionCurator {
 
   private static async curatePowerUserPostReactionRemove() {
     // 1. delete the reaction from the db
-    const whereCondition =
-      this.messageChannelType === "post"
-        ? { postId: this.dbMessage!.id }
-        : { oddJobId: this.dbMessage!.id };
-
-    this.dbReaction = await prisma.reaction.findFirst({
-      where: {
-        ...whereCondition,
-        userDiscordId: this.dbUser!.discordId,
-        emojiId: this.dbEmoji.id,
-      },
-    });
-
-    if (!this.dbReaction) {
-      throw new Error(
-        `[${this.messageChannelType}] Reaction for ${this.messageLink} not found in the db.`
-      );
-    }
-
-    await prisma.reaction.delete({
-      where: {
-        id: this.dbReaction.id,
-      },
-    });
+    this.curateRegularUserReactionRemove();
 
     // 2. handle specific emoji types to update relevant other db schemas
     switch (this.emojiType) {
@@ -500,7 +499,7 @@ export class ReactionCurator {
    * regular user oddjob reaction removes are the same as post reaction removes
    */
   private static curateRegularUserOddJobReactionRemove() {
-    return this.curateRegularUserPostReactionRemove();
+    return this.curateRegularUserReactionRemove();
   }
 
   private static async handleRemoveCategoryRule() {
@@ -643,17 +642,26 @@ export class ReactionCurator {
     logger.log(`[feature] Feature rule removed from ${this.messageLink}.`);
   }
 
-  private static async curateRegularUserPostReactionRemove() {
+  private static async curateRegularUserReactionRemove() {
+    if (!this.dbMessage) {
+      throw new Error("dbMessage is not defined in regularUserReactionRemove");
+    } else if (!this.discordUser) {
+      throw new Error("dbUser is not defined in regularUserReactionRemove");
+    }
+
     try {
-      // dbEmoji.id is not null because we checked for it in getPostUserEmojiFromReaction
-      await deleteReaction(
-        this.dbMessage!.id,
-        this.discordUser!.id,
+      await deleteEntityReaction(
+        this.dbMessage,
+        this.messageChannelType,
+        this.discordUser.id,
         this.dbEmoji.id
       );
     } catch (error) {
-      console.warn("Error in curateRegularUserPostReactionRemove:", error);
-      return;
+      if (error instanceof PrismaClientKnownRequestError) {
+        return;
+      } else {
+        console.warn("error in regularUserReactionRemove", error);
+      }
     }
   }
 
@@ -699,16 +707,27 @@ export class ReactionCurator {
       return true;
     }
 
+    if (this.parentId) {
+      return false;
+    }
+
     const dbPostOrOddjob = await getPostOrOddjob(
       this.message.id,
       this.messageChannelType
     );
 
     if (!dbPostOrOddjob) {
-      logger.warn(
-        `[${this.messageChannelType}] ${this.messageChannelType} with id ${this.reaction.message.id} not found in the database.`
-      );
-      return true;
+      // if the message is a thread it is not necessarily in the db yet
+      // as it will only be added on payment. so we can ignore it here
+      // if it is already tracked the discrepancy detection will continue below in another case
+      if (this.parentId) {
+        return false;
+      } else {
+        logger.warn(
+          `[${this.messageChannelType}] detectDiscrepancy: ${this.messageChannelType} with id ${this.reaction.message.id} not found in the database.`
+        );
+        return true;
+      }
     }
 
     const dbPostOrOddjobReactionCount = await getPostOrOddjobReactionCount(
@@ -739,6 +758,10 @@ export class ReactionCurator {
   private static async isReactionAddPermitted(): Promise<boolean> {
     // 0. regular users can only add regular emojis
     if (!this.isReactionFromPowerUser && this.emojiType !== "regular") {
+      await logger.logAndSend(
+        `Regular users cannot add ${this.emojiType} emojis to messages.`,
+        this.discordUser
+      );
       throw new Error(
         `Regular users cannot add ${this.emojiType} emojis to messages.`
       );
@@ -753,7 +776,7 @@ export class ReactionCurator {
       throw new Error("Post is deleted");
     }
 
-    if (this.messageChannelType === "post") {
+    if (this.messageChannelType === "post" && !this.parentId) {
       const post = this.dbMessage as PostWithCategories;
       if (!post) {
         logger.warn("Post not found in the database.");
@@ -804,7 +827,7 @@ export class ReactionCurator {
           }
         }
 
-        // 3. make sure translation posts have a non anglo category
+        // 1.4. make sure translation posts have a non anglo category
         const isTranslation = post.categories.some((category) =>
           category.name.includes("Translations")
         );
@@ -819,7 +842,7 @@ export class ReactionCurator {
         }
       }
 
-      // when adding non anglo emoji, make sure the post has a flag
+      // 3. when adding non anglo emoji to published posts, make sure the post has a flag
       if (
         post.isPublished &&
         (this.reaction.emoji.name === config.categoryEmojiMap["Non Anglo"] ||
@@ -844,16 +867,30 @@ export class ReactionCurator {
       }
     }
 
+    // 4. oddjobs
     if (this.messageChannelType === "oddjob") {
+      //4.1 only power users can add emojis to oddjobs
+      if (!this.isReactionFromPowerUser) {
+        throw new Error("Regular users cannot add emojis to oddjobs");
+      }
+
       const oddJob = this.dbMessage as OddJob;
       if (!oddJob) {
         logger.warn("Odd job not found in the database.");
         throw new Error("Odd job not found");
       }
 
-      // cannot add category emojis or featured emojis to odd jobs
+      // 4.2 cannot add category emojis or featured emojis to odd jobs
       if (this.emojiType === "category" || this.emojiType === "feature") {
-        throw new Error(`You cannot add ${this.emojiType} emojis to odd jobs.`);
+        throw new Error(`Cannot add ${this.emojiType} emojis to odd jobs.`);
+      }
+    }
+
+    // 5. threads
+    if (this.messageChannelType === "post" && this.parentId) {
+      //5.1.cannot add category emojis or featured emojis to threads
+      if (this.emojiType === "category" || this.emojiType === "feature") {
+        throw new Error(`Cannot add ${this.emojiType} emojis to threads.`);
       }
     }
 
@@ -868,6 +905,24 @@ export class ReactionCurator {
   private static async isPaymentReactionValid(
     paymentRule: PaymentRule
   ): Promise<boolean> {
+    // 1. if oddjob then only manager can pay
+    if (this.messageChannelType === "oddjob") {
+      const oddJob = this.dbMessage as OddJob;
+      if (!oddJob) {
+        logger.warn("Odd job not found in the database.");
+        throw new Error("Odd job not found");
+      }
+
+      if (oddJob.managerId !== this.discordUser.id) {
+        logger.logAndSend(
+          `You do not have permission to add payment reactions in ${this.messageLink}, only the assigned manager can do that.`,
+          this.discordUser
+        );
+        return false;
+      }
+    }
+
+    // 2. payments are only valid if they match the first payment's unit
     const paymentCondition =
       this.messageChannelType === "post"
         ? { postId: this.message.id }
@@ -894,16 +949,6 @@ export class ReactionCurator {
       );
       return true;
     }
-
-    console.log(
-      `paymentRule.paymentUnit ${paymentRule.paymentUnit} firstPayment.unit ${firstPayment.reaction.emoji.name}`
-    );
-
-    console.log(
-      `payment rule above is valid`,
-      paymentRule.paymentUnit === firstPayment.unit &&
-        paymentRule.fundingSource === firstPayment.fundingSource
-    );
 
     // Validate the reaction's payment rule against the first payment's rule
     return (

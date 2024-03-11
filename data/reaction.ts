@@ -55,6 +55,38 @@ export async function upsertEntityReaction(
   return dbReaction;
 }
 
+export async function deleteEntityReaction(
+  entity: Post | OddJob | undefined | null,
+  entityType: "post" | "oddjob" | undefined,
+  userId: string,
+  emojiId: string
+) {
+  if (!entityType || !entity) {
+    logger.warn("Invalid content entityType in upsertEntityReaction");
+    return;
+  }
+
+  const whereCondition =
+    entityType === "post"
+      ? {
+          postId_userDiscordId_emojiId: {
+            postId: entity.id,
+            emojiId,
+            userDiscordId: userId,
+          },
+        }
+      : {
+          oddJobId_userDiscordId_emojiId: {
+            oddJobId: entity.id,
+            emojiId,
+            userDiscordId: userId,
+          },
+        };
+  await prisma.reaction.delete({
+    where: whereCondition,
+  });
+}
+
 /**
  * Upsert a reaction
  * @param post

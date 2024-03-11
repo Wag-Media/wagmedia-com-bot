@@ -129,6 +129,7 @@ following fields is missing:
 
 - 1️⃣ the bot monitors payment reactions to valid posts in the corresponding
   thread and inserts a payment to the db
+- the parent post gets updated in the db to include thread payments
 - 1️⃣⭕️ superusers🦹 cannot add payment emojis from two different sets or units
 
 ### Odd Jobs

@@ -31,7 +31,7 @@ export type PostCreateType = {
 export const findOrCreatePost = async (
   attributes: PostCreateType
 ): Promise<PostWithCategoriesTagsEmbeds> => {
-  const { message, title, description, tags, embeds } = attributes;
+  const { message, title, description, tags, embeds, parentId } = attributes;
 
   if (!message) {
     throw new Error("Message must be defined");
@@ -69,6 +69,7 @@ export const findOrCreatePost = async (
       discordLink: messageLink,
       slug: slugify(title),
       isDeleted: false,
+      parentPostId: parentId,
       // Update tags connection
       tags: {
         set: [], // Disconnect any existing tags
@@ -82,6 +83,7 @@ export const findOrCreatePost = async (
       discordLink: messageLink,
       slug: slugify(title),
       userId: user.id, // Assuming you have the user's ID
+      parentPostId: parentId,
       tags: {
         connect: tagInstances.map((tag) => ({ id: tag.id })),
       },
@@ -128,7 +130,7 @@ async function _manageEmbedsForPost(
 }
 
 /**
- * Threads are just posts with a parentId
+ * Threads are just posts with a parentId and no specific other fields
  * @param message
  * @param content
  * @param url
@@ -140,13 +142,19 @@ export async function findOrCreateThreadPost(attributes: {
   url: string;
 }): Promise<Post & { categories: Category[] & Tag[] }> {
   const { message, content, url } = attributes;
+
+  const parentId = message.channel.isThread()
+    ? message.channel.parent!.id
+    : undefined;
+  console.log("findOrCreateThreadPost parentId", parentId);
+
   const threadPost = findOrCreatePost({
     message,
     title: "Thread",
     description: content,
     tags: [],
     embeds: [],
-    parentId: message.channel.id,
+    parentId,
   });
   return threadPost;
 }

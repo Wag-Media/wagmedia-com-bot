@@ -94,12 +94,18 @@ export function shouldIgnoreMessage(message: Message | PartialMessage) {
  * @returns
  */
 export function classifyMessage(message: Message | PartialMessage) {
-  const parentChannel = message.channel.isThread()
-    ? message.channel.parent!
-    : undefined;
-  const parentId = parentChannel?.id;
-
+  let parentChannel, parentId;
   let messageChannelType: "post" | "oddjob" | undefined;
+
+  if (message.channel.isThread()) {
+    parentChannel = message.channel.parent;
+    parentId = message.channelId;
+  }
+
+  if (message.channel.isThread()) {
+    console.log("message.channel.isThread()", message.channel.isThread());
+    console.log("message.channel.parent", message);
+  }
 
   if (parentId) {
     if (
