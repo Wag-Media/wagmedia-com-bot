@@ -83,6 +83,7 @@ following fields is missing:
 - 1️⃣⭕️ editing an complete post and it stays complete update it in the db
 - 1️⃣⭕️ editing an incomplete post and it stays incomplete is ignored
 - 😅 editing paid posts is not possible, user gets informed to unpublish first
+- 😅 editing paid posts is not possible, user gets informed to unpublish first
 
 ### Odd Jobs
 

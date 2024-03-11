@@ -7,15 +7,15 @@ import {
   Tag,
 } from "@prisma/client";
 import { Message, MessageReaction, PartialMessage } from "discord.js";
-import { findOrCreateUser } from "./user.js";
-import { logger } from "@/client.js";
-import { slugify } from "@/handlers/util.js";
+import { findOrCreateUser } from "@/data/user";
+import { logger } from "@/client";
+import { slugify } from "@/handlers/util";
 import {
   PostEmbed,
   PostWithCategories,
   PostWithCategoriesTagsEmbeds,
   PostWithEarnings,
-} from "@/types.js";
+} from "@/types";
 const prisma = new PrismaClient();
 
 export type PostCreateType = {
@@ -295,6 +295,30 @@ export async function addCategory(postId: string, categoryId: number) {
     data: {
       categories: {
         connect: [{ id: categoryId }],
+      },
+    },
+  });
+
+  return post;
+}
+
+export async function resetPostReactions(postId: string) {
+  const post = await prisma.post.update({
+    where: {
+      id: postId,
+    },
+    data: {
+      reactions: {
+        deleteMany: {},
+      },
+      payments: {
+        deleteMany: {},
+      },
+      earnings: {
+        deleteMany: {},
+      },
+      categories: {
+        connect: [],
       },
     },
   });

@@ -7,7 +7,7 @@
 1. should the message be ignored? (bots / dms) => return if ignored
 2. classify the message that the reaction was added to (post, oddjob, thread)
 3. classify the type of reaction: regular, category, payment
-4. check the user has the permissions to add emojisreturn if not
+4. check the user has the permissions to add the type of reaction
 
 5. add the emoji to the db (in case we got here)
 6. determine

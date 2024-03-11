@@ -24,12 +24,12 @@ import {
   Collection,
 } from "discord.js";
 
-import * as config from "../config.js";
+import * as config from "@/config";
 import {
   findEmojiCategoryRule,
   findEmojiPaymentRule,
   findOrCreateEmoji,
-} from "@/data/emoji.js";
+} from "@/data/emoji";
 import {
   addCategory,
   fetchPost,
@@ -37,17 +37,19 @@ import {
   getPost,
   getPostReactionCount,
   getPostWithEarnings,
-} from "@/data/post.js";
+  resetPostReactions,
+} from "@/data/post";
 import { Type } from "typescript";
-import { discordClient, logger } from "@/client.js";
-import { PostWithCategories, emojiType } from "../types";
-import { getPostReactions, upsertReaction } from "@/data/reaction.js";
-import { findOrCreateUserFromDiscordUser } from "@/data/user.js";
-import { MessageCurator } from "./message-curator.js";
-import { prisma } from "@/utils/prisma.js";
-import { isCountryFlag } from "@/utils/is-country-flag.js";
-import { getOddJob } from "@/data/oddjob.js";
-import { logPostEarnings } from "@/handlers/log-utils.js";
+import { discordClient, logger } from "@/client";
+import { PostWithCategories, ReactionEvent, emojiType } from "@/types";
+import { getPostReactions, upsertReaction } from "@/data/reaction";
+import { findOrCreateUserFromDiscordUser } from "@/data/user";
+import { MessageCurator } from "@/curators/message-curator";
+import { prisma } from "@/utils/prisma";
+import { isCountryFlag } from "@/utils/is-country-flag";
+import { getOddJob } from "@/data/oddjob";
+import { logPostEarnings } from "@/handlers/log-utils";
+import { ReactionTracker } from "@/reaction-tracker";
 
 export type TypeCuratorPartial = {
   message: boolean;
@@ -61,8 +63,9 @@ export type TypeCuratorPartial = {
  */
 export class ReactionCurator {
   private static handlingDiscrepancy: boolean = false;
+  private static eventType: ReactionEvent;
   private static reaction: MessageReaction;
-  private static dbReaction: Reaction | undefined;
+  private static dbReaction: Reaction | undefined | null;
   private static dbEmoji: Emoji;
   private static emojiType: emojiType;
   private static discordUser: DiscordUser;
@@ -79,12 +82,14 @@ export class ReactionCurator {
   private static async initialize(
     reaction: MessageReaction,
     user: DiscordUser,
+    event: ReactionEvent,
     wasPartial: TypeCuratorPartial
   ) {
     // Assign the reaction and user to class-level variables
     this.reaction = reaction;
     this.discordUser = user;
     this.wasPartial = wasPartial;
+    this.eventType = event;
 
     // Ensure the message associated with the reaction is fully fetched
     // This might be necessary if the message could be partially loaded due to Discord's API limitations
@@ -162,20 +167,21 @@ export class ReactionCurator {
   static async curate(
     reaction: MessageReaction,
     user: DiscordUser,
+    event: ReactionEvent,
     wasPartial: TypeCuratorPartial
   ) {
-    logger.log(
-      `curating reaction ${reaction.emoji.name} for ${reaction.message.id} ${
-        this.handlingDiscrepancy ? "while handling discrepancy" : ""
-      }`
-    );
-
     try {
-      await this.initialize(reaction, user, wasPartial);
+      await this.initialize(reaction, user, event, wasPartial);
     } catch (error) {
       logger.error("Error in reaction curation initialization:", error);
       return;
     }
+
+    logger.log(
+      `curating ${event} ${reaction.emoji.name} for ${this.messageLink} ${
+        this.handlingDiscrepancy ? "while handling discrepancy" : ""
+      }`
+    );
 
     // Skip certain initializations if handling a discrepancy
     if (!this.handlingDiscrepancy) {
@@ -211,6 +217,12 @@ export class ReactionCurator {
       );
 
       // If any error occurs, remove the reaction from from discord
+      console.log(
+        "because an error occored, bot will remove the reaction",
+        this.reaction.emoji.name || this.reaction.emoji.id
+      );
+
+      ReactionTracker.addReactionToTrack(reaction);
       await this.reaction.users.remove(this.discordUser.id);
     }
   }
@@ -244,23 +256,62 @@ export class ReactionCurator {
   }
 
   static async curatePowerUserPostReaction() {
-    switch (this.emojiType) {
-      case "category":
-        await this.handleCategoryRule();
-        break;
-      case "payment":
-        await this.handlePaymentRule();
-        break;
-      case "feature":
-        await this.handleFeatureRule();
-        break;
-      default:
-        //nothing special to do for regular emojis as already handled in curatePostReaction
-        break;
-    }
+    if (this.eventType === "reactionAdd") {
+      let dbPost = this.dbMessage as Post;
+      this.dbReaction = await upsertReaction(
+        dbPost,
+        this.dbUser!,
+        this.dbEmoji
+      );
 
-    let dbPost = this.dbMessage as Post;
-    this.dbReaction = await upsertReaction(dbPost, this.dbUser!, this.dbEmoji);
+      switch (this.emojiType) {
+        case "category":
+          await this.handleAddCategoryRule();
+          break;
+        case "payment":
+          await this.handleAddPaymentRule();
+          break;
+        case "feature":
+          await this.handleAddFeatureRule();
+          break;
+        default:
+          //nothing special to do for regular emojis as already handled in curatePostReaction
+          break;
+      }
+    } else if (this.eventType === "reactionRemove") {
+      this.dbReaction = await prisma.reaction.findFirst({
+        where: {
+          userDiscordId: this.dbUser!.discordId,
+          postId: this.dbMessage!.id,
+          emojiId: this.dbEmoji.id,
+        },
+      });
+
+      if (!this.dbReaction) {
+        throw new Error("Reaction to remove not found in the db");
+      }
+
+      await prisma.reaction.delete({
+        where: {
+          id: this.dbReaction.id,
+        },
+      });
+
+      switch (this.emojiType) {
+        case "category":
+          await this.handleRemoveCategoryRule();
+          break;
+        case "payment":
+          await this.handleRemovePaymentRule();
+          break;
+        case "feature":
+          await this.handleRemoveFeatureRule();
+          break;
+        default:
+          //nothing special to do for regular emojis as already handled in curatePostReaction
+          break;
+      }
+    }
   }
 
   static async curateRegularUserPostReaction() {
@@ -272,9 +323,12 @@ export class ReactionCurator {
     messageReactions: Collection<string, MessageReaction>
   ): Promise<void> {
     console.log("handleDiscrepancies");
+    // 1. remove all reactions and payments and soon to start fresh
+    await resetPostReactions(this.message.id);
+
     for (const [, messageReaction] of messageReactions) {
       console.log("iterate", messageReaction.emoji.name);
-      await this.curate(messageReaction, this.discordUser, {
+      await this.curate(messageReaction, this.discordUser, "reactionAdd", {
         message: false,
         user: false,
         reaction: false,
@@ -391,19 +445,31 @@ export class ReactionCurator {
     }
 
     const postReactionCount = this.reaction.message.reactions.cache.size;
-    if (postReactionCount !== dbPostReactionCount + 1) {
-      logger.warn(
-        `[post] Post with ID ${this.reaction.message.id} has a different number of reactions in the database.`,
-        ` discord: ${postReactionCount - 1}`,
-        ` db: ${dbPostReactionCount}`
-      );
-      return true;
+
+    if (this.eventType === "reactionAdd") {
+      if (postReactionCount !== dbPostReactionCount + 1) {
+        logger.warn(
+          `[post] Post with ID ${this.reaction.message.id} has a different number of reactions in the database.`,
+          ` discord: ${postReactionCount - 1}`,
+          ` db: ${dbPostReactionCount}`
+        );
+        return true;
+      }
+    } else if (this.eventType === "reactionRemove") {
+      if (postReactionCount !== dbPostReactionCount - 1) {
+        logger.warn(
+          `[post] Post with ID ${this.reaction.message.id} has a different number of reactions in the database.`,
+          ` discord: ${postReactionCount + 1}`,
+          ` db: ${dbPostReactionCount}`
+        );
+        return true;
+      }
     }
 
     return false;
   }
 
-  static async handleCategoryRule() {
+  static async handleAddCategoryRule() {
     this.betterSafeThanSorry();
 
     const categoryRule = await findEmojiCategoryRule(this.dbEmoji.id);
@@ -422,8 +488,19 @@ export class ReactionCurator {
     );
   }
 
-  static async handlePaymentRule() {
-    console.log("payment rule should be handled here");
+  static async handleRemoveCategoryRule() {
+    const categoryRule = await findEmojiCategoryRule(this.dbEmoji.id);
+    if (!categoryRule) {
+      throw new Error("Category rule not found");
+    }
+
+    logger.log(
+      `[category] TODO Category ${categoryRule.category.name} removed from ${this.messageLink}.`
+    );
+  }
+
+  static async handleAddPaymentRule() {
+    console.log("handling add payment rule", this.dbEmoji.id);
 
     // Retrieve the payment rule for the reaction emoji
     const paymentRule = await findEmojiPaymentRule(this.dbEmoji.id);
@@ -500,10 +577,88 @@ export class ReactionCurator {
       });
     }
 
-    logPostEarnings(post, this.messageLink || "");
+    await logPostEarnings(post, this.messageLink || "");
   }
 
-  static async handleFeatureRule() {}
+  static async handleRemovePaymentRule() {
+    console.log("handling remove payment rule", this.dbEmoji.id);
+
+    const post = await getPostWithEarnings(this.message.id);
+    if (!post) {
+      throw new Error(`Post for ${this.messageLink} not found.`);
+    }
+
+    // Retrieve the payment rule for the reaction emoji
+    const paymentRule = await findEmojiPaymentRule(this.dbEmoji.id);
+
+    if (!paymentRule) {
+      throw new Error(`Payment rule for ${this.messageLink} not found.`);
+    }
+
+    // Fetch all reactions for the post and filter in code to include only those with a PaymentRule
+    const remainingReactions = await prisma.reaction.findMany({
+      where: { postId: post.id },
+      include: {
+        emoji: {
+          include: {
+            PaymentRule: true,
+          },
+        },
+      },
+    });
+
+    // Check if there are no remaining payment emojis
+    const remainingPaymentEmojis = remainingReactions.filter(
+      (r) => r.emoji.PaymentRule && r.emoji.PaymentRule.length > 0
+    );
+
+    // If no payment emojis are left, unpublish the post
+    if (remainingPaymentEmojis.length === 0) {
+      await prisma.post.update({
+        where: { id: post.id },
+        data: { isPublished: false },
+      });
+      logger.log(
+        `[post] Post ${this.messageLink} has been unpublished due to no remaining payment emojis.`
+      );
+    }
+
+    // Aggregate the total payment amount for the specific unit
+    const updatedTotalEarnings = remainingPaymentEmojis.reduce((total, r) => {
+      const rule = r.emoji.PaymentRule.find(
+        (pr) => pr.paymentUnit === paymentRule.paymentUnit
+      );
+      return total + (rule?.paymentAmount || 0);
+    }, 0);
+
+    // Update the post's total earnings for the specific unit
+    await prisma.contentEarnings.upsert({
+      where: {
+        postId_unit: {
+          postId: post.id,
+          unit: paymentRule.paymentUnit,
+        },
+      },
+      update: {
+        totalAmount: updatedTotalEarnings,
+      },
+      create: {
+        postId: post.id,
+        unit: paymentRule.paymentUnit,
+        totalAmount: updatedTotalEarnings,
+      },
+    });
+
+    await logPostEarnings(post, this.messageLink || "");
+  }
+
+  static async handleAddFeatureRule() {
+    logger.log(`[feature] TODO Feature rule added to ${this.messageLink}.`);
+  }
+
+  static async handleRemoveFeatureRule() {
+    logger.log(`[feature] TODO Feature rule removed from ${this.messageLink}.`);
+  }
 
   static async isPaymentReactionValid(
     paymentRule: PaymentRule
@@ -534,6 +689,16 @@ export class ReactionCurator {
       );
       return true;
     }
+
+    console.log(
+      `paymentRule.paymentUnit ${paymentRule.paymentUnit} firstPayment.unit ${firstPayment.reaction.emoji.name}`
+    );
+
+    console.log(
+      `payment rule above is valid`,
+      paymentRule.paymentUnit === firstPayment.unit &&
+        paymentRule.fundingSource === firstPayment.fundingSource
+    );
 
     // Validate the reaction's payment rule against the first payment's rule
     return (

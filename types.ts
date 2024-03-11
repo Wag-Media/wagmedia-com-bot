@@ -44,3 +44,5 @@ export type PostWithCategoriesTagsEmbeds = Post & {
 };
 
 export type emojiType = "regular" | "feature" | "category" | "payment";
+
+export type ReactionEvent = "reactionAdd" | "reactionRemove";

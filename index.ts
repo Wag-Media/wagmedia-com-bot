@@ -9,13 +9,17 @@ import { handleMessageDelete } from "./handlers/handleMessageDelete.js";
 import { Events } from "discord.js";
 import { logIntroMessage } from "./handlers/log-utils.js";
 
-import * as config from "./config.js";
+import * as config from "@/config";
 import { ensureFullEntities, ensureFullMessage } from "./handlers/util.js";
-import { MessageCurator } from "./curators/message-curator.js";
-import { ReactionCurator } from "./curators/reaction-curator.js";
+import { MessageCurator } from "@/curators/message-curator";
+import { ReactionCurator } from "@/curators/reaction-curator-2";
+import { ReactionTracker } from "@/reaction-tracker.js";
 
 //store your token in environment variable in .env
 const token = process.env["DISCORD_BOT_TOKEN"];
+
+// A Set to keep track of reactions removed by the bot
+const botRemovedReactions = new Set<string>();
 
 discordClient.on(Events.Error, logger.error);
 discordClient.on(Events.Warn, logger.warn);
@@ -96,15 +100,7 @@ discordClient.on(Events.MessageReactionAdd, async (reaction, user) => {
       wasPartial,
     } = await ensureFullEntities(reaction, user);
 
-    // console.log(
-    //   "received a message reaction add event. WasPartial:",
-    //   wasPartial,
-    //   reaction
-    // );
-
-    await ReactionCurator.curate(fullReaction, fullUser, wasPartial);
-
-    // await handleMessageReactionAdd(reaction, user);
+    await ReactionCurator.curateAdd(fullReaction, fullUser);
   } catch (error) {
     console.error("Error in messageReactionAdd event handler:", error);
   }
@@ -112,7 +108,26 @@ discordClient.on(Events.MessageReactionAdd, async (reaction, user) => {
 
 discordClient.on(Events.MessageReactionRemove, async (reaction, user) => {
   try {
-    // await handleMessageReactionRemove(reaction, user);
+    const {
+      reaction: fullReaction,
+      user: fullUser,
+      wasPartial,
+    } = await ensureFullEntities(reaction, user);
+
+    // Use ReactionTracker to check if the removal was tracked (initiated by the bot)
+    // and if so, remove the reaction from the tracker and return
+    if (ReactionTracker.isReactionTracked(fullReaction)) {
+      console.log(
+        "the reaction",
+        reaction.emoji.name || reaction.emoji.id,
+        "was removed by the bot and will not be handled here"
+      );
+      ReactionTracker.removeTrackedReaction(fullReaction);
+      return;
+    }
+
+    // Otherwise, curate the removal
+    await ReactionCurator.curateRemove(fullReaction, fullUser);
   } catch (error) {
     console.error("Error in messageReactionRemove event handler:", error);
   }

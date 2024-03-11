@@ -1,9 +1,8 @@
-// In a new file, say di-container.ts
 import DiscordLogger from "./utils/DiscordLogger";
 import { Client, GatewayIntentBits, Partials } from "discord.js";
 import * as config from "./config";
 
-const discordClient = new Client({
+const discordClient = new Client<true>({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.MessageContent,

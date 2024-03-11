@@ -2,7 +2,7 @@ import {
   findEmojiCategoryRule,
   findEmojiPaymentRule,
   findOrCreateEmoji,
-} from "@/data/emoji.js";
+} from "@/data/emoji";
 import { userHasRole } from "@/utils/userHasRole.js";
 import {
   Category,
@@ -24,7 +24,7 @@ import {
   messageLink,
 } from "discord.js";
 
-import { logger } from "@/client.js";
+import { logger } from "@/client";
 import {
   ensureFullEntities,
   isCategoryMonitoredForPosts,
@@ -44,14 +44,14 @@ import {
   logOddjobEarnings,
   logPostEarnings,
 } from "./log-utils.js";
-import { findOrCreateUserFromDiscordUser } from "@/data/user.js";
-import { upsertOddjobReaction, upsertReaction } from "@/data/reaction.js";
+import { findOrCreateUserFromDiscordUser } from "@/data/user";
+import { upsertOddjobReaction, upsertReaction } from "@/data/reaction";
 import { isCountryFlag } from "../utils/is-country-flag";
-import { fetchOddjob } from "@/data/oddjob.js";
-import { parseOddjob } from "@/utils/handle-odd-job.js";
-import { isPaymentReactionValid } from "@/utils/payment-valid.js";
+import { fetchOddjob } from "@/data/oddjob";
+import { parseOddjob } from "@/utils/handle-odd-job";
+import { isPaymentReactionValid } from "@/utils/payment-valid";
 
-import * as config from "../config.js";
+import * as config from "@/config";
 import { all } from "axios";
 
 const prisma = new PrismaClient();

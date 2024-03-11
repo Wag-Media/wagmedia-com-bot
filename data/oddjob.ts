@@ -1,7 +1,7 @@
 import { ContentEarnings, OddJob, Payment, PrismaClient } from "@prisma/client";
 import { Message, MessageReaction, PartialMessage, User } from "discord.js";
-import { findOrCreateUser, findOrCreateUserFromDiscordUser } from "./user.js";
-import { logger } from "@/client.js";
+import { findOrCreateUser, findOrCreateUserFromDiscordUser } from "@/data/user";
+import { logger } from "@/client";
 const prisma = new PrismaClient();
 
 // id              String    @id

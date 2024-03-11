@@ -8,12 +8,13 @@ import {
   TextChannel,
   Channel,
   ThreadChannel,
+  Guild,
 } from "discord.js";
-import * as config from "../config.js";
-import { logger } from "@/client.js";
-import { findEmojiCategoryRule, findEmojiPaymentRule } from "@/data/emoji.js";
+import * as config from "@/config";
+import { discordClient, logger } from "@/client";
+import { findEmojiCategoryRule, findEmojiPaymentRule } from "@/data/emoji";
 import { Emoji } from "@prisma/client";
-import { emojiType } from "@/types.js";
+import { emojiType } from "@/types";
 
 /**
  * Just a simple delay function.
@@ -80,6 +81,7 @@ export function shouldIgnoreMessage(message: Message | PartialMessage) {
 
   // Ignore reactions from non text or thread channels
   const channel = message.channel;
+
   if (!(channel instanceof TextChannel || channel instanceof ThreadChannel))
     return true;
 
@@ -263,4 +265,18 @@ export function parseDiscordUserId(message: string): string | null {
   const match = message.match(mentionRegex);
 
   return match ? match[1] : null;
+}
+
+export async function getGuildFromMessage(
+  message: Message | PartialMessage
+): Promise<Guild> {
+  if (!message.guildId) {
+    throw new Error("Message must have a guildId");
+  }
+  // Set the guild from the reaction message, which might involve fetching it if not readily available
+  const guild =
+    message.guild ||
+    (await discordClient.guilds.fetch(message.guildId as string));
+
+  return guild;
 }

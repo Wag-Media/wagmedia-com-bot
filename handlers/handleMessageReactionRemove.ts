@@ -14,14 +14,14 @@ import {
   Emoji,
   Message,
 } from "discord.js";
-import * as config from "../config.js";
-import { logger } from "@/client.js";
+import * as config from "@/config";
+import { logger } from "@/client";
 import {
   findEmoji,
   findEmojiCategoryRule,
   findEmojiPaymentRule,
   findOrCreateEmoji,
-} from "@/data/emoji.js";
+} from "@/data/emoji";
 import { userHasRole } from "@/utils/userHasRole.js";
 import { ensureFullEntities, shouldIgnoreReaction } from "./util.js";
 import { logEmojiRemoved, logPostEarnings } from "./log-utils";
