@@ -17,8 +17,14 @@ export class ReactionCurator {
     // Only check for discrepancies if not currently resolving them
     if (!this.isResolvingDiscrepancies) {
       this.isResolvingDiscrepancies = true;
-      await ReactionDiscrepancyResolver.checkAndResolve(message);
+      const hadDiscrepancies =
+        await ReactionDiscrepancyResolver.checkAndResolve(message);
       this.isResolvingDiscrepancies = false;
+
+      if (hadDiscrepancies) {
+        console.log("discrepancies were handled, returning");
+        return;
+      }
     }
 
     try {
@@ -29,6 +35,7 @@ export class ReactionCurator {
       );
       await handler.handle(reaction, user);
     } catch (error) {
+      console.error("Error handling reaction:", error);
       ReactionTracker.addReactionToTrack(reaction);
       await reaction.users.remove(user.id);
       this.curateRemove(reaction, user);

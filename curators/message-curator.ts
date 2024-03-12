@@ -8,7 +8,11 @@ import {
   isParentMessageFromMonitoredCategoryOrChannel,
   shouldIgnoreMessage,
 } from "@/handlers/util";
-import { PostWithCategories } from "@/types";
+import {
+  OddjobWithEarnings,
+  PostWithCategories,
+  PostWithCategoriesEarnings,
+} from "@/types";
 import { handleOddJob, parseOddjob } from "@/utils/handle-odd-job";
 import {
   PostType,
@@ -29,9 +33,8 @@ export class MessageCurator {
   private static messageLink: string;
 
   static async curate(
-    message: Message,
-    wasPartial: boolean
-  ): Promise<PostWithCategories | OddJob | undefined> {
+    message: Message
+  ): Promise<PostWithCategoriesEarnings | OddjobWithEarnings | undefined> {
     if (shouldIgnoreMessage(message)) {
       return;
     }

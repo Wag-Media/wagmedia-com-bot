@@ -5,7 +5,7 @@ import { getPostOrOddjob, getPostOrOddjobReactionCount } from "@/data/post";
 import { logger } from "@/client";
 
 export class ReactionDiscrepancyResolver {
-  static async checkAndResolve(message: Message): Promise<void> {
+  static async checkAndResolve(message: Message): Promise<boolean> {
     const hasDiscrepancies = await this.detectDiscrepancies(message);
 
     if (hasDiscrepancies) {
@@ -18,6 +18,8 @@ export class ReactionDiscrepancyResolver {
         }
       }
     }
+
+    return hasDiscrepancies;
   }
 
   private static async detectDiscrepancies(message: Message): Promise<boolean> {
@@ -47,16 +49,8 @@ export class ReactionDiscrepancyResolver {
       }
     }
 
-    const dbPostOrOddjobReactionCount = await getPostOrOddjobReactionCount(
-      message.id,
-      contentType
-    );
-    if (!dbPostOrOddjobReactionCount) {
-      logger.warn(
-        `[${contentType}] ${contentType} with id ${message.id} has no reactions in the database.`
-      );
-      return true;
-    }
+    const dbPostOrOddjobReactionCount =
+      (await getPostOrOddjobReactionCount(message.id, contentType)) || 0;
 
     const discordReactionCount = message.reactions.cache.size;
 

@@ -15,7 +15,9 @@ import {
   ContentType,
   OddjobWithEarnings,
   PostEmbed,
+  PostFull,
   PostWithCategories,
+  PostWithCategoriesEarnings,
   PostWithCategoriesTagsEmbeds,
   PostWithEarnings,
 } from "@/types";
@@ -32,7 +34,7 @@ export type PostCreateType = {
 
 export const findOrCreatePost = async (
   attributes: PostCreateType
-): Promise<PostWithCategoriesTagsEmbeds> => {
+): Promise<PostFull> => {
   const { message, title, description, tags, embeds, parentId } = attributes;
 
   if (!message) {
@@ -94,6 +96,7 @@ export const findOrCreatePost = async (
       categories: true,
       tags: true, // Include tags in the returned object for verification
       embeds: true,
+      earnings: true,
     },
   });
 
@@ -142,7 +145,7 @@ export async function findOrCreateThreadPost(attributes: {
   message: Message<boolean> | PartialMessage;
   content: string;
   url: string;
-}): Promise<Post & { categories: Category[] & Tag[] }> {
+}): Promise<PostWithEarnings> {
   const { message, content, url } = attributes;
 
   const parentId = message.channel.isThread()

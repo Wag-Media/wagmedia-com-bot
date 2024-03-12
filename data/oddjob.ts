@@ -34,7 +34,7 @@ export async function findOrCreateOddJob(
   requestedAmount: number,
   requestedUnit: string,
   manager: User
-): Promise<OddJob> {
+): Promise<OddjobWithEarnings> {
   const user = await findOrCreateUser(message);
   const managerInDb = await findOrCreateUserFromDiscordUser(manager);
 
@@ -62,6 +62,7 @@ export async function findOrCreateOddJob(
     },
     include: {
       payments: true,
+      earnings: true,
     },
   });
 }

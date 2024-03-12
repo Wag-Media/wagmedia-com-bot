@@ -11,6 +11,7 @@ import {
 import { OddJob } from "@prisma/client";
 import { storeAttachment } from "@/data/attachment";
 import * as config from "@/config";
+import { OddjobWithEarnings } from "@/types";
 
 export type OddJobType = {
   role: string;
@@ -23,8 +24,8 @@ export type OddJobType = {
 export async function handleOddJob(
   message: Message<boolean>,
   messageLink: string
-): Promise<OddJob | undefined> {
-  let oddJob: OddJob | undefined;
+): Promise<OddjobWithEarnings | undefined> {
+  let oddJob: OddjobWithEarnings | undefined;
 
   // content is not null because we checked for it in shouldIgnoreMessage
   const parsedOddJob = parseOddjob(

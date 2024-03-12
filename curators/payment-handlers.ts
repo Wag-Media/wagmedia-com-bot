@@ -1,70 +1,26 @@
-import { MessageReaction, User as DiscordUser, Guild } from "discord.js";
-import { IReactionHandler } from "./interface-reaction-handler";
-import { Emoji, OddJob, PaymentRule, Post, User } from "@prisma/client";
-import { findEmojiPaymentRule, findOrCreateEmoji } from "@/data/emoji";
-import {
-  ContentType,
-  OddjobWithEarnings,
-  PostWithCategories,
-  PostWithEarnings,
-} from "@/types";
-import {
-  getPostOrOddjob,
-  getPostOrOddjobWithEarnings,
-  getPostWithEarnings,
-} from "@/data/post";
-import { getGuildFromMessage } from "@/handlers/util";
+import { MessageReaction, User as DiscordUser } from "discord.js";
+import { PaymentRule, Post } from "@prisma/client";
+import { findEmojiPaymentRule } from "@/data/emoji";
+import { ContentType } from "@/types";
 import { prisma } from "@/utils/prisma";
-import { findFirstPayment } from "@/data/payment";
 import { isPaymentUnitValid } from "./utils";
-import { findOrCreateUserFromDiscordUser } from "@/data/user";
 import { upsertEntityReaction } from "@/data/reaction";
 import { logContentEarnings } from "@/handlers/log-utils";
+import { BaseReactionHandler } from "./base-handlers";
+import { findOrCreateThreadPost } from "@/data/post";
 
-abstract class PaymentReactionHandler implements IReactionHandler {
-  abstract contentType: ContentType;
-  protected messageLink: string;
-  protected guild: Guild | null;
-  protected dbEmoji: Emoji;
-  protected dbUser: User | undefined;
+abstract class BasePaymentReactionHandler extends BaseReactionHandler {
   protected paymentRule: PaymentRule | null;
-  protected dbMessage: PostWithEarnings | OddjobWithEarnings | null | undefined;
-
-  protected async isPaymentReactionValid(
-    reaction: MessageReaction,
-    user: DiscordUser
-  ): Promise<boolean> {
-    return await isPaymentUnitValid(
-      reaction.message.id,
-      this.contentType,
-      this.paymentRule
-    );
-  }
-
-  async handle(reaction: MessageReaction, user: DiscordUser): Promise<void> {
-    // Shared pre-processing steps
-    await this.initialize(reaction, user);
-    // Delegating to the subclass-specific logic
-    await this.processPayment(reaction, user);
-    // Shared post-processing steps
-    await this.postProcess(reaction, user);
-  }
+  protected parentId: string | null = null;
 
   protected async initialize(
     reaction: MessageReaction,
     user: DiscordUser
   ): Promise<void> {
-    // Shared logic before processing payment, e.g., logging, validation
-    this.guild = await getGuildFromMessage(reaction.message);
-    this.messageLink = `https://discord.com/channels/${this.guild.id}/${reaction.message.channel.id}/${reaction.message.id}`;
-    this.dbEmoji = await findOrCreateEmoji(reaction.emoji);
-    this.dbUser = await findOrCreateUserFromDiscordUser(user);
-    this.paymentRule = await findEmojiPaymentRule(this.dbEmoji.id);
-    this.dbMessage = await getPostOrOddjobWithEarnings(
-      reaction.message.id,
-      this.contentType
-    );
+    console.log("BasePaymentReactionHandler: Initializing payment reaction");
+    await super.initialize(reaction, user);
 
+    this.paymentRule = await findEmojiPaymentRule(this.dbEmoji.id);
     if (!this.paymentRule) {
       throw new Error(`Payment rule for ${this.messageLink} not found.`);
     }
@@ -74,49 +30,49 @@ abstract class PaymentReactionHandler implements IReactionHandler {
     }
   }
 
-  protected abstract processPayment(
-    reaction: MessageReaction,
-    user: DiscordUser
-  ): Promise<void>;
+  protected async postProcess(): Promise<void> {
+    await logContentEarnings(this.dbContent!, "post", this.messageLink);
+  }
 
-  protected async postProcess(
+  protected async isPaymentReactionValid(
     reaction: MessageReaction,
     user: DiscordUser
-  ): Promise<void> {
-    // Shared logic after processing payment, e.g., notifications
+  ): Promise<boolean> {
+    //todo add more checks here
+    return await isPaymentUnitValid(
+      reaction.message.id,
+      this.contentType,
+      this.paymentRule
+    );
   }
 }
 
-export class PostPaymentReactionHandler extends PaymentReactionHandler {
+export class PostPaymentReactionHandler extends BasePaymentReactionHandler {
   contentType: ContentType = "post";
-  protected async processPayment(reaction: MessageReaction, user: DiscordUser) {
+
+  protected async processReaction(
+    reaction: MessageReaction,
+    user: DiscordUser
+  ) {
     // Specific logic for processing payment for a post
-    console.log("Handling payment reaction for a post");
-    if (!this.paymentRule) {
-      throw new Error(`Payment rule for ${this.messageLink} not found.`);
-    }
+    console.log(
+      "Handling payment reaction for a post with parentId",
+      this.parentId
+    );
 
-    if (!this.dbUser) {
-      throw new Error(`User for ${this.messageLink} not found.`);
-    }
-
-    if (!this.dbMessage) {
-      throw new Error(`Post for ${this.messageLink} not found.`);
-    }
-
-    const { paymentAmount, paymentUnit } = this.paymentRule;
+    const { paymentAmount, paymentUnit, fundingSource } = this.paymentRule!;
 
     const dbReaction = await upsertEntityReaction(
-      this.dbMessage,
+      this.dbContent,
       this.contentType,
-      this.dbUser,
+      this.dbUser!,
       this.dbEmoji
     );
 
     await prisma.contentEarnings.upsert({
       where: {
         postId_unit: {
-          postId: this.dbMessage.id,
+          postId: this.dbContent!.id,
           unit: paymentUnit,
         },
       },
@@ -126,7 +82,7 @@ export class PostPaymentReactionHandler extends PaymentReactionHandler {
         },
       },
       create: {
-        postId: this.dbMessage.id,
+        postId: this.dbContent!.id,
         unit: paymentUnit,
         totalAmount: paymentAmount,
       },
@@ -136,29 +92,110 @@ export class PostPaymentReactionHandler extends PaymentReactionHandler {
       data: {
         amount: paymentAmount,
         unit: paymentUnit,
-        postId: this.dbMessage.id,
-        userId: this.dbUser.id,
+        postId: this.dbContent!.id,
+        userId: this.dbUser!.id,
         reactionId: dbReaction.id,
         status: "unknown",
+        fundingSource,
+        threadParentId: this.parentId,
       },
     });
 
-    if (!(this.dbMessage as Post).isPublished) {
+    if (!(this.dbContent as Post).isPublished) {
       await prisma.post.update({
-        where: { id: this.dbMessage.id },
+        where: { id: this.dbContent!.id },
         data: { isPublished: true },
       });
     }
-
-    await logContentEarnings(this.dbMessage, "post", this.messageLink);
   }
 }
 
-export class OddJobPaymentReactionHandler extends PaymentReactionHandler {
+export class OddJobPaymentReactionHandler extends BasePaymentReactionHandler {
   contentType: ContentType = "oddjob";
-  protected processPayment(reaction: MessageReaction, user: DiscordUser) {
-    // Specific logic for processing payment for an odd job
-    console.log("Handling payment reaction for an odd job");
+  protected async processReaction(
+    reaction: MessageReaction,
+    user: DiscordUser
+  ) {
+    console.log("Handling payment reaction for oddjob");
+
+    const { paymentAmount, paymentUnit, fundingSource } = this.paymentRule!;
+
+    const dbReaction = await upsertEntityReaction(
+      this.dbContent,
+      this.contentType,
+      this.dbUser!,
+      this.dbEmoji
+    );
+
+    await prisma.contentEarnings.upsert({
+      where: {
+        oddJobId_unit: {
+          oddJobId: this.dbContent!.id,
+          unit: paymentUnit,
+        },
+      },
+      update: {
+        totalAmount: {
+          increment: paymentAmount,
+        },
+      },
+      create: {
+        oddJobId: this.dbContent!.id,
+        unit: paymentUnit,
+        totalAmount: paymentAmount,
+      },
+    });
+
+    await prisma.payment.create({
+      data: {
+        amount: paymentAmount,
+        unit: paymentUnit,
+        oddJobId: this.dbContent!.id,
+        userId: this.dbUser!.id,
+        reactionId: dbReaction.id,
+        status: "unknown",
+        fundingSource,
+        threadParentId: (this.dbContent as Post).parentPostId,
+      },
+    });
+  }
+}
+
+export class ThreadPaymentReactionHandler extends PostPaymentReactionHandler {
+  contentType: ContentType = "thread";
+
+  protected async initialize(
+    reaction: MessageReaction,
+    user: DiscordUser
+  ): Promise<void> {
+    console.log("Initializing payment reaction for a thread");
+    await super.initialize(reaction, user);
+
+    // If the message is a thread, set the parentId
+    this.parentId = reaction.message.channelId;
+    console.log("ParentId set to", this.parentId);
+  }
+
+  protected async processReaction(
+    reaction: MessageReaction,
+    user: DiscordUser
+  ) {
+    console.log("Handling payment reaction for a thread");
+
+    // 1. if the thread is not in the database, create it on payment
+    if (!this.dbContent) {
+      this.dbContent = await findOrCreateThreadPost({
+        message: reaction.message,
+        content: reaction.message.content || "",
+        url: this.messageLink || "",
+      });
+    }
+
+    // 2. process the payment as in posts
+    await super.processReaction(reaction, user);
+  }
+
+  protected async postProcess(): Promise<void> {
     return Promise.resolve();
   }
 }

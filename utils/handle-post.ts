@@ -1,6 +1,10 @@
 import { logger } from "@/client";
 import { findOrCreatePost } from "@/data/post";
-import { PostEmbed, PostWithCategories } from "@/types";
+import {
+  PostEmbed,
+  PostWithCategories,
+  PostWithCategoriesEarnings,
+} from "@/types";
 import { Post } from "@prisma/client";
 import { Embed, Message, PartialMessage } from "discord.js";
 
@@ -14,7 +18,7 @@ export type PostType = {
 export async function handlePost(
   message: Message<boolean>,
   messageLink: string
-): Promise<PostWithCategories | undefined> {
+): Promise<PostWithCategoriesEarnings | undefined> {
   // content is not null because we checked for it in shouldIgnoreMessage
   const parsedMessage = parseMessage(message);
 

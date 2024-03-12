@@ -37,6 +37,16 @@ export type PostEmbed = {
 
 export type PostWithCategories = Post & { categories: Category[] };
 export type PostWithEarnings = Post & { earnings: ContentEarnings[] };
+export type PostWithCategoriesEarnings = Post & {
+  categories: Category[];
+  earnings: ContentEarnings[];
+};
+export type PostFull = Post & {
+  categories: Category[];
+  earnings: ContentEarnings[];
+  tags: Tag[];
+  embeds: Embed[];
+};
 
 export type OddjobWithEarnings = OddJob & {
   earnings: ContentEarnings[];

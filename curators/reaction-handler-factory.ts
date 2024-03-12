@@ -3,6 +3,7 @@ import { IReactionHandler } from "./interface-reaction-handler";
 import {
   OddJobPaymentReactionHandler,
   PostPaymentReactionHandler,
+  ThreadPaymentReactionHandler,
 } from "./payment-handlers";
 import { EmojiType, ReactionEventType } from "@/types";
 import {
@@ -40,6 +41,7 @@ export class ReactionHandlerFactory {
       emojiType === "payment" &&
       contentType.contentType === "post"
     ) {
+      console.log("PostPaymentReactionHandler");
       return new PostPaymentReactionHandler();
     } else if (
       userRole === "superuser" &&
@@ -48,6 +50,13 @@ export class ReactionHandlerFactory {
       contentType.contentType === "oddjob"
     ) {
       return new OddJobPaymentReactionHandler();
+    } else if (
+      userRole === "superuser" &&
+      eventType === "reactionAdd" &&
+      emojiType === "payment" &&
+      contentType.contentType === "thread"
+    ) {
+      return new ThreadPaymentReactionHandler();
     } else if (
       userRole === "regular" &&
       eventType === "reactionAdd" &&
