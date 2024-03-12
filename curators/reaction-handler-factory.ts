@@ -11,6 +11,8 @@ import {
   determineUserRole,
 } from "./utils";
 import { ensureFullMessage } from "@/handlers/util";
+import { NotAllowedReactionHandler } from "./not-allowed-handler";
+import { ReactionDiscrepancyResolver } from "./discrepancy-resolver";
 
 export class ReactionHandlerFactory {
   static async getHandler(
@@ -19,6 +21,7 @@ export class ReactionHandlerFactory {
     eventType: ReactionEventType
   ): Promise<IReactionHandler> {
     const { message } = await ensureFullMessage(reaction.message);
+
     // Determine the type of content (e.g., post, oddjob, thread)
     const contentType = determineContentType(message);
     // and the user role (e.g., poweruser, regularuser)
@@ -45,10 +48,34 @@ export class ReactionHandlerFactory {
       contentType.contentType === "oddjob"
     ) {
       return new OddJobPaymentReactionHandler();
+    } else if (
+      userRole === "regular" &&
+      eventType === "reactionAdd" &&
+      emojiType === "payment"
+    ) {
+      return new NotAllowedReactionHandler(
+        `You are not allowed to use payment emojis.`
+      );
+    } else if (
+      userRole === "regular" &&
+      eventType === "reactionAdd" &&
+      emojiType === "category"
+    ) {
+      return new NotAllowedReactionHandler(
+        `You are not allowed to use category emojis.`
+      );
+    } else if (
+      userRole === "regular" &&
+      eventType === "reactionAdd" &&
+      emojiType === "feature"
+    ) {
+      return new NotAllowedReactionHandler(
+        `You are not allowed to use feature emojis.`
+      );
     } else {
       // Return a default handler or throw an error
       throw new Error(
-        `No handlers found for content type ${contentType}, user role ${userRole}, emoji type ${emojiType}, and event type ${eventType}`
+        `No handlers found for contentType:${contentType.contentType}, userRole:${userRole}, emojiType:${emojiType}, and eventType:${eventType}`
       );
     }
   }

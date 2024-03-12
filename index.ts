@@ -1,7 +1,6 @@
 import "dotenv/config";
 import { dfp } from "./utils/dfp.js";
 import { discordClient, logger } from "./client";
-import { handleMessageCreate } from "./handlers/handleMessageCreate.js";
 import { handleMessageReactionAdd } from "./handlers/handleMessageReactionAdd.js";
 import { handleMessageReactionRemove } from "./handlers/handleMessageReactionRemove.js";
 import { handleMessageUpdate } from "./handlers/handleMessageUpdate.js";
@@ -12,7 +11,7 @@ import { logIntroMessage } from "./handlers/log-utils.js";
 import * as config from "@/config";
 import { ensureFullEntities, ensureFullMessage } from "./handlers/util.js";
 import { MessageCurator } from "@/curators/message-curator";
-import { ReactionCurator } from "@/curators/reaction-curator-2";
+import { ReactionCurator } from "@/curators/reaction-curator-new";
 import { ReactionTracker } from "@/reaction-tracker.js";
 
 //store your token in environment variable in .env

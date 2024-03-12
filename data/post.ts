@@ -12,6 +12,8 @@ import { findOrCreateUser } from "@/data/user";
 import { logger } from "@/client";
 import { slugify } from "@/handlers/util";
 import {
+  ContentType,
+  OddjobWithEarnings,
   PostEmbed,
   PostWithCategories,
   PostWithCategoriesTagsEmbeds,
@@ -170,15 +172,17 @@ export async function getPostReactionCount(postId: string) {
 }
 
 export async function getPostOrOddjobReactionCount(
-  entityId: string,
-  entityType: "post" | "oddjob" | undefined
+  contentId: string,
+  contentType: ContentType
 ) {
-  if (!entityType) {
+  if (!contentType) {
     return;
   }
 
   const whereCondition =
-    entityType === "post" ? { postId: entityId } : { oddJobId: entityId };
+    contentType === "post" || contentType === "thread"
+      ? { postId: contentId }
+      : { oddJobId: contentId };
 
   const count = await prisma.reaction.count({
     where: whereCondition,
@@ -429,13 +433,13 @@ export async function unfeaturePost(postId: string) {
 
 export async function getPostOrOddjob(
   entityId: string,
-  entityType: "post" | "oddjob" | undefined
+  entityType: ContentType
 ): Promise<PostWithCategories | OddJob | null | undefined> {
   if (!entityType) {
     return;
   }
 
-  if (entityType === "post") {
+  if (entityType === "post" || entityType === "thread") {
     return prisma.post.findUnique({
       where: {
         id: entityId,
@@ -448,6 +452,35 @@ export async function getPostOrOddjob(
     return prisma.oddJob.findUnique({
       where: {
         id: entityId,
+      },
+    });
+  }
+}
+
+export async function getPostOrOddjobWithEarnings(
+  entityId: string,
+  entityType: ContentType
+): Promise<PostWithEarnings | OddjobWithEarnings | null | undefined> {
+  if (!entityType) {
+    return;
+  }
+
+  if (entityType === "post" || entityType === "thread") {
+    return prisma.post.findUnique({
+      where: {
+        id: entityId,
+      },
+      include: {
+        earnings: true,
+      },
+    });
+  } else {
+    return prisma.oddJob.findUnique({
+      where: {
+        id: entityId,
+      },
+      include: {
+        earnings: true,
       },
     });
   }

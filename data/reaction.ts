@@ -4,6 +4,7 @@ import { Emoji, OddJob, Post, User } from "@prisma/client";
 import { MessageReaction } from "discord.js";
 import { findEmoji } from "./emoji";
 import { findUserById } from "./user";
+import { ContentType } from "@/types";
 
 export async function findReaction(postId, userId, emojiId) {
   const dbReaction = await prisma.reaction.findUnique({
@@ -32,7 +33,7 @@ export async function getPostReactions(postId: string) {
 
 export async function upsertEntityReaction(
   entity: Post | OddJob | undefined | null,
-  entityType: "post" | "oddjob" | undefined,
+  entityType: ContentType,
   dbUser: User,
   dbEmoji: Emoji
 ) {
@@ -43,7 +44,7 @@ export async function upsertEntityReaction(
 
   let dbReaction;
 
-  if (entityType == "post") {
+  if (entityType == "post" || entityType == "thread") {
     dbReaction = await upsertPostReaction(entity as Post, dbUser, dbEmoji);
   } else {
     dbReaction = await upsertOddjobReaction(entity as OddJob, dbUser, dbEmoji);

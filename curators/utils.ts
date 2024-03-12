@@ -19,6 +19,8 @@ import {
   findEmojiCategoryRule,
   findEmojiPaymentRule,
 } from "@/data/emoji";
+import { PaymentRule } from "@prisma/client";
+import { findFirstPayment } from "@/data/payment";
 
 export function determineContentType(message: Message | PartialMessage): {
   contentType: ContentType;
@@ -93,4 +95,30 @@ export async function determineEmojiType(
   }
 
   return "regular";
+}
+
+export async function isPaymentUnitValid(
+  dbContentId: string,
+  contentType: ContentType,
+  paymentRule: PaymentRule | null
+): Promise<boolean> {
+  if (!paymentRule) {
+    return false;
+  }
+
+  const paymentCondition =
+    contentType === "post" || contentType === "thread"
+      ? { postId: dbContentId }
+      : { oddJobId: dbContentId };
+
+  const firstPayment = await findFirstPayment(paymentCondition);
+
+  if (!firstPayment || !firstPayment.reaction) {
+    return true;
+  }
+
+  return (
+    paymentRule.paymentUnit === firstPayment.unit &&
+    paymentRule.fundingSource === firstPayment.fundingSource
+  );
 }

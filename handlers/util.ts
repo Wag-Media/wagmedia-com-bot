@@ -206,7 +206,7 @@ export async function ensureFullEntities(
   if (reaction.message.partial) {
     wasPartial.message = true;
     try {
-      await reaction.message.fetch();
+      reaction.message = await reaction.message.fetch();
     } catch (error) {
       logger.error("Something went wrong when fetching the message:", error);
       throw new Error("Something went wrong when fetching the message:");
