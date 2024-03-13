@@ -1,15 +1,24 @@
 import { MessageReaction, User as DiscordUser } from "discord.js";
 import { PaymentRule, Post } from "@prisma/client";
 import { findEmojiPaymentRule } from "@/data/emoji";
-import { ContentType } from "@/types";
+import {
+  ContentType,
+  OddJobWithOptions,
+  PostWithCategories,
+  PostWithOptions,
+} from "@/types";
 import { prisma } from "@/utils/prisma";
-import { isPaymentUnitValid } from "./utils";
-import { upsertEntityReaction } from "@/data/reaction";
+import { isPaymentUnitValid } from "../../../curators/utils";
+import { getPostReactions, upsertEntityReaction } from "@/data/reaction";
 import { logContentEarnings } from "@/handlers/log-utils";
-import { BaseReactionHandler } from "./base-handlers";
-import { findOrCreateThreadPost } from "@/data/post";
+import { BaseReactionHandler } from "../_BaseReactionHandler";
+import { findOrCreateThreadPost, getPost } from "@/data/post";
+import { BaseReactionAddHandler } from "./_BaseReactionAddHandler";
+import { logger } from "@/client";
+import { isCountryFlag } from "@/utils/is-country-flag";
+import { getOddJob } from "@/data/oddjob";
 
-abstract class BasePaymentReactionHandler extends BaseReactionHandler {
+abstract class BasePaymentReactionHandler extends BaseReactionAddHandler {
   protected paymentRule: PaymentRule | null;
   protected parentId: string | null = null;
 
@@ -31,7 +40,11 @@ abstract class BasePaymentReactionHandler extends BaseReactionHandler {
   }
 
   protected async postProcess(): Promise<void> {
-    await logContentEarnings(this.dbContent!, "post", this.messageLink);
+    await logContentEarnings(
+      this.dbContent!,
+      this.contentType,
+      this.messageLink
+    );
   }
 
   protected async isPaymentReactionValid(
@@ -50,6 +63,12 @@ abstract class BasePaymentReactionHandler extends BaseReactionHandler {
 export class PostPaymentReactionHandler extends BasePaymentReactionHandler {
   contentType: ContentType = "post";
 
+  protected getDbContent(
+    reaction: MessageReaction
+  ): Promise<PostWithCategories | null> {
+    return getPost(reaction.message.id);
+  }
+
   protected async processReaction(
     reaction: MessageReaction,
     user: DiscordUser
@@ -61,13 +80,6 @@ export class PostPaymentReactionHandler extends BasePaymentReactionHandler {
     );
 
     const { paymentAmount, paymentUnit, fundingSource } = this.paymentRule!;
-
-    const dbReaction = await upsertEntityReaction(
-      this.dbContent,
-      this.contentType,
-      this.dbUser!,
-      this.dbEmoji
-    );
 
     await prisma.contentEarnings.upsert({
       where: {
@@ -94,7 +106,7 @@ export class PostPaymentReactionHandler extends BasePaymentReactionHandler {
         unit: paymentUnit,
         postId: this.dbContent!.id,
         userId: this.dbUser!.id,
-        reactionId: dbReaction.id,
+        reactionId: this.dbReaction!.id,
         status: "unknown",
         fundingSource,
         threadParentId: this.parentId,
@@ -108,10 +120,86 @@ export class PostPaymentReactionHandler extends BasePaymentReactionHandler {
       });
     }
   }
+
+  protected async isReactionPermitted(reaction, user): Promise<boolean> {
+    const post = this.dbContent as PostWithCategories;
+
+    // 1.1. make sure the post has a title and description
+    if (!post.title || !post.content) {
+      logger.logAndSend(
+        `Before you can publish the post ${this.messageLink}, make sure it has a title and description.`,
+        user
+      );
+      throw new Error("Post has no title or description");
+    }
+
+    // 1.2. make sure the post has a category
+    if (post.categories.length === 0) {
+      logger.logAndSend(
+        `Before you can publish the post ${this.messageLink}, make sure it has a category.`,
+        user
+      );
+      throw new Error("Post has no category");
+    }
+
+    // 1.3. make sure non anglo posts have a flag
+    const isNonAnglo = post.categories.some((category) =>
+      category.name.includes("Non Anglo")
+    );
+
+    if (isNonAnglo) {
+      //get post reactions
+      const postReactions = await getPostReactions(reaction.message.id);
+
+      // check if the post has a flag
+      const hasFlag = postReactions.some((reaction) =>
+        isCountryFlag(reaction.emoji?.id)
+      );
+
+      if (!hasFlag) {
+        logger.logAndSend(
+          `Before you can publish the post ${this.messageLink} with non anglo category, make sure it has a flag.`,
+          user
+        );
+
+        throw new Error("Post is non anglo and has no flag");
+      }
+    }
+
+    // 1.4. make sure translation posts have a non anglo category
+    const isTranslation = post.categories.some((category) =>
+      category.name.includes("Translations")
+    );
+
+    if (isTranslation && !isNonAnglo) {
+      logger.logAndSend(
+        `Before you can publish the post ${this.messageLink} with a translation category, make sure it also has a Non Anglo category.`,
+        user
+      );
+
+      throw new Error("Post is translation and has no non anglo category");
+    }
+
+    return true;
+  }
 }
 
 export class OddJobPaymentReactionHandler extends BasePaymentReactionHandler {
   contentType: ContentType = "oddjob";
+
+  protected getDbContent(
+    reaction: MessageReaction
+  ): Promise<PostWithOptions | OddJobWithOptions | null> {
+    return getOddJob(reaction.message.id);
+  }
+
+  protected isReactionPermitted(
+    reaction: MessageReaction,
+    user: DiscordUser
+  ): Promise<boolean> {
+    return Promise.resolve(true);
+  }
+
   protected async processReaction(
     reaction: MessageReaction,
     user: DiscordUser

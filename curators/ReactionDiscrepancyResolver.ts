@@ -1,7 +1,11 @@
 import { Message, MessageReaction, PartialMessage } from "discord.js";
-import { ReactionCurator } from "./reaction-curator-new";
+import { ReactionCurator } from "./ReactionCurator";
 import { determineContentType } from "./utils";
-import { getPostOrOddjob, getPostOrOddjobReactionCount } from "@/data/post";
+import {
+  getPostOrOddjob,
+  getPostOrOddjobReactionCount,
+  resetPostOrOddjobReactions,
+} from "@/data/post";
 import { logger } from "@/client";
 
 export class ReactionDiscrepancyResolver {
@@ -9,6 +13,10 @@ export class ReactionDiscrepancyResolver {
     const hasDiscrepancies = await this.detectDiscrepancies(message);
 
     if (hasDiscrepancies) {
+      // 1. remove all reactions and payments and connected entities from the db
+      await resetPostOrOddjobReactions(message.id);
+
+      // 2. iterate over all reactions and re-add them
       for (const [_, messageReaction] of message.reactions.cache) {
         const users = await messageReaction.users.fetch();
         for (const user of users.values()) {

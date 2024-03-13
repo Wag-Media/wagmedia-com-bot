@@ -1,8 +1,8 @@
 import { MessageReaction, User as DiscordUser, Message } from "discord.js";
-import { ReactionHandlerFactory } from "./reaction-handler-factory";
-import { logger } from "@/client";
+import { ReactionHandlerFactory } from "../handlers/ReactionHandlerFactory";
 import { ReactionTracker } from "@/reaction-tracker";
-import { ReactionDiscrepancyResolver } from "./discrepancy-resolver";
+import { ReactionDiscrepancyResolver } from "./ReactionDiscrepancyResolver";
+import { logger } from "@/client";
 
 export class ReactionCurator {
   static isResolvingDiscrepancies = false;
@@ -35,9 +35,15 @@ export class ReactionCurator {
       );
       await handler.handle(reaction, user);
     } catch (error) {
-      console.error("Error handling reaction:", error);
+      logger.error("Error handling reaction:", error.message);
+      // track the reaction = label it as removed by the bot so it wont be handled again
+      // in the messageReactionRemove events
       ReactionTracker.addReactionToTrack(reaction);
+
+      // remove any reaction if an error occured
       await reaction.users.remove(user.id);
+
+      // and also side effects (e.g. remove the reaction from the db)
       this.curateRemove(reaction, user);
     }
   }

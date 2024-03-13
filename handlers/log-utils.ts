@@ -3,6 +3,7 @@ import { prisma } from "@/utils/prisma";
 import { OddJob, Post } from "@prisma/client";
 import { MessageReaction, User as DiscordUser, ChannelType } from "discord.js";
 import * as config from "@/config";
+import { ContentType } from "@/types";
 
 export function logNewEmojiReceived(
   reaction: MessageReaction,
@@ -40,15 +41,17 @@ export function logEmojiRemoved(
 
 export async function logContentEarnings(
   entity: Post | OddJob,
-  entityType: "post" | "oddjob" | undefined,
+  contentType: ContentType,
   messageLink: string
 ) {
-  if (entityType !== "post" && entityType !== "oddjob") {
-    logger.error("Invalid content entityType in logContentEarnings");
+  if (!contentType) {
+    logger.error("Invalid content type in logContentEarnings");
+    return;
   }
 
-  const earningsCondition =
-    entityType === "post" ? { postId: entity.id } : { oddJobId: entity.id };
+  const earningsCondition = ["post", "thread"].includes(contentType)
+    ? { postId: entity.id }
+    : { oddJobId: entity.id };
 
   // Fetch all earnings for the post after the update
   const allPostEarnings = await prisma.contentEarnings.findMany({
@@ -63,11 +66,11 @@ export async function logContentEarnings(
 
   // create a comma separated human readable string
   const humanReadableTotalEarnings = Object.keys(totalEarningsPerUnit)
-    .map((key) => `${key}: ${totalEarningsPerUnit[key]}`)
+    .map((key) => `${totalEarningsPerUnit[key]} ${key}`)
     .join(", ");
 
   logger.log(
-    `[${entityType}] New total earnings for ${messageLink}: ${humanReadableTotalEarnings}`
+    `[${contentType}] New total earnings for ${messageLink}: **${humanReadableTotalEarnings}**`
   );
 }
 

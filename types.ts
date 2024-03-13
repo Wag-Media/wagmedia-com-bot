@@ -1,3 +1,4 @@
+import { OddJob } from "@prisma/client";
 import {
   Category,
   Emoji,
@@ -35,6 +36,12 @@ export type PostEmbed = {
   color: number | null;
 };
 
+export type PostWithOptions = Post & {
+  categories?: Category[];
+  earnings?: ContentEarnings[];
+  tags?: Tag[];
+  embeds?: Embed[];
+};
 export type PostWithCategories = Post & { categories: Category[] };
 export type PostWithEarnings = Post & { earnings: ContentEarnings[] };
 export type PostWithCategoriesEarnings = Post & {
@@ -48,6 +55,11 @@ export type PostFull = Post & {
   embeds: Embed[];
 };
 
+export type OddJobWithOptions = OddJob & {
+  payments?: Payment[];
+  earnings?: ContentEarnings[];
+  embeds?: Embed[];
+};
 export type OddjobWithEarnings = OddJob & {
   earnings: ContentEarnings[];
 };

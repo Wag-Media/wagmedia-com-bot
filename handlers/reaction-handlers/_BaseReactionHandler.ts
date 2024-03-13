@@ -4,27 +4,38 @@ import {
   User as DiscordUser,
   Message,
 } from "discord.js";
-import { IReactionHandler } from "./interface-reaction-handler";
+import { IReactionHandler } from "./_IReactionHandler";
 import { getGuildFromMessage } from "@/handlers/util";
-import { ContentType, OddjobWithEarnings, PostWithEarnings } from "@/types";
-import { Emoji, PaymentRule, User } from "@prisma/client";
+import {
+  ContentType,
+  OddJobWithOptions,
+  OddjobWithEarnings,
+  PostWithEarnings,
+  PostWithOptions,
+} from "@/types";
+import { Emoji, PaymentRule, Reaction, User } from "@prisma/client";
 import { findOrCreateEmoji } from "@/data/emoji";
 import { findOrCreateUserFromDiscordUser } from "@/data/user";
 import { getPostOrOddjobWithEarnings } from "@/data/post";
-import { MessageCurator } from "./message-curator";
+import { MessageCurator } from "../../curators/message-curator";
 
+/**
+ * Base class for reaction handlers. Takes care of initializing the reaction context
+ */
 export abstract class BaseReactionHandler implements IReactionHandler {
   abstract contentType: ContentType;
   protected messageLink: string;
   protected guild: Guild | null;
   protected dbEmoji: Emoji;
   protected dbUser: User | undefined;
-  protected dbContent: PostWithEarnings | OddjobWithEarnings | null | undefined;
+  protected dbContent: PostWithOptions | OddJobWithOptions | null | undefined;
+  protected dbReaction: Reaction | null | undefined;
 
-  async handle(reaction, user, parentId) {
-    console.info("BaseReactionHandler: Handling payment reaction");
+  async handle(reaction, user) {
     await this.initialize(reaction, user);
-    await this.processReaction(reaction, user);
+    if (await this.isReactionPermitted(reaction, user)) {
+      await this.processReaction(reaction, user);
+    }
     await this.postProcess(reaction, user);
   }
 
@@ -35,10 +46,7 @@ export abstract class BaseReactionHandler implements IReactionHandler {
     this.messageLink = `https://discord.com/channels/${this.guild.id}/${reaction.message.channel.id}/${reaction.message.id}`;
     this.dbEmoji = await findOrCreateEmoji(reaction.emoji);
     this.dbUser = await findOrCreateUserFromDiscordUser(user);
-    this.dbContent = await getPostOrOddjobWithEarnings(
-      reaction.message.id,
-      this.contentType
-    );
+    this.dbContent = await this.getDbContent(reaction);
 
     if (!this.guild) {
       throw new Error(`Guild for ${this.messageLink} not found.`);
@@ -59,6 +67,17 @@ export abstract class BaseReactionHandler implements IReactionHandler {
     }
   }
 
+  protected getDbContent(
+    reaction: MessageReaction
+  ): Promise<PostWithOptions | OddJobWithOptions | null | undefined> {
+    return getPostOrOddjobWithEarnings(reaction.message.id, this.contentType);
+  }
+
+  protected abstract isReactionPermitted(
+    reaction: MessageReaction,
+    user: DiscordUser
+  ): Promise<boolean>;
+
   protected abstract processReaction(
     reaction: MessageReaction,
     user: DiscordUser
@@ -68,6 +87,8 @@ export abstract class BaseReactionHandler implements IReactionHandler {
     reaction: MessageReaction,
     user: DiscordUser
   ): Promise<void> {
+    console.log("BaseReactionHandler: Post-processing reaction");
+    // Shared logic after processing payment, e.g., logging, validation
     return Promise.resolve();
   }
 }

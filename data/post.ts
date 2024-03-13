@@ -361,14 +361,15 @@ export async function resetPostReactions(postId: string) {
 }
 
 export async function resetPostOrOddjobReactions(
-  entityId: string,
-  entityType: "oddjob" | "post" | undefined
+  entityId: string
 ): Promise<Post | OddJob | null | undefined> {
-  if (!entityType) {
-    return;
-  }
+  const post = await prisma.post.findUnique({
+    where: {
+      id: entityId,
+    },
+  });
 
-  if (entityType === "post") {
+  if (post) {
     return prisma.post.update({
       where: {
         id: entityId,
@@ -388,7 +389,15 @@ export async function resetPostOrOddjobReactions(
         },
       },
     });
-  } else {
+  }
+
+  const oddJob = await prisma.oddJob.findUnique({
+    where: {
+      id: entityId,
+    },
+  });
+
+  if (oddJob) {
     return prisma.oddJob.update({
       where: {
         id: entityId,
@@ -406,6 +415,8 @@ export async function resetPostOrOddjobReactions(
       },
     });
   }
+
+  return null;
 }
 
 export async function featurePost(postId: string) {

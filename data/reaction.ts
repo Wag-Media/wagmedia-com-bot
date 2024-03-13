@@ -58,17 +58,17 @@ export async function upsertEntityReaction(
 
 export async function deleteEntityReaction(
   entity: Post | OddJob | undefined | null,
-  entityType: "post" | "oddjob" | undefined,
+  contentType: ContentType,
   userId: string,
   emojiId: string
 ) {
-  if (!entityType || !entity) {
-    logger.warn("Invalid content entityType in upsertEntityReaction");
+  if (!contentType || !entity) {
+    logger.warn("Invalid content contentType in upsertEntityReaction");
     return;
   }
 
   const whereCondition =
-    entityType === "post"
+    contentType === "post" || contentType === "thread"
       ? {
           postId_userDiscordId_emojiId: {
             postId: entity.id,

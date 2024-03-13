@@ -46,7 +46,7 @@ import {
 } from "./log-utils.js";
 import { findOrCreateUserFromDiscordUser } from "@/data/user";
 import { upsertOddjobReaction, upsertPostReaction } from "@/data/reaction";
-import { isCountryFlag } from "../utils/is-country-flag";
+import { isCountryFlag } from "../utils/is-country-flag.js";
 import { fetchOddjob } from "@/data/oddjob";
 import { parseOddjob } from "@/utils/handle-odd-job";
 import { isPaymentReactionValid } from "@/utils/payment-valid";

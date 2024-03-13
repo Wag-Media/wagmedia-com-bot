@@ -1,9 +1,11 @@
 import { MessageReaction, User as DiscordUser } from "discord.js";
-import { IReactionHandler } from "./interface-reaction-handler";
+import { IReactionHandler } from "./_IReactionHandler";
 import { logger } from "@/client";
-import { BaseReactionHandler } from "./base-handlers";
+import { BaseReactionHandler } from "./_BaseReactionHandler";
+import { ContentType } from "@/types";
 
 export class NotAllowedReactionHandler extends BaseReactionHandler {
+  contentType: ContentType;
   private readonly message: string;
 
   constructor(message: string) {
@@ -11,11 +13,19 @@ export class NotAllowedReactionHandler extends BaseReactionHandler {
     this.message = message;
   }
 
-  protected async processReaction(
+  protected async isReactionPermitted(
+    reaction: MessageReaction,
+    user: DiscordUser
+  ): Promise<boolean> {
+    await logger.logAndSend(`${this.message} ${this.messageLink}`, user);
+    throw new Error(this.message);
+  }
+
+  protected processReaction(
     reaction: MessageReaction,
     user: DiscordUser
   ): Promise<void> {
-    await logger.logAndSend(`${this.message} ${this.messageLink}`, user);
-    throw new Error(this.message);
+    // no-op
+    return Promise.resolve();
   }
 }
