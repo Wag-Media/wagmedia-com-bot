@@ -24,13 +24,13 @@ import {
 } from "@/data/emoji";
 import { userHasRole } from "@/utils/userHasRole.js";
 import { ensureFullEntities, shouldIgnoreReaction } from "./util.js";
-import { logEmojiRemoved, logPostEarnings } from "./log-utils.js";
+import { logEmojiRemoved } from "./log-utils";
 import {
   deleteReaction,
   getPostUserEmojiFromReaction,
 } from "@/data/reaction.js";
 import { removeCategoryFromPost } from "@/data/post.js";
-import { isChannelMonitoredForOddJobs } from "./util.js";
+import { isChannelMonitoredForOddJobs } from "./util";
 
 const prisma = new PrismaClient();
 

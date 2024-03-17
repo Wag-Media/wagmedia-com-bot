@@ -17,8 +17,9 @@ import { BaseReactionAddHandler } from "./_BaseReactionAddHandler";
 import { logger } from "@/client";
 import { isCountryFlag } from "@/utils/is-country-flag";
 import { getOddJob } from "@/data/oddjob";
+import { ThreadPaymentReactionRemoveHandler } from "../remove/PaymentReactionRemoveHandler";
 
-abstract class BasePaymentReactionHandler extends BaseReactionAddHandler {
+abstract class BasePaymentReactionAddHandler extends BaseReactionAddHandler {
   protected paymentRule: PaymentRule | null;
   protected parentId: string | null = null;
 
@@ -26,7 +27,6 @@ abstract class BasePaymentReactionHandler extends BaseReactionAddHandler {
     reaction: MessageReaction,
     user: DiscordUser
   ): Promise<void> {
-    console.log("BasePaymentReactionHandler: Initializing payment reaction");
     await super.initialize(reaction, user);
 
     this.paymentRule = await findEmojiPaymentRule(this.dbEmoji.id);
@@ -34,9 +34,7 @@ abstract class BasePaymentReactionHandler extends BaseReactionAddHandler {
       throw new Error(`Payment rule for ${this.messageLink} not found.`);
     }
 
-    if (!(await this.isPaymentReactionValid(reaction, user))) {
-      throw new Error(`Payment reaction for ${this.messageLink} is not valid.`);
-    }
+    await this.isPaymentReactionValid(reaction, user);
   }
 
   protected async postProcess(): Promise<void> {
@@ -52,15 +50,26 @@ abstract class BasePaymentReactionHandler extends BaseReactionAddHandler {
     user: DiscordUser
   ): Promise<boolean> {
     //todo add more checks here
-    return await isPaymentUnitValid(
+
+    const unitValid = await isPaymentUnitValid(
       reaction.message.id,
       this.contentType,
       this.paymentRule
     );
+
+    if (!unitValid) {
+      logger.logAndSend(
+        `Payment unit for ${this.messageLink} is invalid as it does not equal the unit of the first payment.`,
+        user
+      );
+      throw new Error("Payment unit is invalid");
+    }
+
+    return true;
   }
 }
 
-export class PostPaymentReactionHandler extends BasePaymentReactionHandler {
+export class PostPaymentReactionAddHandler extends BasePaymentReactionAddHandler {
   contentType: ContentType = "post";
 
   protected getDbContent(
@@ -113,7 +122,7 @@ export class PostPaymentReactionHandler extends BasePaymentReactionHandler {
       },
     });
 
-    if (!(this.dbContent as Post).isPublished) {
+    if (this.contentType === "post" && !(this.dbContent as Post).isPublished) {
       await prisma.post.update({
         where: { id: this.dbContent!.id },
         data: { isPublished: true },
@@ -184,7 +193,7 @@ export class PostPaymentReactionHandler extends BasePaymentReactionHandler {
   }
 }
 
-export class OddJobPaymentReactionHandler extends BasePaymentReactionHandler {
+export class OddJobPaymentReactionAddHandler extends BasePaymentReactionAddHandler {
   contentType: ContentType = "oddjob";
 
   protected getDbContent(
@@ -249,7 +258,58 @@ export class OddJobPaymentReactionHandler extends BasePaymentReactionHandler {
   }
 }
 
-export class ThreadPaymentReactionHandler extends PostPaymentReactionHandler {
+// export class ThreadPaymentReactionAddHandler extends BasePaymentReactionAddHandler {
+//   contentType: ContentType = "thread";
+//   protected parentId: string | null = null;
+
+//   protected async initialize(
+//     reaction: MessageReaction,
+//     user: DiscordUser
+//   ): Promise<void> {
+//     console.log("Initializing payment reaction for a thread");
+//     await super.initialize(reaction, user);
+
+//     // If the message is a thread, set the parentId
+//     this.parentId = reaction.message.channelId;
+//   }
+
+//   protected async isReactionPermitted(
+//     reaction: any,
+//     user: any
+//   ): Promise<boolean> {
+//     // Payments to threads (by superusers) are always permitted
+//     return await isPaymentUnitValid(
+//       reaction.message.id,
+//       this.contentType,
+//       this.paymentRule
+//     );
+//   }
+
+//   protected async processReaction(
+//     reaction: MessageReaction,
+//     user: DiscordUser
+//   ) {
+//     console.log("Handling payment reaction for a thread");
+
+//     // 1. if the thread is not in the database, create it on payment
+//     if (!this.dbContent) {
+//       this.dbContent = await findOrCreateThreadPost({
+//         message: reaction.message,
+//         content: reaction.message.content || "",
+//         url: this.messageLink || "",
+//       });
+//     }
+
+//     // 2. process the payment as in posts
+//     await super.processReaction(reaction, user);
+//   }
+
+//   protected async postProcess(): Promise<void> {
+//     return Promise.resolve();
+//   }
+// }
+
+export class ThreadPaymentReactionAddHandler extends PostPaymentReactionAddHandler {
   contentType: ContentType = "thread";
 
   protected async initialize(
@@ -261,7 +321,11 @@ export class ThreadPaymentReactionHandler extends PostPaymentReactionHandler {
 
     // If the message is a thread, set the parentId
     this.parentId = reaction.message.channelId;
-    console.log("ParentId set to", this.parentId);
+  }
+
+  protected isReactionPermitted(reaction: any, user: any): Promise<boolean> {
+    // Payments to threads (by superusers) are always permitted
+    return Promise.resolve(true);
   }
 
   protected async processReaction(
@@ -279,11 +343,15 @@ export class ThreadPaymentReactionHandler extends PostPaymentReactionHandler {
       });
     }
 
-    // 2. process the payment as in posts
-    await super.processReaction(reaction, user);
-  }
+    // 2. add the dbReaction to the db (it was not as post was not defined)
+    this.dbReaction = await upsertEntityReaction(
+      this.dbContent,
+      this.contentType,
+      this.dbUser!,
+      this.dbEmoji
+    );
 
-  protected async postProcess(): Promise<void> {
-    return Promise.resolve();
+    // 3. process the payment as in posts
+    await super.processReaction(reaction, user);
   }
 }

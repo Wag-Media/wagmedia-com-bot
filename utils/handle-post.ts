@@ -38,19 +38,17 @@ export async function handlePost(
   // Check if the message contains necessary information
   if (missingFields.length > 0) {
     logger.warn(
-      `[post] Post is missing required fields: ${missingFields.join(
+      `[post] Post ${messageLink} is missing required fields: ${missingFields.join(
         ", "
-      )}: ${messageLink}`
+      )}`
     );
     return;
   }
 
   logger.log(
-    `[post] recorded new relevant message by ${
-      message.member?.displayName
-    } with ${embeds.length} ${embeds.length === 1 ? "embed" : "embeds"} and ${
-      tags.length
-    } ${
+    `[post] New valid post by ${message.member?.displayName} with ${
+      embeds.length
+    } ${embeds.length === 1 ? "embed" : "embeds"} and ${tags.length} ${
       tags.length === 1 ? "tag" : "tags"
     } in the channel ${messageLink}: ${title} `
   );

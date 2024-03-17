@@ -15,10 +15,7 @@ export class RegularReactionRemoveHandler extends BaseReactionRemoveHandler {
     this.contentType = contentType;
   }
 
-  protected async isReactionPermitted(
-    reaction: MessageReaction,
-    user: User
-  ): Promise<boolean> {
+  protected async isReactionPermitted(): Promise<boolean> {
     return true;
   }
 

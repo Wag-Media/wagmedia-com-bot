@@ -13,16 +13,25 @@ export abstract class BaseReactionAddHandler extends BaseReactionHandler {
     reaction: MessageReaction,
     user: DiscordUser
   ): Promise<void> {
-    console.log("BaseReactionAddHandler: Initializing reaction add");
     await super.initialize(reaction, user);
-    this.dbReaction = await upsertEntityReaction(
-      this.dbContent,
-      this.contentType,
-      this.dbUser!,
-      this.dbEmoji
-    );
-    logger.log(
-      `[${this.contentType}] Reaction ${reaction.emoji} added to ${this.messageLink}`
-    );
+
+    if (!this.dbContent && this.contentType !== "thread") {
+      throw new Error(
+        `Adding emojis to inclomplete ${this.contentType} is not allowed`
+      );
+    }
+
+    // threads are a special case that only stores payment reactions and is handled separately
+    if (this.contentType !== "thread") {
+      this.dbReaction = await upsertEntityReaction(
+        this.dbContent,
+        this.contentType,
+        this.dbUser!,
+        this.dbEmoji
+      );
+      logger.log(
+        `[${this.contentType}] Reaction ${reaction.emoji} added to ${this.messageLink} by ${user.username}#${user.discriminator}.`
+      );
+    }
   }
 }

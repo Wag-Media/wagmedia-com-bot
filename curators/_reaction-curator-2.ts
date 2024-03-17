@@ -188,7 +188,7 @@ export class ReactionCurator {
 
       // If any error occurs, remove the reaction from from discord
       console.log(
-        `because an error occored, bot will remove the reaction ${
+        `because an error occurred, bot will remove the reaction ${
           this.reaction.emoji.name || this.reaction.emoji.id
         } by ${this.discordUser.username}`
       );

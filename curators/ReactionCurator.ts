@@ -18,7 +18,10 @@ export class ReactionCurator {
     if (!this.isResolvingDiscrepancies) {
       this.isResolvingDiscrepancies = true;
       const hadDiscrepancies =
-        await ReactionDiscrepancyResolver.checkAndResolve(message);
+        await ReactionDiscrepancyResolver.checkAndResolve(
+          message,
+          "reactionAdd"
+        );
       this.isResolvingDiscrepancies = false;
 
       if (hadDiscrepancies) {
@@ -35,16 +38,16 @@ export class ReactionCurator {
       );
       await handler.handle(reaction, user);
     } catch (error) {
-      logger.error("Error handling reaction:", error.message);
+      console.error("Error handling reaction:", error);
       // track the reaction = label it as removed by the bot so it wont be handled again
       // in the messageReactionRemove events
-      ReactionTracker.addReactionToTrack(reaction);
+      ReactionTracker.addReactionToTrack(reaction, user.id);
 
       // remove any reaction if an error occured
       await reaction.users.remove(user.id);
 
       // and also side effects (e.g. remove the reaction from the db)
-      this.curateRemove(reaction, user);
+      await this.curateRemove(reaction, user);
     }
   }
 
@@ -62,5 +65,34 @@ export class ReactionCurator {
     } catch (error) {
       console.error("Error handling reaction:", error);
     }
+
+    // const message = reaction.message as Message;
+
+    // // Only check for discrepancies if not currently resolving them
+    // if (!this.isResolvingDiscrepancies) {
+    //   this.isResolvingDiscrepancies = true;
+    //   const hadDiscrepancies =
+    //     await ReactionDiscrepancyResolver.checkAndResolve(
+    //       message,
+    //       "reactionRemove"
+    //     );
+    //   this.isResolvingDiscrepancies = false;
+
+    //   if (hadDiscrepancies) {
+    //     console.log("discrepancies were handled, returning");
+    //     return;
+    //   }
+    // }
+
+    // try {
+    //   const handler = await ReactionHandlerFactory.getHandler(
+    //     reaction,
+    //     user,
+    //     "reactionRemove"
+    //   );
+    //   await handler.handle(reaction, user);
+    // } catch (error) {
+    //   logger.error("Error handling reaction:", error.message);
+    // }
   }
 }

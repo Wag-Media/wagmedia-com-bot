@@ -3,17 +3,24 @@ import { MessageReaction } from "discord.js";
 
 // ReactionTracker.ts
 export class ReactionTracker {
-  private static botRemovedReactions = new Set<string>();
+  public static botRemovedReactions = new Set<string>();
   private static readonly TIMEOUT = 60000; // 1 minute in milliseconds
 
-  private static getKey(reaction: MessageReaction): string {
-    return `${reaction.message.id}:${reaction.users.cache.last()?.id}:${
-      reaction.emoji.name
-    }`;
+  public static getKey(reaction: MessageReaction, userId: string): string {
+    return `${reaction.message.id}:${userId}:${reaction.emoji.name}`;
   }
 
-  public static addReactionToTrack(reaction: MessageReaction): void {
-    const reactionKey = this.getKey(reaction);
+  /**
+   * Add a reaction to the set of tracked reactions. We need the user id as well as
+   * on delete reactions the reaction.users.cache.last() will be undefined
+   * @param reaction
+   * @param userId
+   */
+  public static addReactionToTrack(
+    reaction: MessageReaction,
+    userId: string
+  ): void {
+    const reactionKey = this.getKey(reaction, userId);
     this.botRemovedReactions.add(reactionKey);
 
     // Automatically remove the reaction from the set after the specified timeout
@@ -22,11 +29,17 @@ export class ReactionTracker {
     }, this.TIMEOUT);
   }
 
-  public static isReactionTracked(reaction: MessageReaction): boolean {
-    return this.botRemovedReactions.has(this.getKey(reaction));
+  public static isReactionTracked(
+    reaction: MessageReaction,
+    userId: string
+  ): boolean {
+    return this.botRemovedReactions.has(this.getKey(reaction, userId));
   }
 
-  public static removeTrackedReaction(reaction: MessageReaction): void {
-    this.botRemovedReactions.delete(this.getKey(reaction));
+  public static removeTrackedReaction(
+    reaction: MessageReaction,
+    userId: string
+  ): void {
+    this.botRemovedReactions.delete(this.getKey(reaction, userId));
   }
 }

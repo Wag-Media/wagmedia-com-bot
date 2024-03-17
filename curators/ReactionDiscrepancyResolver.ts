@@ -7,10 +7,21 @@ import {
   resetPostOrOddjobReactions,
 } from "@/data/post";
 import { logger } from "@/client";
+import { ReactionEventType } from "@/types";
 
+/**
+ * This class is responsible for checking and resolving discrepancies between the database and Discord reactions.
+ * It is used to ensure that the database and Discord reactions are in sync.
+ *
+ * If a discrepancy is detected, all reactions and payments and connected entities are removed from the database and re-added in the
+ * sequence they appeared.
+ */
 export class ReactionDiscrepancyResolver {
-  static async checkAndResolve(message: Message): Promise<boolean> {
-    const hasDiscrepancies = await this.detectDiscrepancies(message);
+  static async checkAndResolve(
+    message: Message,
+    event: ReactionEventType
+  ): Promise<boolean> {
+    const hasDiscrepancies = await this.detectDiscrepancies(message, event);
 
     if (hasDiscrepancies) {
       // 1. remove all reactions and payments and connected entities from the db
@@ -30,7 +41,18 @@ export class ReactionDiscrepancyResolver {
     return hasDiscrepancies;
   }
 
-  private static async detectDiscrepancies(message: Message): Promise<boolean> {
+  /**
+   * A discrepancy is detected if
+   * - the message that was reacted to is not in the database
+   * - the number of reactions in the database is different from the number of
+   *   reactions in Discord
+   * @param message
+   * @returns
+   */
+  private static async detectDiscrepancies(
+    message: Message,
+    event: ReactionEventType
+  ): Promise<boolean> {
     const { contentType, parentId } = determineContentType(message);
 
     if (!message.id) {
@@ -57,15 +79,33 @@ export class ReactionDiscrepancyResolver {
       }
     }
 
-    const dbPostOrOddjobReactionCount =
-      (await getPostOrOddjobReactionCount(message.id, contentType)) || 0;
+    const dbPostOrOddjobReactionCount = await getPostOrOddjobReactionCount(
+      message.id,
+      contentType
+    );
 
-    const discordReactionCount = message.reactions.cache.size;
+    let discordReactionCount = 0;
+    message.reactions.cache.forEach((messageReaction) => {
+      discordReactionCount += messageReaction.count;
+    });
 
-    if (discordReactionCount !== dbPostOrOddjobReactionCount + 1) {
+    let expectedReactionCount = dbPostOrOddjobReactionCount || 0;
+
+    console.log("expectedReactionCount", expectedReactionCount);
+
+    // as we are in an event handler we need to adjust the expected reaction count
+    // - reaction was just added there should be +1 on discord
+    // - reaction was just removed there should be -1 on discord
+    if (event === "reactionAdd") {
+      expectedReactionCount += 1;
+    } else if (event === "reactionRemove") {
+      expectedReactionCount -= 1;
+    }
+
+    if (discordReactionCount !== expectedReactionCount) {
       logger.warn(
-        `[${contentType}] ${contentType} with ID ${message.id} has a different number of reactions in the database.`,
-        ` discord: ${discordReactionCount - 1}`,
+        `[${contentType}] ${contentType} with ID ${message.id} has a different number of reactions in the database on ${event}.`,
+        ` discord: ${discordReactionCount}`,
         ` db: ${dbPostOrOddjobReactionCount}`
       );
       return true;

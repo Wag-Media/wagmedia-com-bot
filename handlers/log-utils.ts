@@ -5,6 +5,8 @@ import { MessageReaction, User as DiscordUser, ChannelType } from "discord.js";
 import * as config from "@/config";
 import { ContentType } from "@/types";
 
+const space = ".      ";
+
 export function logNewEmojiReceived(
   reaction: MessageReaction,
   user: DiscordUser,
@@ -121,12 +123,12 @@ export async function logIntroMessage(guild, discordClient) {
 
   config.CHANNELS_TO_MONITOR.map((channelId) => {
     const channel = guild.channels.cache.get(channelId);
-    logger.info(`↪ #${channel?.name} (${channel?.id})`);
+    logger.info(`${space}↪ #${channel?.name} (${channel?.id})`);
   });
 
   monitoredCategoriesChannels?.forEach((channel) => {
     logger.info(
-      `↪ ${channel?.parent?.name} ↪ #${channel?.name} (${channel?.id})`
+      `${space}↪ ${channel?.parent?.name} ↪ #${channel?.name} (${channel?.id})`
     );
   });
 
@@ -135,7 +137,7 @@ export async function logIntroMessage(guild, discordClient) {
   );
   config.CHANNELS_ODD_JOBS.map((channelId) => {
     const channel = guild.channels.cache.get(channelId);
-    logger.info(`↪ #${channel?.name} (${channel?.id})`);
+    logger.info(`${space}↪ #${channel?.name} (${channel?.id})`);
   });
 }
 

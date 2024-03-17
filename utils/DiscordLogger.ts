@@ -1,5 +1,6 @@
 import { wrapUrlsInMessage } from "@/handlers/log-utils";
 import { Client, PermissionsBitField, TextChannel, User } from "discord.js";
+import * as config from "@/config";
 
 export class DiscordLogger {
   private discordClient: Client;
@@ -44,13 +45,17 @@ export class DiscordLogger {
         this.channelId
       )) as TextChannel;
 
+      const logLevelPrefix = config.LOG_THE_LEVEL_IN_DISCORD
+        ? `[${level.toUpperCase()}]`
+        : "";
+
       if (this.discordClient.user && channel) {
         const permissions = channel.permissionsFor(this.discordClient.user);
         if (
           permissions &&
           permissions.has(PermissionsBitField.Flags.SendMessages)
         ) {
-          channel.send(`[${level}]${combinedMessage}`);
+          channel.send(`${logLevelPrefix}${combinedMessage}`);
         } else {
           console.warn(
             `DiscordLogger: Missing 'SEND_MESSAGES' permission in channel ${this.channelId}.`
@@ -95,7 +100,7 @@ export class DiscordLogger {
     const logFunction = this[level || "log"];
 
     user.send(message).catch(console.error);
-    logFunction.call(this, `Informed user ${user.tag}: ${message}`);
+    logFunction.call(this, `[info] Informed user ${user.tag}: ${message}`);
   }
 }
 

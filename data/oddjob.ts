@@ -107,6 +107,14 @@ export async function getOddJob(id: string): Promise<OddJob | null> {
   });
 }
 
+export async function oddJobHasEarnings(oddJobId: string): Promise<boolean> {
+  const earnings = await prisma.contentEarnings.findMany({
+    where: { oddJobId },
+  });
+
+  return earnings.length > 0;
+}
+
 export async function getOddjobWithEarnings(
   oddJobId: string
 ): Promise<OddjobWithEarnings | null> {

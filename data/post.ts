@@ -91,6 +91,9 @@ export const findOrCreatePost = async (
       tags: {
         connect: tagInstances.map((tag) => ({ id: tag.id })),
       },
+      isPublished: false,
+      isDeleted: false,
+      isFeatured: false,
     },
     include: {
       categories: true,

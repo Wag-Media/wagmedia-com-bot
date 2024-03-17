@@ -1,11 +1,9 @@
 import { logger } from "@/client";
+import { findOrCreateOddJob, oddJobHasEarnings } from "@/data/oddjob";
 import { findOrCreatePost, flagDeletePost, getPost } from "@/data/post";
 import {
   classifyMessage,
   ensureFullMessage,
-  isCategoryMonitoredForPosts,
-  isChannelMonitoredForPosts,
-  isParentMessageFromMonitoredCategoryOrChannel,
   shouldIgnoreMessage,
 } from "@/handlers/util";
 import {
@@ -13,15 +11,15 @@ import {
   PostWithCategories,
   PostWithCategoriesEarnings,
 } from "@/types";
-import { handleOddJob, parseOddjob } from "@/utils/handle-odd-job";
 import {
-  PostType,
-  handlePost,
-  isPostValid,
-  parseMessage,
-} from "@/utils/handle-post";
-import { OddJob, Post } from "@prisma/client";
-import { Channel, Message, PartialMessage } from "discord.js";
+  handleOddJob,
+  isOddJobValid,
+  parseOddjob,
+} from "@/utils/handle-odd-job";
+import { handlePost, isPostValid, parseMessage } from "@/utils/handle-post";
+import { prisma } from "@/utils/prisma";
+import { OddJob } from "@prisma/client";
+import { Message, PartialMessage } from "discord.js";
 
 /**
  * A message curator handles bot internal message logic, e.g. parsing a message, deciding its type (post / oddjob)
@@ -52,9 +50,6 @@ export class MessageCurator {
     } else if (this.messageChannelType === "post" && this.parentId) {
       // skip thread messages, they will only be added to the db after they received an emoji
       // check the reaction curator
-      logger.info(
-        `[post] Thread message detected: ${this.messageLink}, skipping`
-      );
     } else {
       // the message is not from a monitored channel or category
       return;
@@ -128,27 +123,52 @@ export class MessageCurator {
       // 2. odd job updates
     } else if (this.messageChannelType === "oddjob") {
       const { message: oldFullMessage } = await ensureFullMessage(oldMessage);
-      const oldOddJob = await parseOddjob(
-        oldFullMessage.content,
-        oldFullMessage.mentions,
-        oldFullMessage.attachments
-      );
-      const newOddJob = await parseOddjob(
-        newFullMessage.content,
-        newFullMessage.mentions,
-        newFullMessage.attachments
-      );
+      const oldOddJob = await parseOddjob(oldFullMessage);
+      const newOddJob = await parseOddjob(newFullMessage);
 
-      if (oldOddJob && newOddJob) {
-        logger.log(`Odd job updated in the channel ${this.messageLink}`);
-      } else if (oldOddJob && !newOddJob) {
-        logger.log(
-          `Odd job invalid in the channel ${this.messageLink}. Not updating.`
+      const oldOddJobValid = isOddJobValid(oldOddJob);
+      const newOddJobValid = isOddJobValid(newOddJob);
+
+      console.log("old + new", oldOddJob, newOddJob);
+
+      const oldOddJobHasEarnings = await oddJobHasEarnings(oldFullMessage.id);
+
+      if (oldOddJobHasEarnings) {
+        logger.logAndSend(
+          `The oddjob ${this.messageLink} is already paid and cannot be edited.`,
+          newFullMessage.author
         );
-        newFullMessage.author.send(
-          `Your odd job in ${this.messageLink} is invalid and is not being updated in the database. Please correct it.`
+        return;
+      }
+
+      if (oldOddJobValid && newOddJobValid) {
+        await findOrCreateOddJob(
+          newFullMessage,
+          this.messageLink,
+          newOddJob.role!,
+          newOddJob.description!,
+          newOddJob.timeline!,
+          newOddJob.payment?.amount!,
+          newOddJob.payment?.unit!,
+          newOddJob.manager!
         );
-      } else if (!oldOddJob && newOddJob) {
+        logger.log(`[oddjob] Odd job ${this.messageLink} updated`);
+      } else if (oldOddJobValid && !newOddJobValid) {
+        logger.logAndSend(
+          `Odd job ${this.messageLink} is invalid and not updated in the database. Please correct it.`,
+          newFullMessage.author
+        );
+      } else if (!oldOddJobValid && newOddJobValid) {
+        await findOrCreateOddJob(
+          newFullMessage,
+          this.messageLink,
+          newOddJob.role!,
+          newOddJob.description!,
+          newOddJob.timeline!,
+          newOddJob.payment?.amount!,
+          newOddJob.payment?.unit!,
+          newOddJob.manager!
+        );
         logger.log(
           `Oddjob is now valid and added to the db / updated: ${this.messageLink}`
         );
@@ -170,23 +190,56 @@ export class MessageCurator {
   public static async curateDelete(
     message: Message | PartialMessage
   ): Promise<void> {
-    const { message: fullMessage } = await ensureFullMessage(message);
-    if (shouldIgnoreMessage(fullMessage)) {
+    if (shouldIgnoreMessage(message)) {
       return;
     }
 
-    const post = await getPost(fullMessage.id);
+    const channelLink = `https://discord.com/channels/${message.guild?.id}/${message.channel.id}`;
+
+    const post = await getPost(message.id);
     if (post) {
       if (post.isPublished) {
-        logger.logAndSend(
-          `🚨 The post ${this.messageLink} has been deleted. The post has been unpublished.`,
-          fullMessage.author
-        );
+        logger.warn(`[post] A published post was deleted in ${channelLink}`);
+        message.author &&
+          message.author.send(
+            `Uh oh, your published post in ${channelLink} was just deleted. Please contact a moderator if you think this was a mistake.`
+          );
+        await prisma.post.update({
+          where: { id: message.id },
+          data: { isDeleted: true },
+        });
       } else {
-        logger.log(`[post] Post deleted: ${this.messageLink}`);
+        logger.log(
+          `[post] A post that was not yet published was deleted in ${channelLink}`
+        );
+        await prisma.post.delete({ where: { id: message.id } });
       }
-    } else {
-      logger.log(`[post] Message deleted: ${this.messageLink}`);
+
+      return;
+    }
+
+    const oddJob = await prisma.oddJob.findUnique({
+      where: { id: message.id },
+      include: { payments: true },
+    });
+
+    if (oddJob) {
+      if (oddJob.payments.length > 0) {
+        logger.warn(`[oddjob] A paid oddJob was deleted in ${channelLink}`);
+        message.author &&
+          message.author.send(
+            `Uh oh, your paid odd job in ${channelLink} was just deleted. Please contact a moderator if you think this was a mistake.`
+          );
+        await prisma.oddJob.update({
+          where: { id: message.id },
+          data: { isDeleted: true },
+        });
+      } else {
+        logger.log(
+          `[oddjob] An oddjob that was not yet published was deleted in ${channelLink}`
+        );
+        await prisma.oddJob.delete({ where: { id: message.id } });
+      }
     }
   }
 }

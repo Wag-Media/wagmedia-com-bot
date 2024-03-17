@@ -63,7 +63,7 @@ export async function deleteEntityReaction(
   emojiId: string
 ) {
   if (!contentType || !entity) {
-    logger.warn("Invalid content contentType in upsertEntityReaction");
+    logger.warn("Invalid content contentType in deleteEntityReaction");
     return;
   }
 

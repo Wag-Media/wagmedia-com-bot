@@ -40,7 +40,6 @@ export abstract class BaseReactionHandler implements IReactionHandler {
   }
 
   protected async initialize(reaction: MessageReaction, user: DiscordUser) {
-    console.log("Initializing payment reaction");
     // Shared logic before processing payment, e.g., logging, validation
     this.guild = await getGuildFromMessage(reaction.message);
     this.messageLink = `https://discord.com/channels/${this.guild.id}/${reaction.message.channel.id}/${reaction.message.id}`;

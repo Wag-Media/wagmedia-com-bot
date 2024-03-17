@@ -31,6 +31,8 @@ export const CHANNEL_LOG = process.env.CHANNEL_LOG
   ? process.env.CHANNEL_LOG.toString()
   : "";
 
+export const LOG_THE_LEVEL_IN_DISCORD = false;
+
 // Define the discord roles that have the power to trigger actions from EmojiActions
 export const ROLES_WITH_POWER = ["Director"];
 

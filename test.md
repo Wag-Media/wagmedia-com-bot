@@ -40,69 +40,73 @@ following fields is missing:
 
 ## General Tests
 
-- ⭕️ the set of emojis to seed the db is complete for the functioning of the
+- ✅ the set of emojis to seed the db is complete for the functioning of the
   bot, `./config.ts`-> `paymentEmojiMap`, `categoryEmojiMap`
-- 🍋 all emojis that are defined `./config.ts`-> `paymentEmojiMap`,
+- ✅ all emojis that are defined `./config.ts`-> `paymentEmojiMap`,
   `categoryEmojiMap` are used to seed the db
-- 🍋 all emojis that are defined in `categoryEmojiMap` have a `CategoryRule` in
+- ✅ all emojis that are defined in `categoryEmojiMap` have a `CategoryRule` in
   the db
-- 🍋 all emojis that are defined in `paymentEmojiMap` have a `PaymentRule` in
+- ✅ all emojis that are defined in `paymentEmojiMap` have a `PaymentRule` in
   the db
-- 🍋 the bot leaves guilds(servers) that is not configured in `config.GUILD_ID`
+- ✅ the bot leaves guilds(servers) that is not configured in `config.GUILD_ID`
 
 ## Create Messages
 
 ### Posts
 
-- 🍋⭕️ complete posts are added to the db but not published to the website
-- 🍋⭕️ complete post added to the db should be logged to discord
-- 🍋 all relevant fields (title, description, tags, embedUrl, discordLink, user,
+- ✅ complete posts are added to the db but not published to the website
+- ✅ complete post added to the db should be logged to discord
+- ✅ all relevant fields (title, description, tags, embedUrl, discordLink, user,
   contentUrl) get inserted into the db correctly
-- 🍋⭕️ tags are recognized in the format: `Hashtags: #tag1, #tag2, ...` or
+- ✅ tags are recognized in the format: `Hashtags: #tag1, #tag2, ...` or
   `Tags: #tag1, tag2, ...`
-- 🍋 incomplete posts (missing title) should not be added to db
-- 🍋 incomplete posts (missing description) should not be added to db
-- 🍋 incomplete posts (missing content link) should not be added to db
-- 🍋 create messages with title + description + link but without hashtags should
+- ✅ incomplete posts (missing title) should not be added to db
+- ✅ incomplete posts (missing description) should not be added to db
+- create messages with title + description but without embed should be added to
+  the db
+- ✅ create messages with title + description + link but without hashtags should
   be added to the db
-- 🍋⭕️ correct posts added in channels / categories that are not monitored
-  should be ignored
+- ✅ correct posts added in channels / categories that are not monitored should
+  be ignored
 
 ### Odd Jobs
 
-- 🍋⭕️ [incomplete](#general) odd-jobs should notify poster
-- 🍋 [complete](#general) odd-jobs should add odd-job to the db
+- ✅ incomplete odd-jobs should notify poster
+- ✅ complete odd-jobs should add odd-job to the db
+- ✅ oddjobs attachments are saved to the db
+- ✅ if more than 5 attachments user is informed
+- ✅ if attachment is larger than config value `MAX_FILE_SIZE` it is not saved
+  and user is informed
 
 ## Edit Messages
 
 ### Posts
 
-- 🍋 editing an incomplete post to make it complete adds it to the db
-- 🍋⭕️ editing an complete post to make it incomplete unpublishes it, if it is
-  published
-- 🍋⭕️ editing an complete post and it stays complete update it in the db
-- 🍋⭕️ editing an incomplete post and it stays incomplete is ignored
-- 😅 editing paid posts is not possible, user gets informed to unpublish first
-- 😅 editing paid posts is not possible, user gets informed to unpublish first
+- ✅ editing an incomplete post to make it complete adds it to the db
+- ✅ editing an complete post to make it incomplete unpublishes it, if it is
+  published (isDeleted = true)
+- ✅ correcting an isDeleted = true post removes sets isDeleted = false
+- ✅ editing an complete post and it stays complete update it in the db
+- ✅ editing an incomplete post and it stays incomplete is ignored
+- ✅ editing paid posts is not possible, user gets informed to unpublish first
 
 ### Odd Jobs
 
-- 😅 editing paid odd-jobs is not possible
-- 🍋 editing an incomplete odd-job to make it complete saves the oddjob
-- 🍋⭕️ editing an complete odd-job to make it incomplete will warn the creator
-  but leave the odd job in the db
+- ✅ editing an incomplete odd-job to make it complete saves the oddjob
+- ✅ editing an complete odd-job to make it incomplete will warn the creator but
+  leave the odd job in the db
+- ✅ editing paid odd-jobs is not possible
 
 ## Delete Messages
 
-- 🍋⭕️ if a post message that is not published yet or has no categories gets
+- ✅ if a post message that is not published yet or has no categories gets
   deleted, it will be removed from the database.
-- 🍋⭕️ if a post message that is already published (=payed) or has any custom
-  emojis by directors gets deleted, it stays in the db and gets flagged as
-  deleted
-- 🍋⭕️ if an oddjob message that is not paid yet gets deleted it will be
-  removed from the database
-- 🍋⭕️ if an oddjob message that is paid gets deleted, it stays in the db and
-  gets flagged as deleted
+- ✅ if a post message that is already published (=paid) gets deleted, it stays
+  in the db and gets flagged as deleted
+- ✅ if an oddjob message that is not paid yet gets deleted it will be removed
+  from the database
+- ✅ if an oddjob message that is paid gets deleted, it stays in the db and gets
+  flagged as deleted
 
 - ??? if a post message with threads gets deleted?
 
@@ -110,21 +114,23 @@ following fields is missing:
 
 ### Posts
 
-- 🍋⭕️ regular users🤷‍♂️ can only add regular emojis (no WM, no flags)
-- 🍋⭕️ regular users🤷‍♂️ (allowed) reactions are stored to the db
-- 🍋⭕️ superusers🦹 can add all emojis to completed posts (see below)
-- 🍋⭕️ superusers🦹' emojis to incomplete posts will be removed
-- 🍋⭕️ superusers🦹 that add emojis to incomplete posts will be informed that
-  the post is incomplete
-- 🍋⭕️ superusers🦹 cannot add payment emojis from two different sets or units
-- 🍋⭕️ superuser🦹 adds any payment emoji to a post will publish a post if the
+- ✅ regular users🤷‍♂️ can only add regular emojis (no WM, no flags)
+- ✅ regular users🤷‍♂️ (allowed) reactions are stored to the db
+- ✅ superusers🦹 can add all emojis to completed posts (see below)
+- ✅ superusers🦹 can add featured emojis to posts
+- ✅ adding a feature emoji to a posts sets `isFeatured` in the db to true
+- ✅ superusers🦹' emojis to incomplete posts will be removed
+- ✅ superusers🦹 that add emojis to incomplete posts will be informed that the
+  post is incomplete
+- ✅ superusers🦹 cannot add payment emojis from two different sets or units
+- ✅ superuser🦹 adds any payment emoji to a post will publish a post if the
   post is complete. a post is **not complete** if
 
   1. it has no category
   2. it is non-anglo and has no flag
   3. it is a translation and has no non-anglo category
 
-- 🍋 payment emojis by superusers🦹 will update the total amount of payments a
+- ✅ payment emojis by superusers🦹 will update the total amount of payments a
   post received and save it to the db
 
 ### Post Threads
@@ -176,18 +182,32 @@ following fields is missing:
 
 - same as in posts for payments
 
+### Threads
+
+- same as in posts
+
 ## Old Messages
 
-- 🍋 if the bot (re-)joins a server, all reactions to old posts that happen to
-  posts that were posted before bot joined should still be handled
-- 🚥 if the bot (re-)joins a server, it should look in all monitored channels
-  for missed messages and process them to the rules above
+- if a message was created before bot joined, bot goes online, then message is
+  reacted to, the message and the reactions are inserted correctly to the db
+- if a message was created when bot was online, bot goes offline misses 2
+  reactions, bot goes online, then message isreacted to, the message and the
+  reactions are inserted correctly to the db
+- 🍋 if a discrepancy is detected between a discord post/thread/oddjob and any
+  reaction is **added** the bot parses all reactions again creating a valid db
+  state that is in sync with discord
+- 🍋 if a discrepancy is detected between a discord post/thread/oddjob and any
+  reaction is **removed** the bot parses all reactions again creating a valid db
+  state that is in sync with discord
+- ✅ if a regular user adds invalid emojis while the bot is offline and bot
+  comes online, then any reaction triggers a revalidation and produces a valid
+  db state
 
 ## Integration Tests
 
-- ⭕️ the bot stays online
-- ⭕️ the bot does not negatively influence wagmi bot
-- ⭕️ the bot is not negatively influenced by wagmi bot
+- ✅ the bot stays online
+- ✅ the bot does not negatively influence wagmi bot
+- ✅ the bot is not negatively influenced by wagmi bot
 
 ## Website
 

@@ -1,10 +1,6 @@
 import "dotenv/config";
 import { dfp } from "./utils/dfp.js";
 import { discordClient, logger } from "./client";
-import { handleMessageReactionAdd } from "./handlers/_handleMessageReactionAdd.js";
-import { handleMessageReactionRemove } from "./handlers/handleMessageReactionRemove.js";
-import { handleMessageUpdate } from "./handlers/handleMessageUpdate.js";
-import { handleMessageDelete } from "./handlers/handleMessageDelete.js";
 import { Events } from "discord.js";
 import { logIntroMessage } from "./handlers/log-utils.js";
 
@@ -16,9 +12,6 @@ import { ReactionTracker } from "@/reaction-tracker.js";
 
 //store your token in environment variable in .env
 const token = process.env["DISCORD_BOT_TOKEN"];
-
-// A Set to keep track of reactions removed by the bot
-const botRemovedReactions = new Set<string>();
 
 discordClient.on(Events.Error, logger.error);
 discordClient.on(Events.Warn, logger.warn);
@@ -74,10 +67,8 @@ discordClient.once(Events.ClientReady, async () => {
 
 discordClient.on(Events.MessageCreate, async (message) => {
   try {
-    const { message: fullMessage, wasPartial } = await ensureFullMessage(
-      message
-    );
-    await MessageCurator.curate(fullMessage, wasPartial);
+    const { message: fullMessage } = await ensureFullMessage(message);
+    await MessageCurator.curate(fullMessage);
   } catch (error) {
     console.error("Error in messageCreate event handler:", error);
   }
@@ -92,7 +83,16 @@ discordClient.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
   }
 });
 
+discordClient.on(Events.MessageDelete, async (message) => {
+  try {
+    await MessageCurator.curateDelete(message);
+  } catch (error) {
+    console.error("Error in messageDelete event handler:", error);
+  }
+});
+
 discordClient.on(Events.MessageReactionAdd, async (reaction, user) => {
+  console.log("Events.MessageReactionAdd");
   try {
     const {
       reaction: fullReaction,
@@ -101,28 +101,29 @@ discordClient.on(Events.MessageReactionAdd, async (reaction, user) => {
     } = await ensureFullEntities(reaction, user);
 
     await ReactionCurator.curateAdd(fullReaction, fullUser);
+    console.log("curate add done");
   } catch (error) {
     console.error("Error in messageReactionAdd event handler:", error);
   }
 });
 
 discordClient.on(Events.MessageReactionRemove, async (reaction, user) => {
+  console.log("Events.MessageReactionRemove");
   try {
-    const {
-      reaction: fullReaction,
-      user: fullUser,
-      wasPartial,
-    } = await ensureFullEntities(reaction, user);
+    const { reaction: fullReaction, user: fullUser } = await ensureFullEntities(
+      reaction,
+      user
+    );
 
     // Use ReactionTracker to check if the removal was tracked (initiated by the bot)
     // and if so, remove the reaction from the tracker and return
-    if (ReactionTracker.isReactionTracked(fullReaction)) {
-      console.log(
+    if (ReactionTracker.isReactionTracked(fullReaction, fullUser.id)) {
+      console.info(
         "the reaction",
         reaction.emoji.name || reaction.emoji.id,
         "was removed by the bot and will not be handled here"
       );
-      ReactionTracker.removeTrackedReaction(fullReaction);
+      ReactionTracker.removeTrackedReaction(fullReaction, fullUser.id);
       return;
     }
 
@@ -130,14 +131,6 @@ discordClient.on(Events.MessageReactionRemove, async (reaction, user) => {
     await ReactionCurator.curateRemove(fullReaction, fullUser);
   } catch (error) {
     console.error("Error in messageReactionRemove event handler:", error);
-  }
-});
-
-discordClient.on(Events.MessageDelete, async (message) => {
-  try {
-    // await handleMessageDelete(message);
-  } catch (error) {
-    console.error("Error in messageDelete event handler:", error);
   }
 });
 

@@ -1,8 +1,9 @@
 import { MessageReaction, User as DiscordUser } from "discord.js";
 import { BaseReactionHandler } from "../_BaseReactionHandler";
-import { deleteEntityReaction, upsertEntityReaction } from "@/data/reaction";
+import { deleteEntityReaction } from "@/data/reaction";
 import { logger } from "@/client";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+import { ReactionTracker } from "@/reaction-tracker";
 
 /**
  * Base class for reaction handlers that handle reaction removes.
@@ -33,6 +34,7 @@ export abstract class BaseReactionRemoveHandler extends BaseReactionHandler {
         console.warn("error in regularUserReactionRemove", error);
       }
     }
+    ReactionTracker.addReactionToTrack(reaction, user.id);
     await reaction.users.remove(user.id);
     logger.log(
       `[${this.contentType}] Reaction ${reaction.emoji} removed from ${this.messageLink}`
