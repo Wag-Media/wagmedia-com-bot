@@ -68,17 +68,17 @@ export function parseMessage(message: Message): PostType {
   const { content, embeds } = message;
 
   try {
-    // Regular expressions to match title, description, and tags (case-insensitive)
+    const cleanedContent = content.replace(/\*/g, "");
+
     const titleRegex = /title:\s*(.*?)\s*\n/i;
-    // Modified descriptionRegex to make the lookahead for tags optional
     const descriptionRegex =
       /description:\s*([\s\S]*?)(?=\n(hashtags|tags):|$)/i;
     const tagsRegex = /(hashtags|tags):\s*([^\n]+)/i;
 
     // Extracting title, description, and tags using the regular expressions
-    const titleMatch = content.match(titleRegex);
-    const descriptionMatch = content.match(descriptionRegex);
-    const tagsMatch = content.match(tagsRegex);
+    const titleMatch = cleanedContent.match(titleRegex);
+    const descriptionMatch = cleanedContent.match(descriptionRegex);
+    const tagsMatch = cleanedContent.match(tagsRegex);
 
     const title = titleMatch ? titleMatch[1].trim() : null;
     const description = descriptionMatch ? descriptionMatch[1].trim() : null;

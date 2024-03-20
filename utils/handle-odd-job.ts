@@ -137,20 +137,20 @@ export async function handleOddJob(
 export function parseOddjob(message: Message): OddJobType {
   const { content, mentions, attachments } = message;
 
-  console.log("oddjob content", content);
-
   try {
+    const cleanedContent = content.replace(/\*/g, "");
+
     const roleRegex = /Odd-Job Role:\s*(.+?)(?=\n|$)/;
     const descriptionRegex = /Odd-Job Description:\s*(.+?)(?=\n|$)/;
     const timelineRegex = /Odd-Job Timeline:\s*(.+?)(?=\n|$)/;
     const paymentRegex = /Agreed Payment:\s*(.+?)(?=\n|$)/;
     const managerRegex = /Managing Director:\s*(.+?)(?=\n|$)/;
 
-    const roleMatch = content.match(roleRegex);
-    const descriptionMatch = content.match(descriptionRegex);
-    const timelineMatch = content.match(timelineRegex);
-    const paymentMatch = content.match(paymentRegex);
-    const managerMatch = content.match(managerRegex);
+    const roleMatch = cleanedContent.match(roleRegex);
+    const descriptionMatch = cleanedContent.match(descriptionRegex);
+    const timelineMatch = cleanedContent.match(timelineRegex);
+    const paymentMatch = cleanedContent.match(paymentRegex);
+    const managerMatch = cleanedContent.match(managerRegex);
 
     let manager: User | null = null;
     if (managerMatch && managerMatch[1]) {

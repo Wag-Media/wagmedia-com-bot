@@ -136,7 +136,7 @@ export class ReactionHandlerFactory {
       eventType === "reactionAdd"
     ) {
       return new NotAllowedReactionHandler(
-        `You are not allowed to use payment emojis. ${eventType}`
+        `You are not allowed to use payment emojis.`
       );
     } else if (
       userRole === "regular" &&
