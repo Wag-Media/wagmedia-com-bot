@@ -101,7 +101,7 @@ following fields is missing:
 - ✅ if a post message that is not published yet or has no categories gets
   deleted, it will be removed from the database.
 - ✅⭕️ if a post message that is already published (=paid) gets deleted, it
-  stays in the db and gets flagged as deleted (As we discussed several times published post can not be unpublished, while it has payment emojis, the DB should keep the data as it is, you might show notice that the original post from the discord is deleted by the user/admin show the id who deleted the post, and say it is the Archive version)
+  stays in the db and gets flagged as deleted (https://github.com/Wag-Media/wagmedia-com-bot/issues/50)
 - ✅ if an oddjob message that is not paid yet gets deleted it will be removed
   from the database
 - ✅ if an oddjob message that is paid gets deleted, it stays in the db and gets
@@ -186,7 +186,7 @@ following fields is missing:
 - ✅ same as in posts
 - ✅ if a post is not published or not rewarded, it should still be possible
   to reward threads
-- 🚥⭕️ Keep archive copies of the rewarded comments in the DB, if the rewarded thread comments are deleted 
+- 🚥⭕️ Keep archive copies of the rewarded comments in the DB, if the rewarded thread comments are deleted (https://github.com/Wag-Media/wagmedia-com-bot/issues/51)
 
 ## Old Messages
 
