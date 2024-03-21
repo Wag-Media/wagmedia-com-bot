@@ -3,6 +3,7 @@ import { ReactionHandlerFactory } from "../handlers/ReactionHandlerFactory";
 import { ReactionTracker } from "@/reaction-tracker";
 import { ReactionDiscrepancyResolver } from "./ReactionDiscrepancyResolver";
 import { logger } from "@/client";
+import { classifyMessage, shouldIgnoreMessage } from "@/handlers/util";
 
 export class ReactionCurator {
   static isResolvingDiscrepancies = false;
@@ -13,6 +14,11 @@ export class ReactionCurator {
   ): Promise<void> {
     // the index.ts fetches PartialMessages so this is safe
     const message = reaction.message as Message;
+    const { messageChannelType } = classifyMessage(message);
+
+    if (!messageChannelType || shouldIgnoreMessage(message)) {
+      return;
+    }
 
     // Only check for discrepancies if not currently resolving them
     if (!this.isResolvingDiscrepancies) {
@@ -54,6 +60,12 @@ export class ReactionCurator {
     reaction: MessageReaction,
     user: DiscordUser
   ): Promise<void> {
+    const { messageChannelType } = classifyMessage(reaction.message);
+
+    if (!messageChannelType || shouldIgnoreMessage(reaction.message)) {
+      return;
+    }
+
     try {
       const handler = await ReactionHandlerFactory.getHandler(
         reaction,
