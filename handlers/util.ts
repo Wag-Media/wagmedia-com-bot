@@ -48,7 +48,7 @@ export function slugify(text: string) {
  * @returns
  */
 export function shouldIgnoreReaction(
-  reaction: MessageReaction | PartialMessageReaction
+  reaction: MessageReaction | PartialMessageReaction,
 ): boolean {
   return shouldIgnoreMessage(reaction.message);
 }
@@ -145,7 +145,7 @@ export async function classifyReaction(dbEmoji: Emoji): Promise<emojiType> {
 }
 
 export async function ensureFullMessage(
-  message: Message<boolean> | PartialMessage
+  message: Message<boolean> | PartialMessage,
 ): Promise<{ message: Message; wasPartial: boolean }> {
   let wasPartial = false;
   if (message.partial) {
@@ -155,10 +155,10 @@ export async function ensureFullMessage(
     } catch (error) {
       logger.error(
         "Something went wrong when fetching the partial message:",
-        error
+        error,
       );
       throw new Error(
-        "Something went wrong when fetching the partial message:"
+        "Something went wrong when fetching the partial message:",
       );
     }
   }
@@ -174,7 +174,7 @@ export async function ensureFullMessage(
  */
 export async function ensureFullEntities(
   reaction: MessageReaction | PartialMessageReaction | null,
-  user: DiscordUser | PartialUser | null
+  user: DiscordUser | PartialUser | null,
 ): Promise<{
   reaction: MessageReaction;
   user: DiscordUser;
@@ -242,7 +242,7 @@ export const isCategoryMonitoredForPosts = (channel: Channel) =>
   config.CATEGORIES_TO_MONITOR.includes(channel.parentId);
 
 export const isParentMessageFromMonitoredCategoryOrChannel = (
-  message: Message<boolean> | PartialMessage
+  message: Message<boolean> | PartialMessage,
 ) => {
   if (message.channel.isThread()) {
     // Access thread details
@@ -269,7 +269,7 @@ export function parseDiscordUserId(message: string): string | null {
 }
 
 export async function getGuildFromMessage(
-  message: Message | PartialMessage
+  message: Message | PartialMessage,
 ): Promise<Guild> {
   if (!message.guildId) {
     throw new Error("Message must have a guildId");

@@ -33,7 +33,7 @@ export type PostCreateType = {
 };
 
 export const findOrCreatePost = async (
-  attributes: PostCreateType
+  attributes: PostCreateType,
 ): Promise<PostFull> => {
   const { message, title, description, tags, embeds, parentId } = attributes;
 
@@ -61,7 +61,7 @@ export const findOrCreatePost = async (
           name: tag,
         },
       });
-    })
+    }),
   );
 
   // Upsert the post
@@ -113,7 +113,7 @@ export const findOrCreatePost = async (
 
 async function _manageEmbedsForPost(
   postId: string,
-  embeds: PostEmbed[]
+  embeds: PostEmbed[],
 ): Promise<Embed[]> {
   // Delete existing embeds - assuming this is still the desired behavior
   await prisma.embed.deleteMany({
@@ -130,8 +130,8 @@ async function _manageEmbedsForPost(
           embedColor: embed.color,
           postId: postId,
         },
-      })
-    )
+      }),
+    ),
   );
 
   return createdEmbeds;
@@ -179,7 +179,7 @@ export async function getPostReactionCount(postId: string) {
 
 export async function getPostOrOddjobReactionCount(
   contentId: string,
-  contentType: ContentType
+  contentType: ContentType,
 ) {
   if (!contentType) {
     return;
@@ -198,7 +198,7 @@ export async function getPostOrOddjobReactionCount(
 }
 
 export async function fetchPost(
-  reaction: MessageReaction
+  reaction: MessageReaction,
 ): Promise<
   (Post & { categories: Category[] } & { earnings: ContentEarnings[] }) | null
 > {
@@ -216,7 +216,7 @@ export async function fetchPost(
 
   if (!post) {
     logger.warn(
-      `[post] Post with ID ${reaction.message.id} not found in the database.`
+      `[post] Post with ID ${reaction.message.id} not found in the database.`,
     );
   }
   return post;
@@ -224,7 +224,7 @@ export async function fetchPost(
 
 export async function removeCategoryFromPost(
   postId: string,
-  categoryId: number
+  categoryId: number,
 ) {
   const post = await prisma.post.update({
     where: {
@@ -243,7 +243,7 @@ export async function removeCategoryFromPost(
 export async function removeReactionFromPost(
   postId: string,
   userId: string,
-  emojiId: string
+  emojiId: string,
 ) {
   const post = await prisma.post.update({
     where: {
@@ -292,7 +292,7 @@ export async function flagDeletePost(postId: string) {
 }
 
 export async function getPost(
-  postId: string
+  postId: string,
 ): Promise<PostWithCategories | null> {
   const post = await prisma.post.findUnique({
     where: {
@@ -307,7 +307,7 @@ export async function getPost(
 }
 
 export async function getPostWithEarnings(
-  postId: string
+  postId: string,
 ): Promise<PostWithEarnings | null> {
   const post = await prisma.post.findUnique({
     where: {
@@ -388,7 +388,7 @@ export async function resetPostReactions(postId: string) {
 }
 
 export async function resetPostOrOddjobReactions(
-  entityId: string
+  entityId: string,
 ): Promise<Post | OddJob | null | undefined> {
   const post = await prisma.post.findUnique({
     where: {
@@ -474,7 +474,7 @@ export async function unfeaturePost(postId: string) {
 
 export async function getPostOrOddjob(
   entityId: string,
-  entityType: ContentType
+  entityType: ContentType,
 ): Promise<PostWithCategories | OddJob | null | undefined> {
   if (!entityType) {
     return;
@@ -500,7 +500,7 @@ export async function getPostOrOddjob(
 
 export async function getPostOrOddjobWithEarnings(
   entityId: string,
-  entityType: ContentType
+  entityType: ContentType,
 ): Promise<PostWithEarnings | OddjobWithEarnings | null | undefined> {
   if (!entityType) {
     return;

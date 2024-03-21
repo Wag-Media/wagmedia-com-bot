@@ -11,7 +11,7 @@ import { isPostValid, parseMessage } from "../utils/handle-post";
 
 export async function handleMessageUpdate(
   oldMessage: Message<boolean> | PartialMessage,
-  newMessage: Message<boolean> | PartialMessage
+  newMessage: Message<boolean> | PartialMessage,
 ) {
   const { message: newFullMessage } = await ensureFullMessage(newMessage);
   if (shouldIgnoreMessage(newFullMessage)) return;
@@ -27,14 +27,14 @@ export async function handleMessageUpdate(
       logger.log(`Odd job updated in the channel ${messageLink}`);
     } else if (oldOddJob && !newOddJob) {
       logger.log(
-        `Odd job invalid in the channel ${messageLink}. Not updating.`
+        `Odd job invalid in the channel ${messageLink}. Not updating.`,
       );
       newFullMessage.author.send(
-        `Your odd job in ${messageLink} is invalid and is not being updated in the database. Please correct it.`
+        `Your odd job in ${messageLink} is invalid and is not being updated in the database. Please correct it.`,
       );
     } else if (!oldOddJob && newOddJob) {
       logger.log(
-        `Oddjob is now valid and added to the db / updated: ${messageLink}`
+        `Oddjob is now valid and added to the db / updated: ${messageLink}`,
       );
     }
   } else {
@@ -53,7 +53,7 @@ export async function handleMessageUpdate(
     if (oldDbPost?.isPublished) {
       logger.logAndSend(
         `The post ${messageLink} is already published and cannot be edited. If you want to change it, unpublish it first.`,
-        newFullMessage.author
+        newFullMessage.author,
       );
     } else if (oldPostValid && newPostValid) {
       await findOrCreatePost({
@@ -68,7 +68,7 @@ export async function handleMessageUpdate(
       await flagDeletePost(newFullMessage.id);
       logger.logAndSend(
         `Your post in ${messageLink} is invalid and is unpublished until it is corrected.`,
-        newFullMessage.author
+        newFullMessage.author,
       );
     } else if (!oldPostValid && newPostValid) {
       await findOrCreatePost({
@@ -79,7 +79,7 @@ export async function handleMessageUpdate(
         embeds: newPost.embeds,
       });
       logger.log(
-        `Post is now valid and added to the db / updated: ${messageLink}`
+        `Post is now valid and added to the db / updated: ${messageLink}`,
       );
     } else if (!oldPostValid && !newPostValid) {
       return;

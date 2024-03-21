@@ -15,7 +15,7 @@ export class NotAllowedReactionHandler extends BaseReactionHandler {
 
   protected async isReactionPermitted(
     reaction: MessageReaction,
-    user: DiscordUser
+    user: DiscordUser,
   ): Promise<boolean> {
     await logger.logAndSend(`${this.message} ${this.messageLink}`, user);
     throw new Error(this.message);
@@ -23,7 +23,7 @@ export class NotAllowedReactionHandler extends BaseReactionHandler {
 
   protected processReaction(
     reaction: MessageReaction,
-    user: DiscordUser
+    user: DiscordUser,
   ): Promise<void> {
     // no-op
     return Promise.resolve();

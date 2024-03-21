@@ -11,13 +11,13 @@ export abstract class BaseReactionAddHandler extends BaseReactionHandler {
   //todo what about adding reactions to deleted posts or oddjobs?
   protected async initialize(
     reaction: MessageReaction,
-    user: DiscordUser
+    user: DiscordUser,
   ): Promise<void> {
     await super.initialize(reaction, user);
 
     if (!this.dbContent && this.contentType !== "thread") {
       throw new Error(
-        `Adding emojis to inclomplete ${this.contentType} is not allowed`
+        `Adding emojis to inclomplete ${this.contentType} is not allowed`,
       );
     }
 
@@ -27,10 +27,10 @@ export abstract class BaseReactionAddHandler extends BaseReactionHandler {
         this.dbContent,
         this.contentType,
         this.dbUser!,
-        this.dbEmoji
+        this.dbEmoji,
       );
       logger.log(
-        `[${this.contentType}] Reaction ${reaction.emoji} added to ${this.messageLink} by ${user.username}#${user.discriminator}.`
+        `[${this.contentType}] Reaction ${reaction.emoji} added to ${this.messageLink} by ${user.username}#${user.discriminator}.`,
       );
     }
   }

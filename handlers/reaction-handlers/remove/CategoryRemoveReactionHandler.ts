@@ -28,7 +28,7 @@ export class CategoryRemoveReactionHandler extends BaseReactionRemoveHandler {
     if (remainingCategories.length > 1) {
       await removeCategoryFromPost(post.id, categoryRule.categoryId);
       logger.log(
-        `[category] Category ${categoryRule.category.name} removed from ${this.messageLink}.`
+        `[category] Category ${categoryRule.category.name} removed from ${this.messageLink}.`,
       );
       return;
     } else if (remainingCategories.length === 1) {
@@ -36,7 +36,7 @@ export class CategoryRemoveReactionHandler extends BaseReactionRemoveHandler {
         logger.logAndSend(
           `🚨 The category ${categoryRule.category.name} has been removed from the post ${this.messageLink}. The post has no remaining categories but will keep its last category in the db / website until new categories are added.`,
           user,
-          "warn"
+          "warn",
         );
       } else {
         await removeCategoryFromPost(post.id, categoryRule.categoryId);

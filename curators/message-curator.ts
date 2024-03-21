@@ -31,7 +31,7 @@ export class MessageCurator {
   private static messageLink: string;
 
   static async curate(
-    message: Message
+    message: Message,
   ): Promise<PostWithCategoriesEarnings | OddjobWithEarnings | undefined> {
     if (shouldIgnoreMessage(message)) {
       return;
@@ -58,7 +58,7 @@ export class MessageCurator {
 
   public static async curateUpdate(
     oldMessage: Message,
-    newMessage: Message | PartialMessage
+    newMessage: Message | PartialMessage,
   ): Promise<PostWithCategories | OddJob | undefined> {
     const { message: newFullMessage } = await ensureFullMessage(newMessage);
     if (shouldIgnoreMessage(newFullMessage)) {
@@ -88,7 +88,7 @@ export class MessageCurator {
       if (oldDbPost?.isPublished) {
         logger.logAndSend(
           `The post ${this.messageLink} is already published and cannot be edited. If you want to change it, unpublish it first.`,
-          newFullMessage.author
+          newFullMessage.author,
         );
       } else if (oldPostValid && newPostValid) {
         await findOrCreatePost({
@@ -103,7 +103,7 @@ export class MessageCurator {
         await flagDeletePost(newFullMessage.id);
         logger.logAndSend(
           `Your post in ${this.messageLink} is invalid and is unpublished until it is corrected.`,
-          newFullMessage.author
+          newFullMessage.author,
         );
       } else if (!oldPostValid && newPostValid) {
         await findOrCreatePost({
@@ -114,7 +114,7 @@ export class MessageCurator {
           embeds: newPost.embeds,
         });
         logger.log(
-          `Post is now valid and added to the db / updated: ${this.messageLink}`
+          `Post is now valid and added to the db / updated: ${this.messageLink}`,
         );
       } else if (!oldPostValid && !newPostValid) {
         return;
@@ -136,7 +136,7 @@ export class MessageCurator {
       if (oldOddJobHasEarnings) {
         logger.logAndSend(
           `The oddjob ${this.messageLink} is already paid and cannot be edited.`,
-          newFullMessage.author
+          newFullMessage.author,
         );
         return;
       }
@@ -150,13 +150,13 @@ export class MessageCurator {
           newOddJob.timeline!,
           newOddJob.payment?.amount!,
           newOddJob.payment?.unit!,
-          newOddJob.manager!
+          newOddJob.manager!,
         );
         logger.log(`[oddjob] Odd job ${this.messageLink} updated`);
       } else if (oldOddJobValid && !newOddJobValid) {
         logger.logAndSend(
           `Odd job ${this.messageLink} is invalid and not updated in the database. Please correct it.`,
-          newFullMessage.author
+          newFullMessage.author,
         );
       } else if (!oldOddJobValid && newOddJobValid) {
         await findOrCreateOddJob(
@@ -167,10 +167,10 @@ export class MessageCurator {
           newOddJob.timeline!,
           newOddJob.payment?.amount!,
           newOddJob.payment?.unit!,
-          newOddJob.manager!
+          newOddJob.manager!,
         );
         logger.log(
-          `Oddjob is now valid and added to the db / updated: ${this.messageLink}`
+          `Oddjob is now valid and added to the db / updated: ${this.messageLink}`,
         );
       }
 
@@ -178,7 +178,7 @@ export class MessageCurator {
     } else if (this.messageChannelType === "post" && this.parentId) {
       // skip thread messages content is not relevant here
       logger.info(
-        `[post] Thread message detected: ${this.messageLink}, skipping update`
+        `[post] Thread message detected: ${this.messageLink}, skipping update`,
       );
 
       // 4. the message is not from a monitored channel or category
@@ -188,7 +188,7 @@ export class MessageCurator {
   }
 
   public static async curateDelete(
-    message: Message | PartialMessage
+    message: Message | PartialMessage,
   ): Promise<void> {
     if (shouldIgnoreMessage(message)) {
       return;
@@ -202,7 +202,7 @@ export class MessageCurator {
         logger.warn(`[post] A published post was deleted in ${channelLink}`);
         message.author &&
           message.author.send(
-            `Uh oh, your published post in ${channelLink} was just deleted. Please contact a moderator if you think this was a mistake.`
+            `Uh oh, your published post in ${channelLink} was just deleted. Please contact a moderator if you think this was a mistake.`,
           );
         await prisma.post.update({
           where: { id: message.id },
@@ -210,7 +210,7 @@ export class MessageCurator {
         });
       } else {
         logger.log(
-          `[post] A post that was not yet published was deleted in ${channelLink}`
+          `[post] A post that was not yet published was deleted in ${channelLink}`,
         );
         await prisma.post.delete({ where: { id: message.id } });
       }
@@ -228,7 +228,7 @@ export class MessageCurator {
         logger.warn(`[oddjob] A paid oddJob was deleted in ${channelLink}`);
         message.author &&
           message.author.send(
-            `Uh oh, your paid odd job in ${channelLink} was just deleted. Please contact a moderator if you think this was a mistake.`
+            `Uh oh, your paid odd job in ${channelLink} was just deleted. Please contact a moderator if you think this was a mistake.`,
           );
         await prisma.oddJob.update({
           where: { id: message.id },
@@ -236,7 +236,7 @@ export class MessageCurator {
         });
       } else {
         logger.log(
-          `[oddjob] An oddjob that was not yet published was deleted in ${channelLink}`
+          `[oddjob] An oddjob that was not yet published was deleted in ${channelLink}`,
         );
         await prisma.oddJob.delete({ where: { id: message.id } });
       }

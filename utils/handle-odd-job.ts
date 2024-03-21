@@ -25,7 +25,7 @@ export type OddJobType = {
 
 export async function handleOddJob(
   message: Message<boolean>,
-  messageLink: string
+  messageLink: string,
 ): Promise<OddjobWithEarnings | undefined> {
   let oddJob: OddjobWithEarnings | undefined;
 
@@ -34,7 +34,7 @@ export async function handleOddJob(
 
   if (!parsedOddJob) {
     logger.error(
-      `Odd job missing required fields in the channel ${messageLink}`
+      `Odd job missing required fields in the channel ${messageLink}`,
     );
     return;
   }
@@ -59,8 +59,8 @@ export async function handleOddJob(
 
     logger.warn(
       `[oddjob] Oddjob ${messageLink} is missing required fields: ${missingFields.join(
-        ", "
-      )}. ${extraInfo}`
+        ", ",
+      )}. ${extraInfo}`,
     );
     return;
   }
@@ -70,7 +70,7 @@ export async function handleOddJob(
       message.member?.displayName
     } for **${payment?.amount} ${payment?.unit}** and managed by **${
       manager!.username
-    }**`
+    }**`,
   );
 
   oddJob = await findOrCreateOddJob(
@@ -81,14 +81,14 @@ export async function handleOddJob(
     timeline!,
     payment?.amount!,
     payment?.unit!,
-    manager!
+    manager!,
   );
 
   if (oddJob && message.author && message.attachments.size > 0) {
     if (message.attachments.size > 5) {
       logger.logAndSend(
         `🚨 Only the first 5 attachments will be saved for ${messageLink}. ${message.attachments.size} were provided.`,
-        message.author!
+        message.author!,
       );
     }
     // only consider the first 5 attachments
@@ -115,7 +115,7 @@ export async function handleOddJob(
           `🚨 Attachment ${attachment.name} for ${messageLink} exceeds the ${
             config.MAX_FILE_SIZE / 1024 / 1024
           }MB size limit and won't be saved.`,
-          message.author!
+          message.author!,
         );
       }
     });
@@ -207,7 +207,7 @@ function parsePayment(paymentString: string): {
   // Create a dynamic regex pattern based on accepted units
   const unitsPattern = acceptedUnits.join("|");
   const paymentRegex = new RegExp(
-    `(\\d+(\\.\\d+)?)\\s*(${unitsPattern})|(${unitsPattern})\\s*(\\d+(\\.\\d+)?)`
+    `(\\d+(\\.\\d+)?)\\s*(${unitsPattern})|(${unitsPattern})\\s*(\\d+(\\.\\d+)?)`,
   );
 
   const match = normalizedPaymentString.match(paymentRegex);

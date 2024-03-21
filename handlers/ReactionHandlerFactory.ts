@@ -31,7 +31,7 @@ export class ReactionHandlerFactory {
   static async getHandler(
     reaction: MessageReaction,
     user: DiscordUser,
-    eventType: ReactionEventType
+    eventType: ReactionEventType,
   ): Promise<IReactionHandler> {
     const { message } = await ensureFullMessage(reaction.message);
 
@@ -63,7 +63,7 @@ export class ReactionHandlerFactory {
       contentType.contentType !== "post"
     ) {
       return new NotAllowedReactionHandler(
-        `You are not allowed to use category emojis in oddjobs or threads.`
+        `You are not allowed to use category emojis in oddjobs or threads.`,
       );
     } else if (
       userRole === "superuser" &&
@@ -100,7 +100,7 @@ export class ReactionHandlerFactory {
       contentType.contentType !== "post"
     ) {
       return new NotAllowedReactionHandler(
-        `Feature emojis can only be added to posts`
+        `Feature emojis can only be added to posts`,
       );
     } else if (
       userRole === "superuser" &&
@@ -144,7 +144,7 @@ export class ReactionHandlerFactory {
       eventType === "reactionAdd"
     ) {
       return new NotAllowedReactionHandler(
-        `You are not allowed to use payment emojis.`
+        `You are not allowed to use payment emojis.`,
       );
     } else if (
       userRole === "regular" &&
@@ -152,7 +152,7 @@ export class ReactionHandlerFactory {
       eventType === "reactionAdd"
     ) {
       return new NotAllowedReactionHandler(
-        `You are not allowed to use category emojis.`
+        `You are not allowed to use category emojis.`,
       );
     } else if (
       userRole === "regular" &&
@@ -160,7 +160,7 @@ export class ReactionHandlerFactory {
       eventType === "reactionAdd"
     ) {
       return new NotAllowedReactionHandler(
-        `You are not allowed to use feature emojis.`
+        `You are not allowed to use feature emojis.`,
       );
     } else if (
       userRole === "regular" &&
@@ -177,13 +177,13 @@ export class ReactionHandlerFactory {
     } else {
       // Return a default handler or throw an error
       throw new Error(
-        `No handlers found for contentType:${contentType.contentType}, userRole:${userRole}, emojiType:${emojiType}, and eventType:${eventType}`
+        `No handlers found for contentType:${contentType.contentType}, userRole:${userRole}, emojiType:${emojiType}, and eventType:${eventType}`,
       );
     }
 
     //satisfying the linter
     return new NotAllowedReactionHandler(
-      `You have no permission to use this emoji.`
+      `You have no permission to use this emoji.`,
     );
   }
 }

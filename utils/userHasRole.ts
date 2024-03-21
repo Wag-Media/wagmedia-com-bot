@@ -3,7 +3,7 @@ import { Guild, User } from "discord.js";
 export const userHasRole = (
   guild: Guild,
   user: User,
-  roles: string[]
+  roles: string[],
 ): boolean => {
   if (!guild) return false; // Ignore DMs
 

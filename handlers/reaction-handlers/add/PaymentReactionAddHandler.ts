@@ -31,7 +31,7 @@ abstract class BasePaymentReactionAddHandler extends BaseReactionAddHandler {
 
   protected async initialize(
     reaction: MessageReaction,
-    user: DiscordUser
+    user: DiscordUser,
   ): Promise<void> {
     await super.initialize(reaction, user);
 
@@ -47,26 +47,26 @@ abstract class BasePaymentReactionAddHandler extends BaseReactionAddHandler {
     await logContentEarnings(
       this.dbContent!,
       this.contentType,
-      this.messageLink
+      this.messageLink,
     );
   }
 
   protected async isPaymentReactionValid(
     reaction: MessageReaction,
-    user: DiscordUser
+    user: DiscordUser,
   ): Promise<boolean> {
     //todo add more checks here
 
     const unitValid = await isPaymentUnitValid(
       reaction.message.id,
       this.contentType,
-      this.paymentRule
+      this.paymentRule,
     );
 
     if (!unitValid) {
       logger.logAndSend(
         `Payment unit for ${this.messageLink} is invalid as it does not equal the unit of the first payment.`,
-        user
+        user,
       );
       throw new Error("Payment unit is invalid");
     }
@@ -79,19 +79,19 @@ export class PostPaymentReactionAddHandler extends BasePaymentReactionAddHandler
   contentType: ContentType = "post";
 
   protected getDbContent(
-    reaction: MessageReaction
+    reaction: MessageReaction,
   ): Promise<PostWithCategories | null> {
     return getPost(reaction.message.id);
   }
 
   protected async processReaction(
     reaction: MessageReaction,
-    user: DiscordUser
+    user: DiscordUser,
   ) {
     // Specific logic for processing payment for a post
     console.log(
       "Handling payment reaction for a post with parentId",
-      this.parentId
+      this.parentId,
     );
 
     const { paymentAmount, paymentUnit, fundingSource } = this.paymentRule!;
@@ -143,7 +143,7 @@ export class PostPaymentReactionAddHandler extends BasePaymentReactionAddHandler
     if (!post.title || !post.content) {
       logger.logAndSend(
         `Before you can publish the post ${this.messageLink}, make sure it has a title and description.`,
-        user
+        user,
       );
       throw new Error("Post has no title or description");
     }
@@ -152,14 +152,14 @@ export class PostPaymentReactionAddHandler extends BasePaymentReactionAddHandler
     if (post.categories.length === 0) {
       logger.logAndSend(
         `Before you can publish the post ${this.messageLink}, make sure it has a category.`,
-        user
+        user,
       );
       throw new Error("Post has no category");
     }
 
     // 1.3. make sure non anglo posts have a flag
     const isNonAnglo = post.categories.some((category) =>
-      category.name.includes("Non Anglo")
+      category.name.includes("Non Anglo"),
     );
 
     if (isNonAnglo) {
@@ -168,13 +168,13 @@ export class PostPaymentReactionAddHandler extends BasePaymentReactionAddHandler
 
       // check if the post has a flag
       const hasFlag = postReactions.some((reaction) =>
-        isCountryFlag(reaction.emoji?.id)
+        isCountryFlag(reaction.emoji?.id),
       );
 
       if (!hasFlag) {
         logger.logAndSend(
           `Before you can publish the post ${this.messageLink} with non anglo category, make sure it has a flag.`,
-          user
+          user,
         );
 
         throw new Error("Post is non anglo and has no flag");
@@ -183,13 +183,13 @@ export class PostPaymentReactionAddHandler extends BasePaymentReactionAddHandler
 
     // 1.4. make sure translation posts have a non anglo category
     const isTranslation = post.categories.some((category) =>
-      category.name.includes("Translations")
+      category.name.includes("Translations"),
     );
 
     if (isTranslation && !isNonAnglo) {
       logger.logAndSend(
         `Before you can publish the post ${this.messageLink} with a translation category, make sure it also has a Non Anglo category.`,
-        user
+        user,
       );
 
       throw new Error("Post is translation and has no non anglo category");
@@ -203,14 +203,14 @@ export class OddJobPaymentReactionAddHandler extends BasePaymentReactionAddHandl
   contentType: ContentType = "oddjob";
 
   protected getDbContent(
-    reaction: MessageReaction
+    reaction: MessageReaction,
   ): Promise<OddJobWithOptions | null> {
     return getOddJob(reaction.message.id);
   }
 
   protected async isReactionPermitted(
     reaction: MessageReaction,
-    user: DiscordUser
+    user: DiscordUser,
   ): Promise<boolean> {
     const oddJob = await this.getDbContent(reaction);
     const payerIsManager = oddJob?.managerId === user.id;
@@ -218,7 +218,7 @@ export class OddJobPaymentReactionAddHandler extends BasePaymentReactionAddHandl
     if (!payerIsManager) {
       logger.logAndSend(
         `Only the manager of the odd job ${this.messageLink} can pay for it.`,
-        user
+        user,
       );
       throw new Error("Payer is not the manager of the odd job");
     }
@@ -228,7 +228,7 @@ export class OddJobPaymentReactionAddHandler extends BasePaymentReactionAddHandl
 
   protected async processReaction(
     reaction: MessageReaction,
-    user: DiscordUser
+    user: DiscordUser,
   ) {
     console.log("Handling payment reaction for oddjob");
 
@@ -238,7 +238,7 @@ export class OddJobPaymentReactionAddHandler extends BasePaymentReactionAddHandl
       this.dbContent,
       this.contentType,
       this.dbUser!,
-      this.dbEmoji
+      this.dbEmoji,
     );
 
     await prisma.contentEarnings.upsert({
@@ -280,7 +280,7 @@ export class ThreadPaymentReactionAddHandler extends PostPaymentReactionAddHandl
 
   protected async initialize(
     reaction: MessageReaction,
-    user: DiscordUser
+    user: DiscordUser,
   ): Promise<void> {
     console.log("Initializing payment reaction for a thread");
     await super.initialize(reaction, user);
@@ -296,7 +296,7 @@ export class ThreadPaymentReactionAddHandler extends PostPaymentReactionAddHandl
 
   protected async processReaction(
     reaction: MessageReaction,
-    user: DiscordUser
+    user: DiscordUser,
   ) {
     console.log("Handling payment reaction for a thread");
 
@@ -314,7 +314,7 @@ export class ThreadPaymentReactionAddHandler extends PostPaymentReactionAddHandl
       this.dbContent,
       this.contentType,
       this.dbUser!,
-      this.dbEmoji
+      this.dbEmoji,
     );
 
     // 3. if the parent post is not in the db, create it

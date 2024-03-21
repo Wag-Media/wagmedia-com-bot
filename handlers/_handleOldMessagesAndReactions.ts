@@ -19,10 +19,10 @@ export const handleOldMessagesAndReactions = async (limit: number) => {
   try {
     for (const channelId of CHANNELS_TO_MONITOR) {
       const channel = (await discordClient.channels.fetch(
-        channelId
+        channelId,
       )) as TextChannel;
       logger.log(
-        `Looking for old messages and reactions in channel: #${channel?.guild?.name} - ${channel?.name}`
+        `Looking for old messages and reactions in channel: #${channel?.guild?.name} - ${channel?.name}`,
       );
 
       if (channel) {
@@ -41,7 +41,7 @@ export const handleOldMessagesAndReactions = async (limit: number) => {
             const users = await reaction.users.fetch();
             for (const user of users.values()) {
               logger.log(
-                `User ${user.tag} reacted with ${reaction.emoji.name} on message: ${message.id}`
+                `User ${user.tag} reacted with ${reaction.emoji.name} on message: ${message.id}`,
               );
             }
           }
@@ -57,6 +57,6 @@ export const handleOldMessagesAndReactions = async (limit: number) => {
   }
 
   logger.log(
-    `Fetched ${messageCount} old messages and ${reactionCount} reactions from ${channelCount} channels.`
+    `Fetched ${messageCount} old messages and ${reactionCount} reactions from ${channelCount} channels.`,
   );
 };
