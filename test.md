@@ -138,7 +138,7 @@ following fields is missing:
   thread and inserts a payment to the db
 - ✅ the parent post gets updated in the db to include thread payments
 - ✅ superusers🦹 cannot add payment emojis from two different sets or units
-- ✅ if the parent of the thread is not valid still monitor the payments
+- ✅⭕️ if the parent of the thread is not valid still monitor the payments
 
 ### Odd Jobs
 
@@ -199,9 +199,9 @@ following fields is missing:
 - ✅ if a oddjob was created when bot was online, bot goes offline misses some
   reactions, bot goes online, then message isreacted to, the message and the
   reactions are inserted correctly to the db
-- ✅ if a discrepancy is detected between a discord post/thread/oddjob and any
-  reaction is **added** the bot parses all reactions again creating a valid db
-  state that is in sync with discord
+- ✅⭕️ if a discrepancy is detected between a discord post/thread/oddjob and
+  any reaction is **added** the bot parses all reactions again creating a valid
+  db state that is in sync with discord
 - ✅ if a regular user adds invalid emojis while the bot is offline and bot
   comes online, then any reaction triggers a revalidation and produces a valid
   db state
