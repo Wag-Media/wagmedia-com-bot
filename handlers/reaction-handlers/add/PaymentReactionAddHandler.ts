@@ -1,4 +1,8 @@
-import { MessageReaction, User as DiscordUser } from "discord.js";
+import {
+  MessageReaction,
+  User as DiscordUser,
+  ThreadChannel,
+} from "discord.js";
 import { PaymentRule, Post } from "@prisma/client";
 import { findEmojiPaymentRule } from "@/data/emoji";
 import {
@@ -12,12 +16,14 @@ import { isPaymentUnitValid } from "../../../curators/utils";
 import { getPostReactions, upsertEntityReaction } from "@/data/reaction";
 import { logContentEarnings } from "@/handlers/log-utils";
 import { BaseReactionHandler } from "../_BaseReactionHandler";
-import { findOrCreateThreadPost, getPost } from "@/data/post";
+import { findOrCreatePost, findOrCreateThreadPost, getPost } from "@/data/post";
 import { BaseReactionAddHandler } from "./_BaseReactionAddHandler";
-import { logger } from "@/client";
+import { discordClient, logger } from "@/client";
 import { isCountryFlag } from "@/utils/is-country-flag";
 import { getOddJob } from "@/data/oddjob";
 import { ThreadPaymentReactionRemoveHandler } from "../remove/PaymentReactionRemoveHandler";
+import { slugify } from "@/handlers/util";
+import { findOrCreateUser } from "@/data/user";
 
 abstract class BasePaymentReactionAddHandler extends BaseReactionAddHandler {
   protected paymentRule: PaymentRule | null;
@@ -198,15 +204,26 @@ export class OddJobPaymentReactionAddHandler extends BasePaymentReactionAddHandl
 
   protected getDbContent(
     reaction: MessageReaction
-  ): Promise<PostWithOptions | OddJobWithOptions | null> {
+  ): Promise<OddJobWithOptions | null> {
     return getOddJob(reaction.message.id);
   }
 
-  protected isReactionPermitted(
+  protected async isReactionPermitted(
     reaction: MessageReaction,
     user: DiscordUser
   ): Promise<boolean> {
-    return Promise.resolve(true);
+    const oddJob = await this.getDbContent(reaction);
+    const payerIsManager = oddJob?.managerId === user.id;
+
+    if (!payerIsManager) {
+      logger.logAndSend(
+        `Only the manager of the odd job ${this.messageLink} can pay for it.`,
+        user
+      );
+      throw new Error("Payer is not the manager of the odd job");
+    }
+
+    return true;
   }
 
   protected async processReaction(
@@ -258,57 +275,6 @@ export class OddJobPaymentReactionAddHandler extends BasePaymentReactionAddHandl
   }
 }
 
-// export class ThreadPaymentReactionAddHandler extends BasePaymentReactionAddHandler {
-//   contentType: ContentType = "thread";
-//   protected parentId: string | null = null;
-
-//   protected async initialize(
-//     reaction: MessageReaction,
-//     user: DiscordUser
-//   ): Promise<void> {
-//     console.log("Initializing payment reaction for a thread");
-//     await super.initialize(reaction, user);
-
-//     // If the message is a thread, set the parentId
-//     this.parentId = reaction.message.channelId;
-//   }
-
-//   protected async isReactionPermitted(
-//     reaction: any,
-//     user: any
-//   ): Promise<boolean> {
-//     // Payments to threads (by superusers) are always permitted
-//     return await isPaymentUnitValid(
-//       reaction.message.id,
-//       this.contentType,
-//       this.paymentRule
-//     );
-//   }
-
-//   protected async processReaction(
-//     reaction: MessageReaction,
-//     user: DiscordUser
-//   ) {
-//     console.log("Handling payment reaction for a thread");
-
-//     // 1. if the thread is not in the database, create it on payment
-//     if (!this.dbContent) {
-//       this.dbContent = await findOrCreateThreadPost({
-//         message: reaction.message,
-//         content: reaction.message.content || "",
-//         url: this.messageLink || "",
-//       });
-//     }
-
-//     // 2. process the payment as in posts
-//     await super.processReaction(reaction, user);
-//   }
-
-//   protected async postProcess(): Promise<void> {
-//     return Promise.resolve();
-//   }
-// }
-
 export class ThreadPaymentReactionAddHandler extends PostPaymentReactionAddHandler {
   contentType: ContentType = "thread";
 
@@ -351,7 +317,35 @@ export class ThreadPaymentReactionAddHandler extends PostPaymentReactionAddHandl
       this.dbEmoji
     );
 
-    // 3. process the payment as in posts
+    // 3. if the parent post is not in the db, create it
+    const parentPost = await getPost(this.parentId!);
+    if (!parentPost) {
+      const parentChannel = (reaction.message.channel as ThreadChannel).parent;
+
+      const parentMessage = await parentChannel?.messages.fetch(this.parentId!);
+      if (!parentMessage) throw new Error("Message not found.");
+
+      const parentMessageLink = `https://discord.com/channels/${parentMessage.guild?.id}/${parentMessage.channel.id}/${parentMessage.id}`;
+
+      const dbUser = await findOrCreateUser(parentMessage);
+
+      const parentPost = await prisma.post.create({
+        data: {
+          id: parentMessage.id,
+          title: "",
+          content: "",
+          discordLink: parentMessageLink,
+          userId: dbUser.id, // Assuming you have the user's ID
+          isPublished: false,
+          isDeleted: false,
+          isFeatured: false,
+        },
+      });
+
+      console.info("parentPost created");
+    }
+
+    // 4. process the payment as in posts
     await super.processReaction(reaction, user);
   }
 }

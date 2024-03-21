@@ -1,6 +1,6 @@
 import { ContentType, OddJobWithOptions, PostWithOptions } from "@/types";
 import { findEmojiCategoryRule } from "@/data/emoji";
-import { addCategory } from "@/data/post";
+import { addCategory, getAllCategories, setCategory } from "@/data/post";
 import { logger } from "@/client";
 import { BaseReactionAddHandler } from "./_BaseReactionAddHandler";
 import { MessageReaction, User } from "discord.js";
@@ -9,7 +9,7 @@ import { isCountryFlag } from "@/utils/is-country-flag";
 
 import * as config from "@/config";
 
-export class CategoryReactionHandler extends BaseReactionAddHandler {
+export class CategoryAddReactionHandler extends BaseReactionAddHandler {
   contentType: ContentType = "post";
 
   protected async isReactionPermitted(
@@ -47,20 +47,35 @@ export class CategoryReactionHandler extends BaseReactionAddHandler {
       throw new Error("Category rule not found");
     }
 
-    // update the local dbMessage with the new category
-    this.dbContent = await addCategory(
-      reaction.message.id,
-      categoryRule.category.id
-    );
+    // fetch all category emojis from the message
+    const allCategories = await getAllCategories();
+    const messageCategoryCount = reaction.message.reactions.cache.filter((r) =>
+      allCategories.some((c) => c.emojiId === r.emoji.name)
+    ).size;
 
-    logger.log(
-      `[category] Category ${categoryRule.category.name} added to ${this.messageLink}.`
-    );
-  }
-}
+    // if the count of the post's categories is 1, we can connect the post with the added
+    // category and remove all other categories. This can happen in an edge case where the
+    // user removed the last category of a published post and then added a new category.
+    if (messageCategoryCount === 1) {
+      this.dbContent = await setCategory(
+        reaction.message.id,
+        categoryRule.category.id
+      );
 
-export class FeatureReactionHandler extends CategoryReactionHandler {
-  protected async processReaction(): Promise<void> {
-    throw new Error("FeatureReactionHandler: Not implemented");
+      logger.log(
+        `[category] Category ${categoryRule.category.name} replaced the out of sync category at ${this.messageLink}.`
+      );
+    } else {
+      // connect the post with the added category
+      // update the local dbMessage with the new category
+      this.dbContent = await addCategory(
+        reaction.message.id,
+        categoryRule.category.id
+      );
+
+      logger.log(
+        `[category] Category ${categoryRule.category.name} added to ${this.messageLink}.`
+      );
+    }
   }
 }

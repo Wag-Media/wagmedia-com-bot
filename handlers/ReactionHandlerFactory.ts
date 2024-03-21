@@ -14,7 +14,7 @@ import {
 import { ensureFullMessage } from "@/handlers/util";
 import { NotAllowedReactionHandler } from "./reaction-handlers/NotAllowedReactionHandler";
 import { ReactionDiscrepancyResolver } from "../curators/ReactionDiscrepancyResolver";
-import { CategoryReactionHandler } from "./reaction-handlers/add/CategoryReactionHandler";
+import { CategoryAddReactionHandler } from "./reaction-handlers/add/CategoryAddReactionHandler";
 import { RegularReactionAddHandler } from "./reaction-handlers/add/RegularReactionAddHandler";
 import { RegularReactionRemoveHandler } from "./reaction-handlers/remove/RegularReactionRemoveHandler";
 import { NoopReactionHandler } from "./reaction-handlers/NoopReactionHandler";
@@ -25,6 +25,7 @@ import {
   PostPaymentReactionRemoveHandler,
   ThreadPaymentReactionRemoveHandler,
 } from "./reaction-handlers/remove/PaymentReactionRemoveHandler";
+import { CategoryRemoveReactionHandler } from "./reaction-handlers/remove/CategoryRemoveReactionHandler";
 
 export class ReactionHandlerFactory {
   static async getHandler(
@@ -54,7 +55,7 @@ export class ReactionHandlerFactory {
       emojiType === "category" &&
       contentType.contentType === "post"
     ) {
-      return new CategoryReactionHandler();
+      return new CategoryAddReactionHandler();
     } else if (
       userRole === "superuser" &&
       eventType === "reactionAdd" &&
@@ -108,6 +109,13 @@ export class ReactionHandlerFactory {
       contentType.contentType === "post"
     ) {
       return new FeatureRemoveReactionHandler();
+    } else if (
+      userRole === "superuser" &&
+      eventType === "reactionRemove" &&
+      emojiType === "category" &&
+      contentType.contentType === "post"
+    ) {
+      return new CategoryRemoveReactionHandler();
     } else if (
       userRole === "superuser" &&
       eventType === "reactionRemove" &&

@@ -7,7 +7,7 @@ import {
   resetPostOrOddjobReactions,
 } from "@/data/post";
 import { logger } from "@/client";
-import { ReactionEventType } from "@/types";
+import { ContentType, ReactionEventType } from "@/types";
 
 /**
  * This class is responsible for checking and resolving discrepancies between the database and Discord reactions.
@@ -17,10 +17,17 @@ import { ReactionEventType } from "@/types";
  * sequence they appeared.
  */
 export class ReactionDiscrepancyResolver {
+  private static contentType: ContentType;
+  private static parentId: string | undefined;
+
   static async checkAndResolve(
     message: Message,
     event: ReactionEventType
   ): Promise<boolean> {
+    const { contentType, parentId } = determineContentType(message);
+    this.contentType = contentType;
+    this.parentId = parentId;
+
     const hasDiscrepancies = await this.detectDiscrepancies(message, event);
 
     if (hasDiscrepancies) {
@@ -36,6 +43,10 @@ export class ReactionDiscrepancyResolver {
           await ReactionCurator.curateAdd(messageReaction, user);
         }
       }
+
+      logger.log(
+        `[${this.contentType}] Discrepancies were handled successfully`
+      );
     }
 
     return hasDiscrepancies;
@@ -53,27 +64,25 @@ export class ReactionDiscrepancyResolver {
     message: Message,
     event: ReactionEventType
   ): Promise<boolean> {
-    const { contentType, parentId } = determineContentType(message);
-
     if (!message.id) {
       return true;
     }
 
-    if (parentId) {
+    if (this.parentId) {
       return false;
     }
 
-    const dbPostOrOddjob = await getPostOrOddjob(message.id, contentType);
+    const dbPostOrOddjob = await getPostOrOddjob(message.id, this.contentType);
 
     if (!dbPostOrOddjob) {
       // if the message is a thread it is not necessarily in the db yet
       // as it will only be added on payment. so we can ignore it here
       // if it is already tracked the discrepancy detection will continue below in another case
-      if (parentId) {
+      if (this.parentId) {
         return false;
       } else {
         logger.warn(
-          `[${contentType}] detectDiscrepancy: ${contentType} with id ${message.id} not found in the database.`
+          `[${this.contentType}] Discrepancy detected: ${this.contentType} with id ${message.id} not found in the database.`
         );
         return true;
       }
@@ -81,7 +90,7 @@ export class ReactionDiscrepancyResolver {
 
     const dbPostOrOddjobReactionCount = await getPostOrOddjobReactionCount(
       message.id,
-      contentType
+      this.contentType
     );
 
     let discordReactionCount = 0;
@@ -104,7 +113,7 @@ export class ReactionDiscrepancyResolver {
 
     if (discordReactionCount !== expectedReactionCount) {
       logger.warn(
-        `[${contentType}] ${contentType} with ID ${message.id} has a different number of reactions in the database on ${event}.`,
+        `[${this.contentType}] ${this.contentType} with ID ${message.id} has a different number of reactions in the database on ${event}.`,
         ` discord: ${discordReactionCount}`,
         ` db: ${dbPostOrOddjobReactionCount}`
       );

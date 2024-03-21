@@ -25,7 +25,6 @@ export class ReactionCurator {
       this.isResolvingDiscrepancies = false;
 
       if (hadDiscrepancies) {
-        console.log("discrepancies were handled, returning");
         return;
       }
     }

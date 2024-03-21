@@ -339,6 +339,30 @@ export async function addCategory(postId: string, categoryId: number) {
   return post;
 }
 
+export async function getAllCategories(): Promise<Category[]> {
+  const categories = await prisma.category.findMany();
+
+  return categories;
+}
+
+export async function setCategory(postId: string, categoryId: number) {
+  const post = await prisma.post.update({
+    where: {
+      id: postId,
+    },
+    include: {
+      categories: true,
+    },
+    data: {
+      categories: {
+        set: [{ id: categoryId }],
+      },
+    },
+  });
+
+  return post;
+}
+
 export async function resetPostReactions(postId: string) {
   const post = await prisma.post.update({
     where: {

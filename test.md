@@ -6,7 +6,6 @@ WagMedia team.
 
 ## Legend
 
-- ⭕️ wagmedia team please verify
 - ✅ tested manually by niftesty
 - 2️⃣ tested manually by wagmedia team
 - 🚥 not implemented yet
@@ -101,8 +100,8 @@ following fields is missing:
 
 - ✅ if a post message that is not published yet or has no categories gets
   deleted, it will be removed from the database.
-- ✅ if a post message that is already published (=paid) gets deleted, it stays
-  in the db and gets flagged as deleted
+- ✅⭕️ if a post message that is already published (=paid) gets deleted, it
+  stays in the db and gets flagged as deleted
 - ✅ if an oddjob message that is not paid yet gets deleted it will be removed
   from the database
 - ✅ if an oddjob message that is paid gets deleted, it stays in the db and gets
@@ -132,76 +131,92 @@ following fields is missing:
 
 - ✅ payment emojis by superusers🦹 will update the total amount of payments a
   post received and save it to the db
+- ⭕️ reacting with the universal publish emoji will publish a (valid) post even
+  if it has no payments
 
 ### Post Threads
 
-- 🍋 the bot monitors payment reactions to valid posts in the corresponding
+- ✅ the bot monitors payment reactions to valid posts in the corresponding
   thread and inserts a payment to the db
-- the parent post gets updated in the db to include thread payments
-- 🍋⭕️ superusers🦹 cannot add payment emojis from two different sets or units
+- ✅ the parent post gets updated in the db to include thread payments
+- ✅ superusers🦹 cannot add payment emojis from two different sets or units
+- ✅ if the parent of the thread is not valid still monitor the payments
 
 ### Odd Jobs
 
-- 🍋⭕️ regular users🤷‍♂️ cannot add any emojis to odd jobs
-- 🍋⭕️ super user cannot add emojis to incomplete oddjobs
-- 🍋⭕️ only the 🦹superuser (manager) that is added as manager can add payment
+- ✅ regular users🤷‍♂️ cannot add any WM emojis to odd jobs
+- ✅ super user cannot add emojis to incomplete oddjobs
+- ✅ only the 🦹superuser (manager) that is added as manager can add payment
   emojis to oddjobs
-- 🍋⭕️ superusers🦹 who are not the manager will get a message when trying to
-  add emojis, emoji removed
-- 🍋⭕️ manager will get a message when trying to add emojis to incomplete
-  oddjobs, emoji removed
-- 🍋⭕️ manager cannot add payment emojis from two different sets or units
-- 🍋⭕️ manager will get a message when trying to add from two set of payment
+- ✅ superusers🦹 who are not the manager will get a message when trying to add
+  emojis, emoji removed
+- ✅ manager will get a message when trying to add emojis to incomplete oddjobs,
+  emoji removed
+- ✅ manager cannot add payment emojis from two different sets or units
+- ✅ manager will get a message when trying to add from two set of payment
   emojis (neither different unit nor different funding source)
-- 🍋 complete odd-jobs with payment emojis from manager will be added to the db
-  with a payment
-- 🍋 payment emojis by superusers🦹 will update the total amount of payments an
-  odd job received and save it to the db
+- ✅ complete odd-jobs will be added to the db
+- ✅ payment emojis by manager will update the total amount of payments an odd
+  job received and save it to the db
 
 ## Remove Reactions
 
 ### Posts
 
-- 🍋⭕️ if a regular user🤷‍♂️ removes a reaction it should also be removed from
-  the db and website
-- 🍋⭕️ if a superuser🦹 removes a reaction it should also be removed from the
+- ✅ if a regular user🤷‍♂️ removes a reaction it should also be removed from the
   db and website
-- 🍋⭕️ if a superuser🦹 removes a category reaction also remove it from the db
+- ✅ if a superuser🦹 removes a reaction it should also be removed from the db
   and website
-- 🍋⭕️ if a superuser🦹 removes **the last** category from a post that is
-  published, unpublish the post
-- 🍋⭕️ if a superuser🦹 removes **the last** category from a post that is
+- ✅ if a superuser🦹 removes a category reaction also remove it from the db and
+  website
+- ✅⭕️ if a superuser🦹 removes **the last** category from a post that is
+  published, warn the user and keep the category in the db. When a new category
+  is added, it should override the one from the db.
+- ✅ if a superuser🦹 removes **the last** category from a post that is
   published, inform the user
-- 🍋 if a superuser🦹 removes a payment reaction recalculate the total payment
+- ✅ if a superuser🦹 removes a payment reaction recalculate the total payment
   amount of the post and store to the db
-- 🍋⭕️ if a superuser🦹 removes **the last** payment reaction from a post, also
+- ✅ if a superuser🦹 removes **the last** payment reaction from a post, also
   unpublish the post
-- a superuser🦹 cannot remove category emojis from published posts
 
 ### Odd Jobs
 
-- same as in posts for payments
+- ✅ same as in posts for payments
 
 ### Threads
 
-- same as in posts
+- ✅ same as in posts
+- ✅⭕️ if a post is not published or not rewarded, it should still be possible
+  to reward threads
 
 ## Old Messages
 
-- if a message was created before bot joined, bot goes online, then message is
+- ✅ if a post was created before bot joined, bot goes online, then message is
   reacted to, the message and the reactions are inserted correctly to the db
-- if a message was created when bot was online, bot goes offline misses 2
+- ⭕️if a oddjob was created before bot joined, bot goes online, then message is
+  reacted to, the message and the reactions are inserted correctly to the db
+- ✅ if a post was created when bot was online, bot goes offline misses some
+  reactions, bot goes online, then message is reacted to, the message and the
+  reactions are inserted correctly to the db
+- ⭕️if a oddjob was created when bot was online, bot goes offline misses some
   reactions, bot goes online, then message isreacted to, the message and the
   reactions are inserted correctly to the db
-- 🍋 if a discrepancy is detected between a discord post/thread/oddjob and any
+- ✅ if a discrepancy is detected between a discord post/thread/oddjob and any
   reaction is **added** the bot parses all reactions again creating a valid db
-  state that is in sync with discord
-- 🍋 if a discrepancy is detected between a discord post/thread/oddjob and any
-  reaction is **removed** the bot parses all reactions again creating a valid db
   state that is in sync with discord
 - ✅ if a regular user adds invalid emojis while the bot is offline and bot
   comes online, then any reaction triggers a revalidation and produces a valid
   db state
+
+## Universal Publish Emoji (UPE)
+
+- 🚥 superusers🦹 can add universal payment emojis (UPE) to posts
+- 🚥 adding UPE emojis publishes a post
+- 🚥 UPE can only be added if there are no other payment emojis
+- 🚥 after UPE is added to a post, no other payment emojis can be added
+
+- 🚥 when UPE is removed the post is unpublished
+- 🚥 all functionality is like it was never there (payment emojis can be added)
 
 ## Integration Tests
 
@@ -211,9 +226,9 @@ following fields is missing:
 
 ## Website
 
-- ⭕️ correct posts that have a category and paymentEmoji are added to the
+- 🚥 correct posts that have a category and paymentEmoji are added to the
   website
-- ⭕️ published posts have all the correct categories from discord
-- ⭕️ correct posts that have the payment emoji removed get removed from the
+- 🚥 published posts have all the correct categories from discord
+- 🚥 correct posts that have the payment emoji removed get removed from the
   website
-- ⭕️ if a category is removed from discord, it is also removed on the website
+- 🚥 if a category is removed from discord, it is also removed on the website

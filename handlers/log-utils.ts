@@ -67,9 +67,15 @@ export async function logContentEarnings(
   );
 
   // create a comma separated human readable string
-  const humanReadableTotalEarnings = Object.keys(totalEarningsPerUnit)
+  let humanReadableTotalEarnings = Object.keys(totalEarningsPerUnit)
+    .filter((key) => totalEarningsPerUnit[key] > 0)
     .map((key) => `${totalEarningsPerUnit[key]} ${key}`)
     .join(", ");
+
+  //if all earnings are 0, log 0
+  if (humanReadableTotalEarnings === "") {
+    humanReadableTotalEarnings = "0";
+  }
 
   logger.log(
     `[${contentType}] New total earnings for ${messageLink}: **${humanReadableTotalEarnings}**`

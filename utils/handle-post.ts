@@ -68,17 +68,17 @@ export function parseMessage(message: Message): PostType {
   const { content, embeds } = message;
 
   try {
-    const cleanedContent = content.replace(/\*/g, "");
-
-    const titleRegex = /title:\s*(.*?)\s*\n/i;
+    const titleRegex =
+      /(?<=^|\n)\*{0,2}\s*title\s*\*{0,2}\s*:\s*(.*?)\s*(?=\n|$)/i;
     const descriptionRegex =
-      /description:\s*([\s\S]*?)(?=\n(hashtags|tags):|$)/i;
-    const tagsRegex = /(hashtags|tags):\s*([^\n]+)/i;
+      /(?<=^|\n)\*{0,2}\s*description\s*\*{0,2}\s*:\s*([\s\S]*?)(?=\n\*{0,2}\s*(hashtags|tags)\s*\*{0,2}\s*:|$)/i;
+    const tagsRegex =
+      /(?<=^|\n)\*{0,2}\s*(hashtags|tags)\s*\*{0,2}\s*:\s*([^\n]+)/i;
 
     // Extracting title, description, and tags using the regular expressions
-    const titleMatch = cleanedContent.match(titleRegex);
-    const descriptionMatch = cleanedContent.match(descriptionRegex);
-    const tagsMatch = cleanedContent.match(tagsRegex);
+    const titleMatch = content.match(titleRegex);
+    const descriptionMatch = content.match(descriptionRegex);
+    const tagsMatch = content.match(tagsRegex);
 
     const title = titleMatch ? titleMatch[1].trim() : null;
     const description = descriptionMatch ? descriptionMatch[1].trim() : null;
