@@ -18,7 +18,7 @@ export class ReactionTracker {
    */
   public static addReactionToTrack(
     reaction: MessageReaction,
-    userId: string
+    userId: string,
   ): void {
     const reactionKey = this.getKey(reaction, userId);
     this.botRemovedReactions.add(reactionKey);
@@ -31,14 +31,14 @@ export class ReactionTracker {
 
   public static isReactionTracked(
     reaction: MessageReaction,
-    userId: string
+    userId: string,
   ): boolean {
     return this.botRemovedReactions.has(this.getKey(reaction, userId));
   }
 
   public static removeTrackedReaction(
     reaction: MessageReaction,
-    userId: string
+    userId: string,
   ): void {
     this.botRemovedReactions.delete(this.getKey(reaction, userId));
   }

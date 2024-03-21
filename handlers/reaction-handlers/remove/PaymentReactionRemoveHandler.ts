@@ -18,7 +18,7 @@ abstract class BasePaymentReactionRemoveHandler extends BaseReactionRemoveHandle
 
   protected async initialize(
     reaction: MessageReaction,
-    user: DiscordUser
+    user: DiscordUser,
   ): Promise<void> {
     await super.initialize(reaction, user);
 
@@ -32,13 +32,13 @@ abstract class BasePaymentReactionRemoveHandler extends BaseReactionRemoveHandle
     await logContentEarnings(
       this.dbContent!,
       this.contentType,
-      this.messageLink
+      this.messageLink,
     );
   }
 
   protected isReactionPermitted(
     reaction: MessageReaction,
-    user: DiscordUser
+    user: DiscordUser,
   ): Promise<boolean> {
     //todo payments can only be removed if post is not too old
     return Promise.resolve(true);
@@ -49,7 +49,7 @@ export class PostPaymentReactionRemoveHandler extends BasePaymentReactionRemoveH
   contentType: ContentType = "post";
   protected async processReaction(
     reaction: MessageReaction,
-    user: DiscordUser
+    user: DiscordUser,
   ): Promise<void> {
     const amount = this.paymentRule?.paymentAmount;
     const unit = this.paymentRule?.paymentUnit;
@@ -73,7 +73,7 @@ export class PostPaymentReactionRemoveHandler extends BasePaymentReactionRemoveH
 
     // Check if there are no remaining payment emojis
     const remainingPaymentEmojis = remainingPostReactions.filter(
-      (r) => r.emoji.PaymentRule && r.emoji.PaymentRule.length > 0
+      (r) => r.emoji.PaymentRule && r.emoji.PaymentRule.length > 0,
     );
 
     // If no payment emojis are left, unpublish the post
@@ -87,7 +87,7 @@ export class PostPaymentReactionRemoveHandler extends BasePaymentReactionRemoveH
         data: { isPublished: false },
       });
       logger.log(
-        `[post] Post ${this.messageLink} has been unpublished due to no remaining payment emojis.`
+        `[post] Post ${this.messageLink} has been unpublished due to no remaining payment emojis.`,
       );
     }
 
@@ -116,7 +116,7 @@ export class OddJobPaymentReactionRemoveHandler extends BasePaymentReactionRemov
   contentType: ContentType = "oddjob";
   protected async processReaction(
     reaction: MessageReaction,
-    user: DiscordUser
+    user: DiscordUser,
   ): Promise<void> {
     const amount = this.paymentRule?.paymentAmount;
     const unit = this.paymentRule?.paymentUnit;
@@ -140,7 +140,7 @@ export class OddJobPaymentReactionRemoveHandler extends BasePaymentReactionRemov
 
     // Check if there are no remaining payment emojis
     const remainingPaymentEmojis = remainingOddJobReactions.filter(
-      (r) => r.emoji.PaymentRule && r.emoji.PaymentRule.length > 0
+      (r) => r.emoji.PaymentRule && r.emoji.PaymentRule.length > 0,
     );
 
     // Aggregate the total payment amount for the specific unit

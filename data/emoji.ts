@@ -9,7 +9,7 @@ import { GuildEmoji, MessageReaction, ReactionEmoji } from "discord.js";
 const prisma = new PrismaClient();
 
 export const findEmoji = async (
-  emoji: GuildEmoji | ReactionEmoji
+  emoji: GuildEmoji | ReactionEmoji,
 ): Promise<Emoji | null> => {
   let emojiName: string | undefined;
   let emojiChar: string | undefined;
@@ -83,7 +83,7 @@ export const findOrCreateEmoji = async (emoji: GuildEmoji | ReactionEmoji) => {
 };
 
 export async function findEmojiPaymentRule(
-  emojiId: string
+  emojiId: string,
 ): Promise<PaymentRule | null> {
   return await prisma.paymentRule.findUnique({
     where: { emojiId: emojiId },
@@ -91,7 +91,7 @@ export async function findEmojiPaymentRule(
 }
 
 export async function findEmojiCategoryRule(
-  emojiId: string
+  emojiId: string,
 ): Promise<(CategoryRule & { category: Category }) | null> {
   return await prisma.categoryRule.findUnique({
     where: { emojiId: emojiId },

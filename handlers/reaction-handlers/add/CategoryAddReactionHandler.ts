@@ -14,7 +14,7 @@ export class CategoryAddReactionHandler extends BaseReactionAddHandler {
 
   protected async isReactionPermitted(
     reaction: MessageReaction,
-    user: User
+    user: User,
   ): Promise<boolean> {
     if (
       [
@@ -25,13 +25,13 @@ export class CategoryAddReactionHandler extends BaseReactionAddHandler {
       const postReactions = await getPostReactions(reaction.message.id);
       // check if the post has a flag
       const hasFlag = postReactions.some((reaction) =>
-        isCountryFlag(reaction.emoji?.id)
+        isCountryFlag(reaction.emoji?.id),
       );
 
       if (!hasFlag) {
         logger.logAndSend(
           `Before you can add the non anglo or translation emoji to the published post ${this.messageLink}, make sure it has a flag.`,
-          user
+          user,
         );
 
         throw new Error("Post is non anglo and has no flag");
@@ -50,7 +50,7 @@ export class CategoryAddReactionHandler extends BaseReactionAddHandler {
     // fetch all category emojis from the message
     const allCategories = await getAllCategories();
     const messageCategoryCount = reaction.message.reactions.cache.filter((r) =>
-      allCategories.some((c) => c.emojiId === r.emoji.name)
+      allCategories.some((c) => c.emojiId === r.emoji.name),
     ).size;
 
     // if the count of the post's categories is 1, we can connect the post with the added
@@ -59,22 +59,22 @@ export class CategoryAddReactionHandler extends BaseReactionAddHandler {
     if (messageCategoryCount === 1) {
       this.dbContent = await setCategory(
         reaction.message.id,
-        categoryRule.category.id
+        categoryRule.category.id,
       );
 
       logger.log(
-        `[category] Category ${categoryRule.category.name} replaced the out of sync category at ${this.messageLink}.`
+        `[category] Category ${categoryRule.category.name} replaced the out of sync category at ${this.messageLink}.`,
       );
     } else {
       // connect the post with the added category
       // update the local dbMessage with the new category
       this.dbContent = await addCategory(
         reaction.message.id,
-        categoryRule.category.id
+        categoryRule.category.id,
       );
 
       logger.log(
-        `[category] Category ${categoryRule.category.name} added to ${this.messageLink}.`
+        `[category] Category ${categoryRule.category.name} added to ${this.messageLink}.`,
       );
     }
   }

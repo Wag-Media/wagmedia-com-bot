@@ -22,7 +22,7 @@ export class ReactionDiscrepancyResolver {
 
   static async checkAndResolve(
     message: Message,
-    event: ReactionEventType
+    event: ReactionEventType,
   ): Promise<boolean> {
     const { contentType, parentId } = determineContentType(message);
     this.contentType = contentType;
@@ -45,7 +45,7 @@ export class ReactionDiscrepancyResolver {
       }
 
       logger.log(
-        `[${this.contentType}] Discrepancies were handled successfully`
+        `[${this.contentType}] Discrepancies were handled successfully`,
       );
     }
 
@@ -62,7 +62,7 @@ export class ReactionDiscrepancyResolver {
    */
   private static async detectDiscrepancies(
     message: Message,
-    event: ReactionEventType
+    event: ReactionEventType,
   ): Promise<boolean> {
     if (!message.id) {
       return true;
@@ -82,7 +82,7 @@ export class ReactionDiscrepancyResolver {
         return false;
       } else {
         logger.warn(
-          `[${this.contentType}] Discrepancy detected: ${this.contentType} with id ${message.id} not found in the database.`
+          `[${this.contentType}] Discrepancy detected: ${this.contentType} with id ${message.id} not found in the database.`,
         );
         return true;
       }
@@ -90,7 +90,7 @@ export class ReactionDiscrepancyResolver {
 
     const dbPostOrOddjobReactionCount = await getPostOrOddjobReactionCount(
       message.id,
-      this.contentType
+      this.contentType,
     );
 
     let discordReactionCount = 0;
@@ -115,7 +115,7 @@ export class ReactionDiscrepancyResolver {
       logger.warn(
         `[${this.contentType}] ${this.contentType} with ID ${message.id} has a different number of reactions in the database on ${event}.`,
         ` discord: ${discordReactionCount}`,
-        ` db: ${dbPostOrOddjobReactionCount}`
+        ` db: ${dbPostOrOddjobReactionCount}`,
       );
       return true;
     }

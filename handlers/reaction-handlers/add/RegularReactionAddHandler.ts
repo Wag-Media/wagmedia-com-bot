@@ -16,19 +16,19 @@ export class RegularReactionAddHandler extends BaseReactionAddHandler {
 
   protected async isReactionPermitted(
     reaction: MessageReaction,
-    user: User
+    user: User,
   ): Promise<boolean> {
     if (this.userRole !== "superuser") {
       if (reaction.emoji.name?.includes("WM")) {
         logger.logAndSend(
           `You do not have permission to add WagMedia emojis to ${this.messageLink}`,
-          user
+          user,
         );
         throw new Error("Regular user adding WagMedia emoji");
       } else if (isCountryFlag(reaction.emoji.name)) {
         logger.logAndSend(
           `You do not have permission to add country flag emojis to ${this.messageLink}`,
-          user
+          user,
         );
         throw new Error("Regular user adding country flag emoji");
       }

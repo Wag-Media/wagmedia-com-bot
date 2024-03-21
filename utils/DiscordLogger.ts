@@ -36,13 +36,13 @@ export class DiscordLogger {
     // Combine all messages into a single string
     const combinedMessage = messages
       .map((message) =>
-        typeof message === "object" ? JSON.stringify(message) : message
+        typeof message === "object" ? JSON.stringify(message) : message,
       )
       .join("");
 
     try {
       const channel = (await this.discordClient.channels.fetch(
-        this.channelId
+        this.channelId,
       )) as TextChannel;
 
       const logLevelPrefix = config.LOG_THE_LEVEL_IN_DISCORD
@@ -58,7 +58,7 @@ export class DiscordLogger {
           channel.send(`${logLevelPrefix}${combinedMessage}`);
         } else {
           console.warn(
-            `DiscordLogger: Missing 'SEND_MESSAGES' permission in channel ${this.channelId}.`
+            `DiscordLogger: Missing 'SEND_MESSAGES' permission in channel ${this.channelId}.`,
           );
         }
       } else {
@@ -68,7 +68,7 @@ export class DiscordLogger {
       // Handle specific DiscordAPIError for missing access
       if (error.code === 50001) {
         console.error(
-          `DiscordLogger Error: Missing access to the channel (ID: ${this.channelId}).`
+          `DiscordLogger Error: Missing access to the channel (ID: ${this.channelId}).`,
         );
       } else {
         console.error(`DiscordLogger Error: ${error}`);

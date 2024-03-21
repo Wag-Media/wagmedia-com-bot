@@ -57,7 +57,7 @@ export function determineContentType(message: Message | PartialMessage): {
 
 export async function determineUserRole(
   message: Message,
-  user: DiscordUser
+  user: DiscordUser,
 ): Promise<UserRole> {
   const guild = await getGuildFromMessage(message);
 
@@ -69,7 +69,7 @@ export async function determineUserRole(
 }
 
 export async function determineEmojiType(
-  reaction: MessageReaction
+  reaction: MessageReaction,
 ): Promise<EmojiType> {
   const dbEmoji = await findEmoji(reaction.emoji);
 
@@ -100,7 +100,7 @@ export async function determineEmojiType(
 export async function isPaymentUnitValid(
   dbContentId: string,
   contentType: ContentType,
-  paymentRule: PaymentRule | null
+  paymentRule: PaymentRule | null,
 ): Promise<boolean> {
   if (!paymentRule) {
     return false;

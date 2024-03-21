@@ -17,7 +17,7 @@ export type PostType = {
 
 export async function handlePost(
   message: Message<boolean>,
-  messageLink: string
+  messageLink: string,
 ): Promise<PostWithCategoriesEarnings | undefined> {
   // content is not null because we checked for it in shouldIgnoreMessage
   const parsedMessage = parseMessage(message);
@@ -39,8 +39,8 @@ export async function handlePost(
   if (missingFields.length > 0) {
     logger.warn(
       `[post] Post ${messageLink} is missing required fields: ${missingFields.join(
-        ", "
-      )}`
+        ", ",
+      )}`,
     );
     return;
   }
@@ -50,7 +50,7 @@ export async function handlePost(
       embeds.length
     } ${embeds.length === 1 ? "embed" : "embeds"} and ${tags.length} ${
       tags.length === 1 ? "tag" : "tags"
-    } in the channel ${messageLink}: ${title} `
+    } in the channel ${messageLink}: ${title} `,
   );
 
   const post = await findOrCreatePost({

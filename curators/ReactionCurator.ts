@@ -10,7 +10,7 @@ export class ReactionCurator {
 
   static async curateAdd(
     reaction: MessageReaction,
-    user: DiscordUser
+    user: DiscordUser,
   ): Promise<void> {
     // the index.ts fetches PartialMessages so this is safe
     const message = reaction.message as Message;
@@ -26,7 +26,7 @@ export class ReactionCurator {
       const hadDiscrepancies =
         await ReactionDiscrepancyResolver.checkAndResolve(
           message,
-          "reactionAdd"
+          "reactionAdd",
         );
       this.isResolvingDiscrepancies = false;
 
@@ -39,7 +39,7 @@ export class ReactionCurator {
       const handler = await ReactionHandlerFactory.getHandler(
         reaction,
         user,
-        "reactionAdd"
+        "reactionAdd",
       );
       await handler.handle(reaction, user);
     } catch (error) {
@@ -58,7 +58,7 @@ export class ReactionCurator {
 
   static async curateRemove(
     reaction: MessageReaction,
-    user: DiscordUser
+    user: DiscordUser,
   ): Promise<void> {
     const { messageChannelType } = classifyMessage(reaction.message);
 
@@ -70,7 +70,7 @@ export class ReactionCurator {
       const handler = await ReactionHandlerFactory.getHandler(
         reaction,
         user,
-        "reactionRemove"
+        "reactionRemove",
       );
       await handler.handle(reaction, user);
     } catch (error) {

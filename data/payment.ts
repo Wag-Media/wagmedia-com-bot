@@ -9,7 +9,7 @@ export async function findFirstPayment(
     | {
         oddJobId: string;
         postId?: undefined;
-      }
+      },
 ) {
   const payment = await prisma.payment.findFirst({
     where,

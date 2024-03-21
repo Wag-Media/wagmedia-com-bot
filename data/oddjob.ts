@@ -33,7 +33,7 @@ export async function findOrCreateOddJob(
   timeline: string,
   requestedAmount: number,
   requestedUnit: string,
-  manager: User
+  manager: User,
 ): Promise<OddjobWithEarnings> {
   const user = await findOrCreateUser(message);
   const managerInDb = await findOrCreateUserFromDiscordUser(manager);
@@ -77,7 +77,7 @@ export async function findOrCreateOddJob(
 export async function upsertOddjobReaction(
   oddjob: OddJob,
   dbUser: User,
-  dbEmoji: Emoji
+  dbEmoji: Emoji,
 ) {
   const dbReaction = await prisma.reaction.upsert({
     where: {
@@ -116,7 +116,7 @@ export async function oddJobHasEarnings(oddJobId: string): Promise<boolean> {
 }
 
 export async function getOddjobWithEarnings(
-  oddJobId: string
+  oddJobId: string,
 ): Promise<OddjobWithEarnings | null> {
   const oddjob = await prisma.oddJob.findUnique({
     where: { id: oddJobId },
@@ -125,14 +125,14 @@ export async function getOddjobWithEarnings(
 
   if (!oddjob) {
     logger.warn(
-      `[oddjob] Oddjob with ID ${oddJobId} not found in the database.`
+      `[oddjob] Oddjob with ID ${oddJobId} not found in the database.`,
     );
   }
   return oddjob;
 }
 
 export async function fetchOddjob(
-  reaction: MessageReaction
+  reaction: MessageReaction,
 ): Promise<
   (OddJob & { payments: Payment[]; earnings: ContentEarnings[] }) | null
 > {
@@ -150,7 +150,7 @@ export async function fetchOddjob(
 
   if (!oddjob) {
     logger.warn(
-      `[oddjob] Oddjob with ID ${reaction.message.id} not found in the database.`
+      `[oddjob] Oddjob with ID ${reaction.message.id} not found in the database.`,
     );
   }
   return oddjob;

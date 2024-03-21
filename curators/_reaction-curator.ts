@@ -83,7 +83,7 @@ export class ReactionCurator {
     reaction: MessageReaction,
     user: DiscordUser,
     event: ReactionEvent,
-    wasPartial: TypeCuratorPartial
+    wasPartial: TypeCuratorPartial,
   ) {
     // Assign the reaction and user to class-level variables
     this.reaction = reaction;
@@ -138,7 +138,7 @@ export class ReactionCurator {
         logger.warn("Message not found in the database.");
         this.dbMessage = await MessageCurator.curate(
           this.message,
-          wasPartial.message
+          wasPartial.message,
         );
       }
 
@@ -160,7 +160,7 @@ export class ReactionCurator {
     this.isReactionFromPowerUser = userHasRole(
       this.guild,
       user,
-      config.ROLES_WITH_POWER
+      config.ROLES_WITH_POWER,
     );
   }
 
@@ -168,7 +168,7 @@ export class ReactionCurator {
     reaction: MessageReaction,
     user: DiscordUser,
     event: ReactionEvent,
-    wasPartial: TypeCuratorPartial
+    wasPartial: TypeCuratorPartial,
   ) {
     try {
       await this.initialize(reaction, user, event, wasPartial);
@@ -180,7 +180,7 @@ export class ReactionCurator {
     logger.log(
       `curating ${event} ${reaction.emoji.name} for ${this.messageLink} ${
         this.handlingDiscrepancy ? "while handling discrepancy" : ""
-      }`
+      }`,
     );
 
     // Skip certain initializations if handling a discrepancy
@@ -213,13 +213,13 @@ export class ReactionCurator {
       logger.error(
         `Error in reaction curation for ${this.messageLink} and emoji ${
           this.dbEmoji.name || this.dbEmoji.id
-        }: ${error.message}`
+        }: ${error.message}`,
       );
 
       // If any error occurs, remove the reaction from from discord
       console.log(
         "because an error occored, bot will remove the reaction",
-        this.reaction.emoji.name || this.reaction.emoji.id
+        this.reaction.emoji.name || this.reaction.emoji.id,
       );
 
       ReactionTracker.addReactionToTrack(reaction);
@@ -269,7 +269,7 @@ export class ReactionCurator {
       this.dbReaction = await upsertPostReaction(
         dbPost,
         this.dbUser!,
-        this.dbEmoji
+        this.dbEmoji,
       );
 
       switch (this.emojiType) {
@@ -327,12 +327,12 @@ export class ReactionCurator {
     this.dbReaction = await upsertPostReaction(
       dbPost,
       this.dbUser!,
-      this.dbEmoji
+      this.dbEmoji,
     );
   }
 
   static async handleDiscrepancies(
-    messageReactions: Collection<string, MessageReaction>
+    messageReactions: Collection<string, MessageReaction>,
   ): Promise<void> {
     console.log("handleDiscrepancies");
     // 1. remove all reactions and payments and soon to start fresh
@@ -352,7 +352,7 @@ export class ReactionCurator {
     // 0. regular users can only add regular emojis
     if (!this.isReactionFromPowerUser && this.emojiType !== "regular") {
       throw new Error(
-        `Regular users cannot add ${this.emojiType} emojis to messages.`
+        `Regular users cannot add ${this.emojiType} emojis to messages.`,
       );
     }
 
@@ -360,7 +360,7 @@ export class ReactionCurator {
     if (this.dbMessage?.isDeleted) {
       await logger.logAndSend(
         `The post ${this.messageLink} you reacted to is deleted and cannot be reacted to.`,
-        this.discordUser
+        this.discordUser,
       );
       throw new Error("Post is deleted");
     }
@@ -378,7 +378,7 @@ export class ReactionCurator {
         if (!post.title || !post.content) {
           logger.logAndSend(
             `Before you can publish the post ${this.messageLink}, make sure it has a title and description.`,
-            this.discordUser
+            this.discordUser,
           );
           throw new Error("Post has no title or description");
         }
@@ -387,14 +387,14 @@ export class ReactionCurator {
         if (post.categories.length === 0) {
           logger.logAndSend(
             `Before you can publish the post ${this.messageLink}, make sure it has a category.`,
-            this.discordUser
+            this.discordUser,
           );
           throw new Error("Post has no category");
         }
 
         // 1.3. make sure non anglo posts have a flag
         const isNonAnglo = post.categories.some((category) =>
-          category.name.includes("Non Anglo")
+          category.name.includes("Non Anglo"),
         );
 
         if (isNonAnglo) {
@@ -403,13 +403,13 @@ export class ReactionCurator {
 
           // check if the post has a flag
           const hasFlag = postReactions.some((reaction) =>
-            isCountryFlag(reaction.emoji?.id)
+            isCountryFlag(reaction.emoji?.id),
           );
 
           if (!hasFlag) {
             logger.logAndSend(
               `Before you can publish the post ${this.messageLink}, make sure it has a flag.`,
-              this.discordUser
+              this.discordUser,
             );
 
             throw new Error("Post is non anglo and has no flag");
@@ -418,13 +418,13 @@ export class ReactionCurator {
 
         // 3. make sure translation posts have a non anglo category
         const isTranslation = post.categories.some((category) =>
-          category.name.includes("Translations")
+          category.name.includes("Translations"),
         );
 
         if (isTranslation && !isNonAnglo) {
           logger.logAndSend(
             `Before you can publish the post ${this.messageLink} with a translation category, make sure it also has a Non Anglo category.`,
-            this.discordUser
+            this.discordUser,
           );
 
           throw new Error("Post is translation and has no non anglo category");
@@ -443,7 +443,7 @@ export class ReactionCurator {
     const dbPost = await fetchPost(this.reaction);
     if (!dbPost) {
       logger.warn(
-        `[post] Post with ID ${this.reaction.message.id} not found in the database.`
+        `[post] Post with ID ${this.reaction.message.id} not found in the database.`,
       );
       return true;
     }
@@ -451,7 +451,7 @@ export class ReactionCurator {
     const dbPostReactionCount = await getPostReactionCount(this.message.id);
     if (dbPostReactionCount === undefined) {
       logger.warn(
-        `[post] Post with ID ${this.reaction.message.id} has no reactions in the database.`
+        `[post] Post with ID ${this.reaction.message.id} has no reactions in the database.`,
       );
       return true;
     }
@@ -463,7 +463,7 @@ export class ReactionCurator {
         logger.warn(
           `[post] Post with ID ${this.reaction.message.id} has a different number of reactions in the database.`,
           ` discord: ${postReactionCount - 1}`,
-          ` db: ${dbPostReactionCount}`
+          ` db: ${dbPostReactionCount}`,
         );
         return true;
       }
@@ -472,7 +472,7 @@ export class ReactionCurator {
         logger.warn(
           `[post] Post with ID ${this.reaction.message.id} has a different number of reactions in the database.`,
           ` discord: ${postReactionCount + 1}`,
-          ` db: ${dbPostReactionCount}`
+          ` db: ${dbPostReactionCount}`,
         );
         return true;
       }
@@ -492,11 +492,11 @@ export class ReactionCurator {
     // update the local dbMessage with the new category
     this.dbMessage = await addCategory(
       this.message.id,
-      categoryRule.category.id
+      categoryRule.category.id,
     );
 
     logger.log(
-      `[category] Category ${categoryRule.category.name} added to ${this.messageLink}.`
+      `[category] Category ${categoryRule.category.name} added to ${this.messageLink}.`,
     );
   }
 
@@ -507,7 +507,7 @@ export class ReactionCurator {
     }
 
     logger.log(
-      `[category] TODO Category ${categoryRule.category.name} removed from ${this.messageLink}.`
+      `[category] TODO Category ${categoryRule.category.name} removed from ${this.messageLink}.`,
     );
   }
 
@@ -534,7 +534,7 @@ export class ReactionCurator {
     }
 
     const postTotalEarningsInUnit = post.earnings.find(
-      (e) => e.unit === unit
+      (e) => e.unit === unit,
     )?.totalAmount;
 
     // if (!postTotalEarningsInUnit) {
@@ -621,7 +621,7 @@ export class ReactionCurator {
 
     // Check if there are no remaining payment emojis
     const remainingPaymentEmojis = remainingReactions.filter(
-      (r) => r.emoji.PaymentRule && r.emoji.PaymentRule.length > 0
+      (r) => r.emoji.PaymentRule && r.emoji.PaymentRule.length > 0,
     );
 
     // If no payment emojis are left, unpublish the post
@@ -631,14 +631,14 @@ export class ReactionCurator {
         data: { isPublished: false },
       });
       logger.log(
-        `[post] Post ${this.messageLink} has been unpublished due to no remaining payment emojis.`
+        `[post] Post ${this.messageLink} has been unpublished due to no remaining payment emojis.`,
       );
     }
 
     // Aggregate the total payment amount for the specific unit
     const updatedTotalEarnings = remainingPaymentEmojis.reduce((total, r) => {
       const rule = r.emoji.PaymentRule.find(
-        (pr) => pr.paymentUnit === paymentRule.paymentUnit
+        (pr) => pr.paymentUnit === paymentRule.paymentUnit,
       );
       return total + (rule?.paymentAmount || 0);
     }, 0);
@@ -673,7 +673,7 @@ export class ReactionCurator {
   }
 
   static async isPaymentReactionValid(
-    paymentRule: PaymentRule
+    paymentRule: PaymentRule,
   ): Promise<boolean> {
     const paymentCondition =
       this.messageChannelType === "post"
@@ -697,19 +697,19 @@ export class ReactionCurator {
 
     if (!firstPayment || !firstPayment.reaction) {
       logger.info(
-        `Payment for ${this.messageLink} is valid because it is the first payment.`
+        `Payment for ${this.messageLink} is valid because it is the first payment.`,
       );
       return true;
     }
 
     console.log(
-      `paymentRule.paymentUnit ${paymentRule.paymentUnit} firstPayment.unit ${firstPayment.reaction.emoji.name}`
+      `paymentRule.paymentUnit ${paymentRule.paymentUnit} firstPayment.unit ${firstPayment.reaction.emoji.name}`,
     );
 
     console.log(
       `payment rule above is valid`,
       paymentRule.paymentUnit === firstPayment.unit &&
-        paymentRule.fundingSource === firstPayment.fundingSource
+        paymentRule.fundingSource === firstPayment.fundingSource,
     );
 
     // Validate the reaction's payment rule against the first payment's rule

@@ -42,7 +42,7 @@ const prisma = new PrismaClient();
  */
 export async function handleMessageReactionRemove(
   reaction: MessageReaction | PartialMessageReaction,
-  user: DiscordUser | PartialUser
+  user: DiscordUser | PartialUser,
 ) {
   // guild is not null because we checked for it in shouldIgnoreReaction
   const guild = reaction.message.guild!;
@@ -56,7 +56,7 @@ export async function handleMessageReactionRemove(
   } catch (error) {
     logger.error(
       "Error ensuring full entities when removing a message reaction:",
-      error
+      error,
     );
     return;
   }
@@ -71,7 +71,7 @@ export async function handleMessageReactionRemove(
     try {
       const { post, dbUser, dbEmoji } = await getPostUserEmojiFromReaction(
         reaction,
-        user.id
+        user.id,
       );
 
       logEmojiRemoved(reaction, user, messageLink);
@@ -83,7 +83,7 @@ export async function handleMessageReactionRemove(
           dbUser,
           post,
           dbEmoji,
-          messageLink
+          messageLink,
         );
       } else {
         processRegularUserReactionRemove(dbUser, post, dbEmoji);
@@ -97,7 +97,7 @@ export async function handleMessageReactionRemove(
 export async function processRegularUserReactionRemove(
   dbUser: User,
   post: Post,
-  dbEmoji: DbEmoji
+  dbEmoji: DbEmoji,
 ) {
   try {
     // dbEmoji.id is not null because we checked for it in getPostUserEmojiFromReaction
@@ -114,7 +114,7 @@ export async function processSuperuserReactionRemove(
   dbUser: User,
   post: Post,
   dbEmoji: DbEmoji,
-  messageLink: string
+  messageLink: string,
 ) {
   try {
     // dbEmoji.id is not null because we checked for it in getPostUserEmojiFromReaction
@@ -133,7 +133,7 @@ export async function processSuperuserReactionRemove(
         post,
         categoryRule,
         discordUser,
-        messageLink
+        messageLink,
       );
     }
   } catch (error) {
@@ -146,7 +146,7 @@ export async function handleSuperUserCategoryRuleReactionRemove(
   post,
   categoryRule,
   discordUser,
-  messageLink: string
+  messageLink: string,
 ) {
   //1. Check if the post has any remaining categories
   const remainingCategories = await prisma.category.findMany({
@@ -156,7 +156,7 @@ export async function handleSuperUserCategoryRuleReactionRemove(
   if (remainingCategories.length > 1) {
     await removeCategoryFromPost(post.id, categoryRule.categoryId);
     logger.log(
-      `[category] Category ${categoryRule.category.name} removed from ${messageLink}.`
+      `[category] Category ${categoryRule.category.name} removed from ${messageLink}.`,
     );
     return;
   } else if (remainingCategories.length === 1) {
@@ -164,7 +164,7 @@ export async function handleSuperUserCategoryRuleReactionRemove(
       logger.logAndSend(
         `🚨 The category ${categoryRule.category.name} has been removed from the post ${messageLink}. The post has no remaining but will keep its last category in the db / website until new categories are added.`,
         discordUser,
-        "warn"
+        "warn",
       );
     } else {
       await removeCategoryFromPost(post.id, categoryRule.categoryId);
@@ -175,7 +175,7 @@ export async function handleSuperUserCategoryRuleReactionRemove(
 export async function handleSuperUserPaymentRuleReactionRemove(
   post: Post,
   paymentRule: PaymentRule,
-  messageLink: string
+  messageLink: string,
 ) {
   // Fetch all reactions for the post and filter in code to include only those with a PaymentRule
   const remainingReactions = await prisma.reaction.findMany({
@@ -191,7 +191,7 @@ export async function handleSuperUserPaymentRuleReactionRemove(
 
   // Check if there are no remaining payment emojis
   const remainingPaymentEmojis = remainingReactions.filter(
-    (r) => r.emoji.PaymentRule && r.emoji.PaymentRule.length > 0
+    (r) => r.emoji.PaymentRule && r.emoji.PaymentRule.length > 0,
   );
 
   // If no payment emojis are left, unpublish the post
@@ -201,14 +201,14 @@ export async function handleSuperUserPaymentRuleReactionRemove(
       data: { isPublished: false },
     });
     logger.log(
-      `[post] Post ${messageLink} has been unpublished due to no remaining payment emojis.`
+      `[post] Post ${messageLink} has been unpublished due to no remaining payment emojis.`,
     );
   }
 
   // Aggregate the total payment amount for the specific unit
   const updatedTotalEarnings = remainingPaymentEmojis.reduce((total, r) => {
     const rule = r.emoji.PaymentRule.find(
-      (pr) => pr.paymentUnit === paymentRule.paymentUnit
+      (pr) => pr.paymentUnit === paymentRule.paymentUnit,
     );
     return total + (rule?.paymentAmount || 0);
   }, 0);

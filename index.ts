@@ -35,7 +35,7 @@ discordClient.on(Events.GuildCreate, async (joinedGuild) => {
 discordClient.once(Events.ClientReady, async () => {
   if (!config.GUILD_ID) {
     console.error(
-      "GUILD_ID is not set in the environment variables. Please set it and try again."
+      "GUILD_ID is not set in the environment variables. Please set it and try again.",
     );
     process.exit(1);
   }
@@ -46,7 +46,7 @@ discordClient.once(Events.ClientReady, async () => {
   discordClient.guilds.cache.forEach(async (guild) => {
     if (guild.id !== config.GUILD_ID.toString()) {
       console.warn(
-        `Guild is not configured as the guild the bot should work with, guild: ${guild.name}`
+        `Guild is not configured as the guild the bot should work with, guild: ${guild.name}`,
       );
       // guild.leave();
     } else {
@@ -57,7 +57,7 @@ discordClient.once(Events.ClientReady, async () => {
 
   if (!onCorrectGuild) {
     console.error(
-      `The bot is not part of the guild with the ID ${config.GUILD_ID}. Please add the bot to the correct guild and try again.`
+      `The bot is not part of the guild with the ID ${config.GUILD_ID}. Please add the bot to the correct guild and try again.`,
     );
     process.exit(1);
   }
@@ -112,7 +112,7 @@ discordClient.on(Events.MessageReactionRemove, async (reaction, user) => {
   try {
     const { reaction: fullReaction, user: fullUser } = await ensureFullEntities(
       reaction,
-      user
+      user,
     );
 
     // Use ReactionTracker to check if the removal was tracked (initiated by the bot)
@@ -121,7 +121,7 @@ discordClient.on(Events.MessageReactionRemove, async (reaction, user) => {
       console.info(
         "the reaction",
         reaction.emoji.name || reaction.emoji.id,
-        "was removed by the bot and will not be handled here"
+        "was removed by the bot and will not be handled here",
       );
       ReactionTracker.removeTrackedReaction(fullReaction, fullUser.id);
       return;

@@ -67,24 +67,24 @@ export abstract class BaseReactionHandler implements IReactionHandler {
   }
 
   protected getDbContent(
-    reaction: MessageReaction
+    reaction: MessageReaction,
   ): Promise<PostWithOptions | OddJobWithOptions | null | undefined> {
     return getPostOrOddjobWithEarnings(reaction.message.id, this.contentType);
   }
 
   protected abstract isReactionPermitted(
     reaction: MessageReaction,
-    user: DiscordUser
+    user: DiscordUser,
   ): Promise<boolean>;
 
   protected abstract processReaction(
     reaction: MessageReaction,
-    user: DiscordUser
+    user: DiscordUser,
   ): Promise<void>;
 
   protected postProcess(
     reaction: MessageReaction,
-    user: DiscordUser
+    user: DiscordUser,
   ): Promise<void> {
     console.log("BaseReactionHandler: Post-processing reaction");
     // Shared logic after processing payment, e.g., logging, validation

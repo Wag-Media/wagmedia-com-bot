@@ -16,7 +16,7 @@ export abstract class BaseReactionRemoveHandler extends BaseReactionHandler {
   //todo what about removing reactions from deleted posts or oddjobs?
   protected async initialize(
     reaction: MessageReaction,
-    user: DiscordUser
+    user: DiscordUser,
   ): Promise<void> {
     await super.initialize(reaction, user);
     try {
@@ -24,7 +24,7 @@ export abstract class BaseReactionRemoveHandler extends BaseReactionHandler {
         this.dbContent,
         this.contentType,
         user.id,
-        this.dbEmoji.id
+        this.dbEmoji.id,
       );
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
@@ -37,7 +37,7 @@ export abstract class BaseReactionRemoveHandler extends BaseReactionHandler {
     ReactionTracker.addReactionToTrack(reaction, user.id);
     await reaction.users.remove(user.id);
     logger.log(
-      `[${this.contentType}] Reaction ${reaction.emoji} removed from ${this.messageLink} by ${user.username}#${user.discriminator}.`
+      `[${this.contentType}] Reaction ${reaction.emoji} removed from ${this.messageLink} by ${user.username}#${user.discriminator}.`,
     );
   }
 }

@@ -35,7 +35,7 @@ export async function upsertEntityReaction(
   entity: Post | OddJob | undefined | null,
   entityType: ContentType,
   dbUser: User,
-  dbEmoji: Emoji
+  dbEmoji: Emoji,
 ) {
   if (!entityType || !entity) {
     logger.warn("Invalid content entityType in upsertEntityReaction");
@@ -60,11 +60,11 @@ export async function deleteEntityReaction(
   entity: Post | OddJob | undefined | null,
   contentType: ContentType,
   userId: string,
-  emojiId: string
+  emojiId: string,
 ) {
   if (!contentType || !entity) {
     console.warn(
-      "Invalid content contentType in deleteEntityReaction. Skipping."
+      "Invalid content contentType in deleteEntityReaction. Skipping.",
     );
     return;
   }
@@ -100,7 +100,7 @@ export async function deleteEntityReaction(
 export async function upsertPostReaction(
   post: Post,
   dbUser: User,
-  dbEmoji: Emoji
+  dbEmoji: Emoji,
 ) {
   const dbReaction = await prisma.reaction.upsert({
     where: {
@@ -134,7 +134,7 @@ export async function upsertPostReaction(
 export async function upsertOddjobReaction(
   oddjob: OddJob,
   dbUser: User,
-  emoji: Emoji
+  emoji: Emoji,
 ) {
   const dbReaction = await prisma.reaction.upsert({
     where: {
@@ -162,7 +162,7 @@ export async function upsertOddjobReaction(
 export async function deleteReaction(
   postId: string,
   userId: string,
-  emojiId: string
+  emojiId: string,
 ) {
   await prisma.reaction.delete({
     where: {
@@ -177,7 +177,7 @@ export async function deleteReaction(
 
 export async function getPostUserEmojiFromReaction(
   reaction: MessageReaction,
-  discordUserId: string
+  discordUserId: string,
 ) {
   const post = await prisma.post.findUnique({
     where: { id: reaction.message.id },
@@ -195,10 +195,10 @@ export async function getPostUserEmojiFromReaction(
   });
   if (!post) {
     logger.warn(
-      `[post] Post with ID ${reaction.message.id} not found in the database. Skipping.`
+      `[post] Post with ID ${reaction.message.id} not found in the database. Skipping.`,
     );
     throw new Error(
-      `Post with ID ${reaction.message.id} not found in the database. Skipping.`
+      `Post with ID ${reaction.message.id} not found in the database. Skipping.`,
     );
   }
 
@@ -211,10 +211,10 @@ export async function getPostUserEmojiFromReaction(
   const dbEmoji = await findEmoji(reaction.emoji);
   if (!dbEmoji) {
     logger.warn(
-      `[emoji] Emoji ${reaction.emoji.name} not found in the database. Skipping.`
+      `[emoji] Emoji ${reaction.emoji.name} not found in the database. Skipping.`,
     );
     throw new Error(
-      `Emoji ${reaction.emoji.name} not found in the database. Skipping.`
+      `Emoji ${reaction.emoji.name} not found in the database. Skipping.`,
     );
   }
 

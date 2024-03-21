@@ -85,7 +85,7 @@ export class ReactionCurator {
 
   private static async initialize(
     reaction: MessageReaction,
-    user: DiscordUser
+    user: DiscordUser,
   ): Promise<void> {
     this.reaction = reaction;
     this.discordUser = user;
@@ -99,7 +99,7 @@ export class ReactionCurator {
     console.log(
       "initialize",
       reaction.emoji.name || reaction.emoji.id,
-      this.message.content
+      this.message.content,
     );
 
     if (!this.handlingDiscrepancy) {
@@ -131,7 +131,7 @@ export class ReactionCurator {
     this.emojiType = await classifyReaction(this.dbEmoji);
     this.dbMessage = await getPostOrOddjob(
       this.message.id,
-      this.messageChannelType
+      this.messageChannelType,
     );
 
     if (!this.guild) {
@@ -140,13 +140,13 @@ export class ReactionCurator {
     this.isReactionFromPowerUser = userHasRole(
       this.guild,
       user,
-      config.ROLES_WITH_POWER
+      config.ROLES_WITH_POWER,
     );
   }
 
   public static async curateAdd(
     reaction: MessageReaction,
-    user: DiscordUser
+    user: DiscordUser,
   ): Promise<void> {
     try {
       await this.initialize(reaction, user);
@@ -183,14 +183,14 @@ export class ReactionCurator {
       logger.error(
         `Error in reaction curation for ${this.messageLink} and emoji ${
           this.dbEmoji.name || this.dbEmoji.id
-        }: ${error.message}`
+        }: ${error.message}`,
       );
 
       // If any error occurs, remove the reaction from from discord
       console.log(
         `because an error occurred, bot will remove the reaction ${
           this.reaction.emoji.name || this.reaction.emoji.id
-        } by ${this.discordUser.username}`
+        } by ${this.discordUser.username}`,
       );
 
       ReactionTracker.addReactionToTrack(reaction);
@@ -275,11 +275,11 @@ export class ReactionCurator {
     // update the local dbMessage with the new category
     this.dbMessage = await addCategory(
       this.message.id,
-      categoryRule.category.id
+      categoryRule.category.id,
     );
 
     logger.log(
-      `[category] Category ${categoryRule.category.name} added to ${this.messageLink}.`
+      `[category] Category ${categoryRule.category.name} added to ${this.messageLink}.`,
     );
   }
 
@@ -307,7 +307,7 @@ export class ReactionCurator {
 
     if (!dbPostOrOddjob) {
       throw new Error(
-        `${this.messageChannelType} for ${this.messageLink} not found.`
+        `${this.messageChannelType} for ${this.messageLink} not found.`,
       );
     }
 
@@ -383,7 +383,7 @@ export class ReactionCurator {
     await logContentEarnings(
       dbPostOrOddjob,
       this.messageChannelType,
-      this.messageLink || ""
+      this.messageLink || "",
     );
   }
 
@@ -398,13 +398,13 @@ export class ReactionCurator {
       this.dbMessage,
       this.messageChannelType,
       this.dbUser!,
-      this.dbEmoji
+      this.dbEmoji,
     );
   }
 
   public static async curateRemove(
     reaction: MessageReaction,
-    user: DiscordUser
+    user: DiscordUser,
   ) {
     try {
       await this.initialize(reaction, user);
@@ -431,13 +431,13 @@ export class ReactionCurator {
       logger.error(
         `Error in reaction curation for ${this.messageLink} and emoji ${
           this.dbEmoji.name || this.dbEmoji.id
-        }: ${error.message}`
+        }: ${error.message}`,
       );
 
       // If any error occurs, remove the reaction from from discord
       console.log(
         "because an error occored, bot will remove the reaction",
-        this.reaction.emoji.name || this.reaction.emoji.id
+        this.reaction.emoji.name || this.reaction.emoji.id,
       );
 
       await this.reaction.users.remove(this.discordUser.id);
@@ -528,7 +528,7 @@ export class ReactionCurator {
     if (remainingCategories.length > 1) {
       await removeCategoryFromPost(post.id, categoryRule.categoryId);
       logger.log(
-        `[category] Category ${categoryRule.category.name} removed from ${this.messageLink}.`
+        `[category] Category ${categoryRule.category.name} removed from ${this.messageLink}.`,
       );
       return;
     } else if (remainingCategories.length === 1) {
@@ -536,7 +536,7 @@ export class ReactionCurator {
         logger.logAndSend(
           `🚨 The category ${categoryRule.category.name} has been removed from the post ${this.messageLink}. The post has no remaining but will keep its last category in the db / website until new categories are added.`,
           this.discordUser,
-          "warn"
+          "warn",
         );
       } else {
         await removeCategoryFromPost(post.id, categoryRule.categoryId);
@@ -587,7 +587,7 @@ export class ReactionCurator {
 
     // Check if there are no remaining payment emojis
     const remainingPaymentEmojis = remainingReactions.filter(
-      (r) => r.emoji.PaymentRule && r.emoji.PaymentRule.length > 0
+      (r) => r.emoji.PaymentRule && r.emoji.PaymentRule.length > 0,
     );
 
     // If no payment emojis are left, unpublish the post
@@ -600,14 +600,14 @@ export class ReactionCurator {
         data: { isPublished: false },
       });
       logger.log(
-        `[post] Post ${this.messageLink} has been unpublished due to no remaining payment emojis.`
+        `[post] Post ${this.messageLink} has been unpublished due to no remaining payment emojis.`,
       );
     }
 
     // Aggregate the total payment amount for the specific unit
     const updatedTotalEarnings = remainingPaymentEmojis.reduce((total, r) => {
       const rule = r.emoji.PaymentRule.find(
-        (pr) => pr.paymentUnit === paymentRule.paymentUnit
+        (pr) => pr.paymentUnit === paymentRule.paymentUnit,
       );
       return total + (rule?.paymentAmount || 0);
     }, 0);
@@ -638,7 +638,7 @@ export class ReactionCurator {
     await logContentEarnings(
       dbPostOrOddjob,
       this.messageChannelType,
-      this.messageLink || ""
+      this.messageLink || "",
     );
   }
 
@@ -659,7 +659,7 @@ export class ReactionCurator {
         this.dbMessage,
         this.messageChannelType,
         this.discordUser.id,
-        this.dbEmoji.id
+        this.dbEmoji.id,
       );
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
@@ -672,21 +672,21 @@ export class ReactionCurator {
 
   private static async removeReaction(
     reaction: MessageReaction,
-    user: DiscordUser
+    user: DiscordUser,
   ): Promise<void> {
     // Add logic to handle a reaction removal
     let dbPost = this.dbMessage as Post;
     this.dbReaction = await upsertPostReaction(
       dbPost,
       this.dbUser!,
-      this.dbEmoji
+      this.dbEmoji,
     );
 
     // Additional tasks for special emojis can be handled here
   }
 
   private static async reconcileReactions(
-    messageReactions: Collection<string, MessageReaction>
+    messageReactions: Collection<string, MessageReaction>,
   ): Promise<void> {
     // 1. remove all reactions and payments and soon to start fresh
     await resetPostOrOddjobReactions(this.message.id, this.messageChannelType);
@@ -718,7 +718,7 @@ export class ReactionCurator {
 
     const dbPostOrOddjob = await getPostOrOddjob(
       this.message.id,
-      this.messageChannelType
+      this.messageChannelType,
     );
 
     if (!dbPostOrOddjob) {
@@ -729,7 +729,7 @@ export class ReactionCurator {
         return false;
       } else {
         logger.warn(
-          `[${this.messageChannelType}] detectDiscrepancy: ${this.messageChannelType} with id ${this.reaction.message.id} not found in the database.`
+          `[${this.messageChannelType}] detectDiscrepancy: ${this.messageChannelType} with id ${this.reaction.message.id} not found in the database.`,
         );
         return true;
       }
@@ -737,11 +737,11 @@ export class ReactionCurator {
 
     const dbPostOrOddjobReactionCount = await getPostOrOddjobReactionCount(
       this.message.id,
-      this.messageChannelType
+      this.messageChannelType,
     );
     if (!dbPostOrOddjobReactionCount) {
       logger.warn(
-        `[${this.messageChannelType}] ${this.messageChannelType} with id ${this.reaction.message.id} has no reactions in the database.`
+        `[${this.messageChannelType}] ${this.messageChannelType} with id ${this.reaction.message.id} has no reactions in the database.`,
       );
       return true;
     }
@@ -752,7 +752,7 @@ export class ReactionCurator {
       logger.warn(
         `[${this.messageChannelType}] ${this.messageChannelType} with ID ${this.reaction.message.id} has a different number of reactions in the database.`,
         ` discord: ${discordReactionCount - 1}`,
-        ` db: ${dbPostOrOddjobReactionCount}`
+        ` db: ${dbPostOrOddjobReactionCount}`,
       );
       return true;
     }
@@ -765,10 +765,10 @@ export class ReactionCurator {
     if (!this.isReactionFromPowerUser && this.emojiType !== "regular") {
       await logger.logAndSend(
         `Regular users cannot add ${this.emojiType} emojis to messages.`,
-        this.discordUser
+        this.discordUser,
       );
       throw new Error(
-        `Regular users cannot add ${this.emojiType} emojis to messages.`
+        `Regular users cannot add ${this.emojiType} emojis to messages.`,
       );
     }
 
@@ -776,7 +776,7 @@ export class ReactionCurator {
     if (this.dbMessage?.isDeleted) {
       await logger.logAndSend(
         `The post ${this.messageLink} you reacted to is deleted and cannot be reacted to.`,
-        this.discordUser
+        this.discordUser,
       );
       throw new Error("Post is deleted");
     }
@@ -794,7 +794,7 @@ export class ReactionCurator {
         if (!post.title || !post.content) {
           logger.logAndSend(
             `Before you can publish the post ${this.messageLink}, make sure it has a title and description.`,
-            this.discordUser
+            this.discordUser,
           );
           throw new Error("Post has no title or description");
         }
@@ -803,14 +803,14 @@ export class ReactionCurator {
         if (post.categories.length === 0) {
           logger.logAndSend(
             `Before you can publish the post ${this.messageLink}, make sure it has a category.`,
-            this.discordUser
+            this.discordUser,
           );
           throw new Error("Post has no category");
         }
 
         // 1.3. make sure non anglo posts have a flag
         const isNonAnglo = post.categories.some((category) =>
-          category.name.includes("Non Anglo")
+          category.name.includes("Non Anglo"),
         );
 
         if (isNonAnglo) {
@@ -819,13 +819,13 @@ export class ReactionCurator {
 
           // check if the post has a flag
           const hasFlag = postReactions.some((reaction) =>
-            isCountryFlag(reaction.emoji?.id)
+            isCountryFlag(reaction.emoji?.id),
           );
 
           if (!hasFlag) {
             logger.logAndSend(
               `Before you can publish the post ${this.messageLink} with non anglo category, make sure it has a flag.`,
-              this.discordUser
+              this.discordUser,
             );
 
             throw new Error("Post is non anglo and has no flag");
@@ -834,13 +834,13 @@ export class ReactionCurator {
 
         // 1.4. make sure translation posts have a non anglo category
         const isTranslation = post.categories.some((category) =>
-          category.name.includes("Translations")
+          category.name.includes("Translations"),
         );
 
         if (isTranslation && !isNonAnglo) {
           logger.logAndSend(
             `Before you can publish the post ${this.messageLink} with a translation category, make sure it also has a Non Anglo category.`,
-            this.discordUser
+            this.discordUser,
           );
 
           throw new Error("Post is translation and has no non anglo category");
@@ -858,13 +858,13 @@ export class ReactionCurator {
 
         // check if the post has a flag
         const hasFlag = postReactions.some((reaction) =>
-          isCountryFlag(reaction.emoji?.id)
+          isCountryFlag(reaction.emoji?.id),
         );
 
         if (!hasFlag) {
           logger.logAndSend(
             `Before you can add the non anglo or translation emoji to the published post ${this.messageLink}, make sure it has a flag.`,
-            this.discordUser
+            this.discordUser,
           );
 
           throw new Error("Post is non anglo and has no flag");
@@ -908,7 +908,7 @@ export class ReactionCurator {
   }
 
   private static async isPaymentReactionValid(
-    paymentRule: PaymentRule
+    paymentRule: PaymentRule,
   ): Promise<boolean> {
     // 1. if oddjob then only manager can pay
     if (this.messageChannelType === "oddjob") {
@@ -921,7 +921,7 @@ export class ReactionCurator {
       if (oddJob.managerId !== this.discordUser.id) {
         logger.logAndSend(
           `You do not have permission to add payment reactions in ${this.messageLink}, only the assigned manager can do that.`,
-          this.discordUser
+          this.discordUser,
         );
         return false;
       }
@@ -950,7 +950,7 @@ export class ReactionCurator {
 
     if (!firstPayment || !firstPayment.reaction) {
       logger.info(
-        `Payment for ${this.messageLink} is valid because it is the first payment.`
+        `Payment for ${this.messageLink} is valid because it is the first payment.`,
       );
       return true;
     }
