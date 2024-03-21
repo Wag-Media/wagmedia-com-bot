@@ -131,8 +131,6 @@ following fields is missing:
 
 - ✅ payment emojis by superusers🦹 will update the total amount of payments a
   post received and save it to the db
-- ⭕️ reacting with the universal publish emoji will publish a (valid) post even
-  if it has no payments
 
 ### Post Threads
 
@@ -193,12 +191,12 @@ following fields is missing:
 
 - ✅ if a post was created before bot joined, bot goes online, then message is
   reacted to, the message and the reactions are inserted correctly to the db
-- ⭕️if a oddjob was created before bot joined, bot goes online, then message is
+- ✅ if a oddjob was created before bot joined, bot goes online, then message is
   reacted to, the message and the reactions are inserted correctly to the db
 - ✅ if a post was created when bot was online, bot goes offline misses some
   reactions, bot goes online, then message is reacted to, the message and the
   reactions are inserted correctly to the db
-- ⭕️if a oddjob was created when bot was online, bot goes offline misses some
+- ✅ if a oddjob was created when bot was online, bot goes offline misses some
   reactions, bot goes online, then message isreacted to, the message and the
   reactions are inserted correctly to the db
 - ✅ if a discrepancy is detected between a discord post/thread/oddjob and any
@@ -210,13 +208,16 @@ following fields is missing:
 
 ## Universal Publish Emoji (UPE)
 
-- 🚥 superusers🦹 can add universal payment emojis (UPE) to posts
-- 🚥 adding UPE emojis publishes a post
-- 🚥 UPE can only be added if there are no other payment emojis
-- 🚥 after UPE is added to a post, no other payment emojis can be added
+- 🚥⭕️ superusers🦹 can add universal payment emojis (UPE) to posts
+- 🚥⭕️ adding UPE emojis publishes a post
+- 🚥⭕️ UPE can only be added if there are no other payment emojis
+- 🚥⭕️ after UPE is added to a post, no other payment emojis can be added
+- 🚥⭕️ reacting with the universal publish emoji will publish a (valid) post
+  even if it has no payments
 
-- 🚥 when UPE is removed the post is unpublished
-- 🚥 all functionality is like it was never there (payment emojis can be added)
+- 🚥⭕️ when UPE is removed the post is unpublished
+- 🚥⭕️ all functionality is like it was never there (payment emojis can be
+  added)
 
 ## Integration Tests
 
