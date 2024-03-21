@@ -11,6 +11,10 @@
     "start": "tsx ./index.ts",
     "test": "jest"
   },
+  "simple-git-hooks": {
+    "pre-commit": "npx lint-staged",
+    "preserveUnused": true
+  },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   },
