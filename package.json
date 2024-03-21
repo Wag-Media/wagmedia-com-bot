@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "tsx watch ./index.ts",
     "dev:wagmedia-demo": "APP_ENV=wagmedia  tsx watch ./index.ts",
-    "lint": "prettier . --check && npm eslint .",
+    "lint": "prettier . --check",
     "lint:format": "prettier . --write",
+    "lint:fix": "prettier . --write",
     "start": "tsx ./index.ts",
     "test": "jest"
   },
@@ -24,9 +25,13 @@
   "dependencies": {
     "@discord-fp/djs": "4.0.1",
     "@prisma/client": "^5.9.1",
+    "@typescript-eslint/eslint-plugin": "^7.3.1",
+    "@typescript-eslint/parser": "^7.3.1",
     "axios": "^1.6.7",
     "discord.js": "^14.7.1",
     "dotenv": "^16.0.3",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
     "jest": "^29.7.0",
     "jest-mock-extended": "^3.0.5",
     "prettier": "^3.2.5",

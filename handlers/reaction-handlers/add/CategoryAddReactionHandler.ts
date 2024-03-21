@@ -53,6 +53,8 @@ export class CategoryAddReactionHandler extends BaseReactionAddHandler {
       allCategories.some((c) => c.emojiId === r.emoji.name),
     ).size;
 
+    console.log("test");
+
     // if the count of the post's categories is 1, we can connect the post with the added
     // category and remove all other categories. This can happen in an edge case where the
     // user removed the last category of a published post and then added a new category.
