@@ -2,7 +2,7 @@ import {
   findEmojiCategoryRule,
   findEmojiPaymentRule,
   findOrCreateEmoji,
-} from "@/data/emoji.js";
+} from "@/data/emoji";
 import { userHasRole } from "@/utils/userHasRole.js";
 import {
   Category,
@@ -24,12 +24,12 @@ import {
   messageLink,
 } from "discord.js";
 
-import { logger } from "@/client.js";
+import { logger } from "@/client";
 import {
   ensureFullEntities,
-  isMessageFromMonitoredCategory,
-  isMessageFromMonitoredChannel,
-  isMessageFromOddJobsChannel,
+  isCategoryMonitoredForPosts,
+  isChannelMonitoredForPosts,
+  isChannelMonitoredForOddJobs,
   isParentMessageFromMonitoredCategoryOrChannel,
   shouldIgnoreReaction,
 } from "./util.js";
@@ -44,14 +44,14 @@ import {
   logOddjobEarnings,
   logPostEarnings,
 } from "./log-utils.js";
-import { findOrCreateUserFromDiscordUser } from "@/data/user.js";
-import { upsertOddjobReaction, upsertReaction } from "@/data/reaction.js";
-import { isCountryFlag } from "../utils/is-country-flag";
-import { fetchOddjob } from "@/data/oddjob.js";
-import { parseOddjob } from "@/utils/handle-odd-job.js";
-import { isPaymentReactionValid } from "@/utils/payment-valid.js";
+import { findOrCreateUserFromDiscordUser } from "@/data/user";
+import { upsertOddjobReaction, upsertPostReaction } from "@/data/reaction";
+import { isCountryFlag } from "../utils/is-country-flag.js";
+import { fetchOddjob } from "@/data/oddjob";
+import { parseOddjob } from "@/utils/handle-odd-job";
+import { isPaymentReactionValid } from "@/utils/payment-valid";
 
-import * as config from "../config.js";
+import * as config from "@/config";
 import { all } from "axios";
 
 const prisma = new PrismaClient();
@@ -171,8 +171,8 @@ export async function handleMessageReactionAdd(
   }
 
   if (
-    isMessageFromMonitoredCategory(reaction.message.channel) ||
-    isMessageFromMonitoredChannel(reaction.message.channel)
+    isCategoryMonitoredForPosts(reaction.message.channel) ||
+    isChannelMonitoredForPosts(reaction.message.channel)
   ) {
     //TODO record the channel information of the message
     // console.log("channel", reaction.message.channel);
@@ -222,7 +222,7 @@ export async function handleMessageReactionAdd(
       logger.error("Error querying the database for the post:", error);
       return;
     }
-  } else if (isMessageFromOddJobsChannel(reaction.message.channel)) {
+  } else if (isChannelMonitoredForOddJobs(reaction.message.channel)) {
     if (!userHasRole(guild, user, config.ROLES_WITH_POWER)) {
       await user.send(
         `You do not have permission to add reactions to odd jobs in ${messageLink}`
@@ -327,10 +327,7 @@ export async function processRegularUserPostReaction(
       `Ignoring user reaction to post ${messageLink}, as it is not valid.`
     );
     return;
-  } else if (
-    reaction.emoji.name?.startsWith("WM") ||
-    reaction.emoji.name?.includes("WM")
-  ) {
+  } else if (reaction.emoji.name?.includes("WM")) {
     // Remove WM emojis if the user does not have the power role
     logger.logAndSend(
       `You do not have permission to add WagMedia emojis in ${messageLink}`,
@@ -344,7 +341,7 @@ export async function processRegularUserPostReaction(
     );
     await reaction.users.remove(discordUser.id);
   } else {
-    await upsertReaction(post, dbUser, dbEmoji);
+    await upsertPostReaction(post, dbUser, dbEmoji);
     logNewRegularUserEmojiReceived(reaction, discordUser, messageLink);
   }
 }
@@ -358,10 +355,11 @@ export async function processSuperuserPostReaction(
   messageLink: string
 ) {
   const postId = reaction.message.id;
-  const dbReaction = await upsertReaction(post, dbUser, dbEmoji);
+  const dbReaction = await upsertPostReaction(post, dbUser, dbEmoji);
   logNewEmojiReceived(reaction, discordUser, messageLink);
 
   // process possible rules for the emoji
+  // 0. Deleted Posts
   // 1. Category Rule
   // 2. Payment Rule
   // 3. Feature Rule

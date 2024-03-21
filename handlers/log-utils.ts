@@ -3,6 +3,9 @@ import { prisma } from "@/utils/prisma";
 import { OddJob, Post } from "@prisma/client";
 import { MessageReaction, User as DiscordUser, ChannelType } from "discord.js";
 import * as config from "@/config";
+import { ContentType } from "@/types";
+
+const space = ".      ";
 
 export function logNewEmojiReceived(
   reaction: MessageReaction,
@@ -38,12 +41,23 @@ export function logEmojiRemoved(
   );
 }
 
-export async function logPostEarnings(post: Post, messageLink: string) {
+export async function logContentEarnings(
+  entity: Post | OddJob,
+  contentType: ContentType,
+  messageLink: string
+) {
+  if (!contentType) {
+    logger.error("Invalid content type in logContentEarnings");
+    return;
+  }
+
+  const earningsCondition = ["post", "thread"].includes(contentType)
+    ? { postId: entity.id }
+    : { oddJobId: entity.id };
+
   // Fetch all earnings for the post after the update
   const allPostEarnings = await prisma.contentEarnings.findMany({
-    where: {
-      postId: post.id,
-    },
+    where: earningsCondition,
   });
 
   // log the total earnings of the post
@@ -53,12 +67,18 @@ export async function logPostEarnings(post: Post, messageLink: string) {
   );
 
   // create a comma separated human readable string
-  const humanReadableTotalEarnings = Object.keys(totalEarningsPerUnit)
-    .map((key) => `${key}: ${totalEarningsPerUnit[key]}`)
+  let humanReadableTotalEarnings = Object.keys(totalEarningsPerUnit)
+    .filter((key) => totalEarningsPerUnit[key] > 0)
+    .map((key) => `${totalEarningsPerUnit[key]} ${key}`)
     .join(", ");
 
+  //if all earnings are 0, log 0
+  if (humanReadableTotalEarnings === "") {
+    humanReadableTotalEarnings = "0";
+  }
+
   logger.log(
-    `[post] New total earnings for ${messageLink}: ${humanReadableTotalEarnings}`
+    `[${contentType}] New total earnings for ${messageLink}: **${humanReadableTotalEarnings}**`
   );
 }
 
@@ -90,7 +110,7 @@ export async function logIntroMessage(guild, discordClient) {
   logger.info(`⚡️ Connected to guild: ${guild.name} (${guild.id})`);
   logger.info(`🤖 Logged in as ${discordClient.user?.tag}!`);
 
-  let monitoredChannelCount = config.CATEGORIES_TO_MONITOR.length;
+  let monitoredChannelCount = config.CHANNELS_TO_MONITOR.length;
 
   const guildChannels = await guild.channels.fetch();
   const monitoredCategoriesChannels = guildChannels.filter(
@@ -107,28 +127,24 @@ export async function logIntroMessage(guild, discordClient) {
     } channels in guild ${guild.name}:`
   );
 
-  logger.info(
-    config.CHANNELS_TO_MONITOR.map((channelId) => {
-      const channel = guild.channels.cache.get(channelId);
-      return `   ↪ #${channel?.name} (${channel?.id})`;
-    }).join("\n")
-  );
+  config.CHANNELS_TO_MONITOR.map((channelId) => {
+    const channel = guild.channels.cache.get(channelId);
+    logger.info(`${space}↪ #${channel?.name} (${channel?.id})`);
+  });
 
   monitoredCategoriesChannels?.forEach((channel) => {
     logger.info(
-      `   ↪ ${channel?.parent?.name} ↪ #${channel?.name} (${channel?.id})`
+      `${space}↪ ${channel?.parent?.name} ↪ #${channel?.name} (${channel?.id})`
     );
   });
 
   logger.info(
     `🦻 Listening for oddjobs and oddjob reactions in ${config.CHANNELS_ODD_JOBS.length} channels in guild ${guild.name}:`
   );
-  logger.info(
-    config.CHANNELS_ODD_JOBS.map((channelId) => {
-      const channel = guild.channels.cache.get(channelId);
-      return `   ↪ #${channel?.name} (${channel?.id})`;
-    }).join("\n")
-  );
+  config.CHANNELS_ODD_JOBS.map((channelId) => {
+    const channel = guild.channels.cache.get(channelId);
+    logger.info(`${space}↪ #${channel?.name} (${channel?.id})`);
+  });
 }
 
 export async function logAndSend(message, user) {}

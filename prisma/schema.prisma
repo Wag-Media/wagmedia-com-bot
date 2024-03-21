@@ -34,6 +34,7 @@ model Post {
   // Payments directly associated with this post
   payments Payment[] @relation(name: "PaymentPost")
 
+  parentPostId   String? // Foreign key for Post
   // Payments associated with threads under this post
   threadPayments Payment[] @relation(name: "PaymentThreadParent")
 }

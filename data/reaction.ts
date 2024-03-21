@@ -4,6 +4,7 @@ import { Emoji, OddJob, Post, User } from "@prisma/client";
 import { MessageReaction } from "discord.js";
 import { findEmoji } from "./emoji";
 import { findUserById } from "./user";
+import { ContentType } from "@/types";
 
 export async function findReaction(postId, userId, emojiId) {
   const dbReaction = await prisma.reaction.findUnique({
@@ -18,6 +19,77 @@ export async function findReaction(postId, userId, emojiId) {
   return dbReaction;
 }
 
+export async function getPostReactions(postId: string) {
+  const dbReactions = await prisma.reaction.findMany({
+    where: {
+      postId,
+    },
+    include: {
+      emoji: true,
+    },
+  });
+  return dbReactions;
+}
+
+export async function upsertEntityReaction(
+  entity: Post | OddJob | undefined | null,
+  entityType: ContentType,
+  dbUser: User,
+  dbEmoji: Emoji
+) {
+  if (!entityType || !entity) {
+    logger.warn("Invalid content entityType in upsertEntityReaction");
+    return;
+  }
+
+  let dbReaction;
+
+  if (entityType == "post" || entityType == "thread") {
+    dbReaction = await upsertPostReaction(entity as Post, dbUser, dbEmoji);
+  } else {
+    dbReaction = await upsertOddjobReaction(entity as OddJob, dbUser, dbEmoji);
+  }
+
+  if (!dbReaction) {
+    throw new Error("Reaction could not be upserted");
+  }
+  return dbReaction;
+}
+
+export async function deleteEntityReaction(
+  entity: Post | OddJob | undefined | null,
+  contentType: ContentType,
+  userId: string,
+  emojiId: string
+) {
+  if (!contentType || !entity) {
+    console.warn(
+      "Invalid content contentType in deleteEntityReaction. Skipping."
+    );
+    return;
+  }
+
+  const whereCondition =
+    contentType === "post" || contentType === "thread"
+      ? {
+          postId_userDiscordId_emojiId: {
+            postId: entity.id,
+            emojiId,
+            userDiscordId: userId,
+          },
+        }
+      : {
+          oddJobId_userDiscordId_emojiId: {
+            oddJobId: entity.id,
+            emojiId,
+            userDiscordId: userId,
+          },
+        };
+  await prisma.reaction.delete({
+    where: whereCondition,
+  });
+}
+
 /**
  * Upsert a reaction
  * @param post
@@ -25,19 +97,23 @@ export async function findReaction(postId, userId, emojiId) {
  * @param emoji
  * @returns
  */
-export async function upsertReaction(post: Post, dbUser: User, emoji: Emoji) {
+export async function upsertPostReaction(
+  post: Post,
+  dbUser: User,
+  dbEmoji: Emoji
+) {
   const dbReaction = await prisma.reaction.upsert({
     where: {
       postId_userDiscordId_emojiId: {
         postId: post.id,
-        emojiId: emoji.id,
+        emojiId: dbEmoji.id,
         userDiscordId: dbUser.discordId,
       },
     },
     update: {},
     create: {
       postId: post.id,
-      emojiId: emoji.id,
+      emojiId: dbEmoji.id,
       userDiscordId: dbUser.discordId,
     },
   });
@@ -45,7 +121,6 @@ export async function upsertReaction(post: Post, dbUser: User, emoji: Emoji) {
   if (!dbReaction) {
     throw new Error("Reaction could not be upserted");
   }
-
   return dbReaction;
 }
 
