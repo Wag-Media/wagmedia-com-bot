@@ -219,6 +219,35 @@ following fields is missing:
 - 🚥⭕️ all functionality is like it was never there (payment emojis can be
   added)
 
+## Newsletter
+
+- 🚥⭕️ superusers🦹 can add "WMNEWSLETTER" emoji to posts inside "wag-newsletter" channel
+- 🚥⭕️ superusers🦹 can add only UPE emoji to the original newsletter post inside "wag-newsletter" channel
+- 🚥⭕️ after UPE is added to a post, no other payment emojis can be added
+- 🚥⭕️ adding UPE emoji publishes the newsletter posts
+- 🚥⭕️ additionally the original post can receive other category emojis also but no payment emoji to the original post
+- 🚥⭕️ original post thread comments can receive rewards (payment emojis)
+- 🚥⭕️ reacting with the universal publish emoji will publish a (valid) post
+  even if it has no payments
+- 🚥⭕️ when UPE is removed the post is unpublished
+- 🚥⭕️ all functionality is like it was never there (payment emojis can be
+  added)
+- 🚥⭕️ For the website we need a separate tab for showing all our posts which are reacted with "WMNEWSLETTER"
+
+## Newsletter (Milestone X.XX)
+
+- 🚥⭕️ superusers🦹 can add "WMEVENTS" emoji to posts inside "events-watch" channel
+- 🚥⭕️ superusers🦹 can add UPE or Payment emoji to the original event post inside "events-watch" channel
+- 🚥⭕️ if UPE is added to the post, no other payment emojis can be added, if payment emoji added it can receive extra payment emojis
+- 🚥⭕️ adding UPE/Payment emoji publishes the event posts
+- 🚥⭕️ The post can not receive any extra category emoji when event emoji is added
+- 🚥⭕️ original post thread comments can receive rewards (payment emojis) if any
+- 🚥⭕️ reacting with the UPE will publish a (valid) post even if it has no payments
+- 🚥⭕️ when UPE/Payment Emoji is removed the post is unpublished
+- 🚥⭕️ all functionality is like it was never there (payment emojis can be
+  added)
+- 🚥⭕️ For the website we need a separate tab for showing all our event posts which are reacted with "WMEVENTS", we plan to make a format for the event page any way so that we can make a great calendar. Like Start date and time and End date and time lots of other extra things.
+
 ## Integration Tests
 
 - ✅ the bot stays online
@@ -233,3 +262,4 @@ following fields is missing:
 - 🚥 correct posts that have the payment emoji removed get removed from the
   website
 - 🚥 if a category is removed from discord, it is also removed on the website
+- 🚥 Newsletter Subscription to Substack 
