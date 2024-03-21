@@ -101,7 +101,7 @@ following fields is missing:
 - ✅ if a post message that is not published yet or has no categories gets
   deleted, it will be removed from the database.
 - ✅⭕️ if a post message that is already published (=paid) gets deleted, it
-  stays in the db and gets flagged as deleted
+  stays in the db and gets flagged as deleted (As we discussed several times published post can not be unpublished, while it has payment emojis, the DB should keep the data as it is, you might show notice that the original post from the discord is deleted by the user/admin show the id who deleted the post, and say it is the Archive version)
 - ✅ if an oddjob message that is not paid yet gets deleted it will be removed
   from the database
 - ✅ if an oddjob message that is paid gets deleted, it stays in the db and gets
@@ -138,7 +138,7 @@ following fields is missing:
   thread and inserts a payment to the db
 - ✅ the parent post gets updated in the db to include thread payments
 - ✅ superusers🦹 cannot add payment emojis from two different sets or units
-- ✅⭕️ if the parent of the thread is not valid still monitor the payments
+- ✅ if the parent of the thread is not valid still monitor the payments
 
 ### Odd Jobs
 
@@ -167,7 +167,7 @@ following fields is missing:
   and website
 - ✅ if a superuser🦹 removes a category reaction also remove it from the db and
   website
-- ✅⭕️ if a superuser🦹 removes **the last** category from a post that is
+- ✅ if a superuser🦹 removes **the last** category from a post that is
   published, warn the user and keep the category in the db. When a new category
   is added, it should override the one from the db.
 - ✅ if a superuser🦹 removes **the last** category from a post that is
@@ -184,8 +184,9 @@ following fields is missing:
 ### Threads
 
 - ✅ same as in posts
-- ✅⭕️ if a post is not published or not rewarded, it should still be possible
+- ✅ if a post is not published or not rewarded, it should still be possible
   to reward threads
+- 🚥⭕️ Keep archive copies of the rewarded comments in the DB, if the rewarded thread comments are deleted 
 
 ## Old Messages
 
