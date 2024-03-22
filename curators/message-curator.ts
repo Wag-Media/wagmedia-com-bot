@@ -1,6 +1,11 @@
 import { logger } from "@/client";
 import { findOrCreateOddJob, oddJobHasEarnings } from "@/data/oddjob";
-import { findOrCreatePost, flagDeletePost, getPost } from "@/data/post";
+import {
+  findOrCreatePost,
+  flagDeletePost,
+  getPost,
+  getPostWithEarnings,
+} from "@/data/post";
 import {
   classifyMessage,
   ensureFullMessage,
@@ -20,6 +25,7 @@ import { handlePost, isPostValid, parseMessage } from "@/utils/handle-post";
 import { prisma } from "@/utils/prisma";
 import { OddJob } from "@prisma/client";
 import { Message, PartialMessage } from "discord.js";
+import { determineContentType } from "./utils";
 
 /**
  * A message curator handles bot internal message logic, e.g. parsing a message, deciding its type (post / oddjob)
@@ -194,28 +200,36 @@ export class MessageCurator {
       return;
     }
 
+    const { contentType } = determineContentType(message);
+
     const channelLink = `https://discord.com/channels/${message.guild?.id}/${message.channel.id}`;
 
-    const post = await getPost(message.id);
-    if (post) {
-      if (post.isPublished) {
-        logger.warn(`[post] A published post was deleted in ${channelLink}`);
-        message.author &&
-          message.author.send(
-            `Uh oh, your published post in ${channelLink} was just deleted. Please contact a moderator if you think this was a mistake.`,
-          );
-        await prisma.post.update({
-          where: { id: message.id },
-          data: { isDeleted: true },
-        });
-      } else {
-        logger.log(
-          `[post] A post that was not yet published was deleted in ${channelLink}`,
-        );
-        await prisma.post.delete({ where: { id: message.id } });
-      }
+    if (contentType === "post" || contentType === "thread") {
+      const post = await getPostWithEarnings(message.id);
+      if (post) {
+        const postHasEarnings = post.earnings.length > 0;
 
-      return;
+        if (postHasEarnings) {
+          logger.warn(
+            `[${contentType}] A paid ${contentType}${contentType === "thread" && " comment"} was deleted in ${channelLink}`,
+          );
+          message.author &&
+            message.author.send(
+              `Uh oh, your paid ${contentType} in ${channelLink} was just deleted. Please contact a moderator if you think this was a mistake.`,
+            );
+          await prisma.post.update({
+            where: { id: message.id },
+            data: { isDeleted: true },
+          });
+        } else {
+          logger.log(
+            `[${contentType}] A ${contentType} that was not yet paid was deleted in ${channelLink}`,
+          );
+          await prisma.post.delete({ where: { id: message.id } });
+        }
+
+        return;
+      }
     }
 
     const oddJob = await prisma.oddJob.findUnique({

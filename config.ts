@@ -40,6 +40,9 @@ export const ROLES_WITH_POWER = ["Director"];
 // the emoji that marks a post as featured
 export const FEATURE_EMOJI = "WMFEATURED";
 
+// the emoji that can publish a post without payment
+export const UNIVERSAL_PUBLISH_EMOJI = "WMZERODOTPUB";
+
 // the max file size for oddjob attachments
 export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 

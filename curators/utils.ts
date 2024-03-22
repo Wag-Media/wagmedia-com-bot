@@ -82,13 +82,18 @@ export async function determineEmojiType(
     return "feature";
   }
 
-  // 2. Check for Category Rule
+  // 2. Check for Universal Publish Emoji
+  if (dbEmoji.name === config.UNIVERSAL_PUBLISH_EMOJI) {
+    return "universalPublish";
+  }
+
+  // 3. Check for Category Rule
   const categoryRule = await findEmojiCategoryRule(dbEmoji.id);
   if (categoryRule) {
     return "category";
   }
 
-  // 3. Check for Payment Rule
+  // 4. Check for Payment Rule
   const paymentRule = await findEmojiPaymentRule(dbEmoji.id);
   if (paymentRule) {
     return "payment";

@@ -26,6 +26,8 @@ import {
   ThreadPaymentReactionRemoveHandler,
 } from "./reaction-handlers/remove/PaymentReactionRemoveHandler";
 import { CategoryRemoveReactionHandler } from "./reaction-handlers/remove/CategoryRemoveReactionHandler";
+import { UPEAddReactionHandler } from "./reaction-handlers/add/UPEAddReactionHandler";
+import { BaseReactionRemoveHandler } from "./reaction-handlers/remove/_BaseReactionRemoveHandler";
 
 export class ReactionHandlerFactory {
   static async getHandler(
@@ -96,6 +98,13 @@ export class ReactionHandlerFactory {
     } else if (
       userRole === "superuser" &&
       eventType === "reactionAdd" &&
+      emojiType === "universalPublish" &&
+      contentType.contentType === "post"
+    ) {
+      return new UPEAddReactionHandler();
+    } else if (
+      userRole === "superuser" &&
+      eventType === "reactionAdd" &&
       emojiType === "feature" &&
       contentType.contentType !== "post"
     ) {
@@ -109,6 +118,13 @@ export class ReactionHandlerFactory {
       contentType.contentType === "post"
     ) {
       return new FeatureRemoveReactionHandler();
+    } else if (
+      userRole === "superuser" &&
+      eventType === "reactionRemove" &&
+      emojiType === "universalPublish" &&
+      contentType.contentType === "post"
+    ) {
+      return new RegularReactionRemoveHandler("post");
     } else if (
       userRole === "superuser" &&
       eventType === "reactionRemove" &&
@@ -164,8 +180,16 @@ export class ReactionHandlerFactory {
       );
     } else if (
       userRole === "regular" &&
+      emojiType === "universalPublish" &&
+      eventType === "reactionAdd"
+    ) {
+      return new NotAllowedReactionHandler(
+        `You are not allowed to use the universal publish emoji.`,
+      );
+    } else if (
+      userRole === "regular" &&
       eventType === "reactionRemove" &&
-      ["category", "feature", "payment"].includes(emojiType)
+      ["category", "feature", "universalPublish", "payment"].includes(emojiType)
     ) {
       return new NoopReactionHandler();
     } else if (eventType === "reactionAdd" && emojiType === "regular") {
