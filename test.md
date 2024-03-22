@@ -208,15 +208,15 @@ following fields is missing:
 
 ## Universal Publish Emoji (UPE)
 
-- 🚥⭕️ superusers🦹 can add universal payment emojis (UPE) to posts
-- 🚥⭕️ adding UPE emojis publishes a post
-- 🚥⭕️ UPE can only be added if there are no other payment emojis
+- ✅⭕️ superusers🦹 can add universal payment emojis (UPE) to posts
+- ✅⭕️ adding UPE emojis publishes a post
+- ✅⭕️ UPE can only be added if there are no other payment emojis
 - 🚥⭕️ after UPE is added to a post, no other payment emojis can be added
-- 🚥⭕️ reacting with the universal publish emoji will publish a (valid) post
+- ✅⭕️ reacting with the universal publish emoji will publish a (valid) post
   even if it has no payments
 
-- 🚥⭕️ when UPE is removed the post is unpublished
-- 🚥⭕️ all functionality is like it was never there (payment emojis can be
+- ✅⭕️ when UPE is removed the post is unpublished
+- ✅⭕️ all functionality is like it was never there (payment emojis can be
   added)
 
 ## Newsletter

@@ -28,6 +28,7 @@ import {
 import { CategoryRemoveReactionHandler } from "./reaction-handlers/remove/CategoryRemoveReactionHandler";
 import { UPEAddReactionHandler } from "./reaction-handlers/add/UPEAddReactionHandler";
 import { BaseReactionRemoveHandler } from "./reaction-handlers/remove/_BaseReactionRemoveHandler";
+import { UPERemoveReactionHandler } from "./reaction-handlers/remove/UPEReactionRemoveHandler";
 
 export class ReactionHandlerFactory {
   static async getHandler(
@@ -124,7 +125,7 @@ export class ReactionHandlerFactory {
       emojiType === "universalPublish" &&
       contentType.contentType === "post"
     ) {
-      return new RegularReactionRemoveHandler("post");
+      return new UPERemoveReactionHandler();
     } else if (
       userRole === "superuser" &&
       eventType === "reactionRemove" &&
