@@ -130,7 +130,7 @@ ed. You want to add a new emoji which represents 0.01 DOT.
 1. look into `config.ts` and see how emojis are setup there in `paymentEmojiMap`
    object
 2. add a new line to the `paymentEmojiMap` object making sure the key is set to
-   the name the emoji has in discord
+   the name the emoji has in discord :
 
 ```
 "001WMDOT": { amount: 0.005, currency: "DOT", fundingSource: "OpenGov-365" },
