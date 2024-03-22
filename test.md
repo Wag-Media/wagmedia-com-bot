@@ -100,8 +100,8 @@ following fields is missing:
 
 - ✅ if a post message that is not published yet or has no categories gets
   deleted, it will be removed from the database.
-- ✅⭕️ if a post message that is already published (=paid) gets deleted, it
-  stays in the db and gets flagged as deleted
+- ✅ if a post message that is already published (=paid) gets deleted, it
+  stays in the db and gets flagged as deleted (https://github.com/Wag-Media/wagmedia-com-bot/issues/50)
 - ✅ if an oddjob message that is not paid yet gets deleted it will be removed
   from the database
 - ✅ if an oddjob message that is paid gets deleted, it stays in the db and gets
@@ -138,7 +138,7 @@ following fields is missing:
   thread and inserts a payment to the db
 - ✅ the parent post gets updated in the db to include thread payments
 - ✅ superusers🦹 cannot add payment emojis from two different sets or units
-- ✅⭕️ if the parent of the thread is not valid still monitor the payments
+- ✅ if the parent of the thread is not valid still monitor the payments
 
 ### Odd Jobs
 
@@ -167,7 +167,7 @@ following fields is missing:
   and website
 - ✅ if a superuser🦹 removes a category reaction also remove it from the db and
   website
-- ✅⭕️ if a superuser🦹 removes **the last** category from a post that is
+- ✅ if a superuser🦹 removes **the last** category from a post that is
   published, warn the user and keep the category in the db. When a new category
   is added, it should override the one from the db.
 - ✅ if a superuser🦹 removes **the last** category from a post that is
@@ -184,8 +184,9 @@ following fields is missing:
 ### Threads
 
 - ✅ same as in posts
-- ✅⭕️ if a post is not published or not rewarded, it should still be possible
+- ✅ if a post is not published or not rewarded, it should still be possible
   to reward threads
+- ✅ Keep archive copies of the rewarded comments in the DB, if the rewarded thread comments are deleted (https://github.com/Wag-Media/wagmedia-com-bot/issues/51)
 
 ## Old Messages
 
@@ -199,7 +200,7 @@ following fields is missing:
 - ✅ if a oddjob was created when bot was online, bot goes offline misses some
   reactions, bot goes online, then message isreacted to, the message and the
   reactions are inserted correctly to the db
-- ✅⭕️ if a discrepancy is detected between a discord post/thread/oddjob and any
+- ✅ if a discrepancy is detected between a discord post/thread/oddjob and any
   reaction is **added** the bot parses all reactions again creating a valid db
   state that is in sync with discord
 - ✅ if a regular user adds invalid emojis while the bot is offline and bot
@@ -208,37 +209,35 @@ following fields is missing:
 
 ## Universal Publish Emoji (UPE)
 
-- ✅⭕️ superusers🦹 can add universal payment emojis (UPE) to posts
-- ✅⭕️ adding UPE emojis publishes a post
-- ✅⭕️ UPE can only be added if there are no other payment emojis
-- ✅⭕️ after UPE is added to a post, no other payment emojis can be added
-- ✅⭕️ reacting with the universal publish emoji will publish a (valid) post
+- ✅ superusers🦹 can add universal payment emojis (UPE) to posts
+- ✅ adding UPE emojis publishes a post
+- ✅ UPE can only be added if there are no other payment emojis
+- ✅ after UPE is added to a post, no other payment emojis can be added (https://github.com/Wag-Media/wagmedia-com-bot/issues/54)
+- ✅ reacting with the universal publish emoji will publish a (valid) post
   even if it has no payments
-
-- ✅⭕️ when UPE is removed the post is unpublished
-- ✅⭕️ all functionality is like it was never there (payment emojis can be
+- ✅ when UPE is removed the post is unpublished
+- ✅ all functionality is like it was never there (payment emojis can be
   added)
+- ✅ UPE will also need at least one category, for non-anglo flag + category
+- ✅ When a Post already has Payment Emojis, UPE can not be added (https://github.com/Wag-Media/wagmedia-com-bot/issues/54)
 
 ## Newsletter
 
-- 🚥⭕️ superusers🦹 can add "WMNEWSLETTER" emoji to posts inside
-  "wag-newsletter" channel
-- 🚥⭕️ superusers🦹 can add only UPE emoji to the original newsletter post
-  inside "wag-newsletter" channel
-- 🚥⭕️ after UPE is added to a post, no other payment emojis can be added
-- 🚥⭕️ adding UPE emoji publishes the newsletter posts
-- 🚥⭕️ additionally the original post can receive other category emojis also but
-  no payment emoji to the original post
+- 🚥⭕️ superusers🦹 can add the UPE emoji to the original newsletter post
+  inside the "wag-newsletter" channel
+- 🚥⭕️ after the UPE is added, no other payment emojis can be added to the original post
+- 🚥⭕️ adding the UPE emoji publishes the newsletter posts
+- 🚥⭕️ additionally the original post can receive other category emojis e.g. DeFi, NFT, etc
 - 🚥⭕️ original post thread comments can receive rewards (payment emojis)
 - 🚥⭕️ reacting with the universal publish emoji will publish a (valid) post
   even if it has no payments
 - 🚥⭕️ when UPE is removed the post is unpublished
 - 🚥⭕️ all functionality is like it was never there (payment emojis can be
   added)
-- 🚥⭕️ For the website we need a separate tab for showing all our posts which
-  are reacted with "WMNEWSLETTER"
+- 🚥⭕️ For the website we need a separate tab for showing all our newsletter posts which
+  are published from "wag-newsletter" channel
 
-## Events (Milestone X.XX)
+## Events (Milestone X.XX, for now please totally ignore.)
 
 - 🚥⭕️ superusers🦹 can add "WMEVENTS" emoji to posts inside "events-watch"
   channel
