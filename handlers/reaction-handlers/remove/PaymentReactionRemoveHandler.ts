@@ -7,6 +7,7 @@ import { isPaymentUnitValid } from "@/curators/utils";
 import { ContentType } from "@/types";
 import { prisma } from "@/utils/prisma";
 import { logger } from "@/client";
+import * as config from "@/config";
 import {
   OddJobPaymentReactionAddHandler,
   ThreadPaymentReactionAddHandler,
@@ -76,19 +77,27 @@ export class PostPaymentReactionRemoveHandler extends BasePaymentReactionRemoveH
       (r) => r.emoji.PaymentRule && r.emoji.PaymentRule.length > 0,
     );
 
-    // If no payment emojis are left, unpublish the post
+    // If no payment emojis are left
     if (
       this.contentType === "post" &&
       remainingPaymentEmojis.length === 0 &&
       (this.dbContent as Post).isPublished
     ) {
-      await prisma.post.update({
-        where: { id: this.dbContent!.id },
-        data: { isPublished: false },
-      });
-      logger.log(
-        `[post] Post ${this.messageLink} has been unpublished due to no remaining payment emojis.`,
-      );
+      // and the post is not published via UPE
+      if (
+        !remainingPostReactions.some(
+          (r) => r.emoji.name === config.UNIVERSAL_PUBLISH_EMOJI,
+        )
+      ) {
+        // unpublish the post
+        await prisma.post.update({
+          where: { id: this.dbContent!.id },
+          data: { isPublished: false },
+        });
+        logger.log(
+          `[post] Post ${this.messageLink} has been unpublished due to no remaining payment emojis.`,
+        );
+      }
     }
 
     // Aggregate the total payment amount for the specific unit

@@ -93,19 +93,19 @@ export class PostPaymentReactionAddHandler extends BasePaymentReactionAddHandler
       },
       update: {
         totalAmount: {
-          increment: paymentAmount,
+          increment: +paymentAmount.toFixed(2),
         },
       },
       create: {
         postId: this.dbContent!.id,
         unit: paymentUnit,
-        totalAmount: paymentAmount,
+        totalAmount: +paymentAmount.toFixed(2),
       },
     });
 
     await prisma.payment.create({
       data: {
-        amount: paymentAmount,
+        amount: +paymentAmount.toFixed(2),
         unit: paymentUnit,
         postId: this.dbContent!.id,
         userId: this.dbUser!.id,
@@ -253,19 +253,19 @@ export class OddJobPaymentReactionAddHandler extends BasePaymentReactionAddHandl
       },
       update: {
         totalAmount: {
-          increment: paymentAmount,
+          increment: +paymentAmount.toFixed(2),
         },
       },
       create: {
         oddJobId: this.dbContent!.id,
         unit: paymentUnit,
-        totalAmount: paymentAmount,
+        totalAmount: +paymentAmount.toFixed(2),
       },
     });
 
     await prisma.payment.create({
       data: {
-        amount: paymentAmount,
+        amount: +paymentAmount.toFixed(2),
         unit: paymentUnit,
         oddJobId: this.dbContent!.id,
         userId: this.dbUser!.id,
