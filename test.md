@@ -211,7 +211,7 @@ following fields is missing:
 - ✅⭕️ superusers🦹 can add universal payment emojis (UPE) to posts
 - ✅⭕️ adding UPE emojis publishes a post
 - ✅⭕️ UPE can only be added if there are no other payment emojis
-- 🚥⭕️ after UPE is added to a post, no other payment emojis can be added
+- ✅⭕️ after UPE is added to a post, no other payment emojis can be added
 - ✅⭕️ reacting with the universal publish emoji will publish a (valid) post
   even if it has no payments
 
