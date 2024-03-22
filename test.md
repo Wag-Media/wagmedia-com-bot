@@ -186,7 +186,7 @@ following fields is missing:
 - ✅ same as in posts
 - ✅ if a post is not published or not rewarded, it should still be possible
   to reward threads
-- 🚥⭕️ Keep archive copies of the rewarded comments in the DB, if the rewarded thread comments are deleted (https://github.com/Wag-Media/wagmedia-com-bot/issues/51)
+- ✅ Keep archive copies of the rewarded comments in the DB, if the rewarded thread comments are deleted (https://github.com/Wag-Media/wagmedia-com-bot/issues/51)
 
 ## Old Messages
 
@@ -215,10 +215,11 @@ following fields is missing:
 - 🚥⭕️ after UPE is added to a post, no other payment emojis can be added
 - 🚥⭕️ reacting with the universal publish emoji will publish a (valid) post
   even if it has no payments
-
 - 🚥⭕️ when UPE is removed the post is unpublished
 - 🚥⭕️ all functionality is like it was never there (payment emojis can be
   added)
+- 🚥⭕️ UPE will also need at least one category, for non-anglo flag + category
+- 🚥⭕️ When a Post already has Payment Emojis, UPE can not be added
 
 ## Newsletter
 
