@@ -200,7 +200,7 @@ following fields is missing:
 - ✅ if a oddjob was created when bot was online, bot goes offline misses some
   reactions, bot goes online, then message isreacted to, the message and the
   reactions are inserted correctly to the db
-- ✅⭕️ if a discrepancy is detected between a discord post/thread/oddjob and any
+- ✅ if a discrepancy is detected between a discord post/thread/oddjob and any
   reaction is **added** the bot parses all reactions again creating a valid db
   state that is in sync with discord
 - ✅ if a regular user adds invalid emojis while the bot is offline and bot
