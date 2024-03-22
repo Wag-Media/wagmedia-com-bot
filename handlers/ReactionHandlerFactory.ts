@@ -39,14 +39,20 @@ export class ReactionHandlerFactory {
     const { message } = await ensureFullMessage(reaction.message);
 
     // Determine the type of content (e.g., post, oddjob, thread)
-    const contentType = determineContentType(message);
+    const { contentType } = determineContentType(message);
     // and the user role (e.g., poweruser, regularuser)
     const userRole = await determineUserRole(message, user);
     // and the emoji type
     const emojiType: EmojiType = await determineEmojiType(reaction);
 
+    if (!contentType || !contentType || !userRole || !emojiType) {
+      throw new Error(
+        `Could not determine content type, user role, or emoji type.`,
+      );
+    }
+
     console.log(
-      `ReactionHandlerFactory.getHandler: contentType=${contentType.contentType}, userRole=${userRole}, emojiType=${emojiType}, eventType=${eventType}`,
+      `ReactionHandlerFactory.getHandler: contentType=${contentType}, userRole=${userRole}, emojiType=${emojiType}, eventType=${eventType}`,
     );
 
     // select the appropriate handler based on
@@ -60,14 +66,14 @@ export class ReactionHandlerFactory {
       userRole === "superuser" &&
       eventType === "reactionAdd" &&
       emojiType === "category" &&
-      ["post", "newsletter"].includes(contentType.contentType || "")
+      ["post", "newsletter"].includes(contentType)
     ) {
-      return new CategoryAddReactionHandler(contentType.contentType);
+      return new CategoryAddReactionHandler(contentType);
     } else if (
       userRole === "superuser" &&
       eventType === "reactionAdd" &&
       emojiType === "category" &&
-      !["post", "newsletter"].includes(contentType.contentType || "")
+      !["post", "newsletter"].includes(contentType)
     ) {
       return new NotAllowedReactionHandler(
         `You are not allowed to use category emojis in oddjobs or threads.`,
@@ -76,42 +82,51 @@ export class ReactionHandlerFactory {
       userRole === "superuser" &&
       eventType === "reactionAdd" &&
       emojiType === "payment" &&
-      contentType.contentType === "post"
+      contentType === "post"
     ) {
       return new PostPaymentReactionAddHandler();
     } else if (
       userRole === "superuser" &&
       eventType === "reactionAdd" &&
       emojiType === "payment" &&
-      contentType.contentType === "oddjob"
+      contentType === "oddjob"
     ) {
       return new OddJobPaymentReactionAddHandler();
     } else if (
       userRole === "superuser" &&
       eventType === "reactionAdd" &&
       emojiType === "payment" &&
-      contentType.contentType === "thread"
+      contentType === "thread"
     ) {
       return new ThreadPaymentReactionAddHandler();
     } else if (
       userRole === "superuser" &&
+      ["reactionAdd", "reactionRemove"].includes(eventType) &&
+      emojiType === "payment" &&
+      contentType === "newsletter"
+    ) {
+      return new NotAllowedReactionHandler(
+        `${eventType}ing a payment emoji for a newsletter post is not allowed.`,
+      );
+    } else if (
+      userRole === "superuser" &&
       eventType === "reactionAdd" &&
       emojiType === "feature" &&
-      ["post", "newsletter"].includes(contentType.contentType || "")
+      ["post", "newsletter"].includes(contentType)
     ) {
-      return new FeatureAddReactionHandler(contentType.contentType);
+      return new FeatureAddReactionHandler(contentType);
     } else if (
       userRole === "superuser" &&
       eventType === "reactionAdd" &&
       emojiType === "universalPublish" &&
-      ["post", "newsletter"].includes(contentType.contentType || "")
+      ["post", "newsletter"].includes(contentType)
     ) {
-      return new UPEAddReactionHandler(contentType.contentType);
+      return new UPEAddReactionHandler(contentType);
     } else if (
       userRole === "superuser" &&
       eventType === "reactionAdd" &&
       emojiType === "feature" &&
-      !["post", "newsletter"].includes(contentType.contentType || "")
+      !["post", "newsletter"].includes(contentType)
     ) {
       return new NotAllowedReactionHandler(
         `Feature emojis can only be added to posts`,
@@ -120,42 +135,42 @@ export class ReactionHandlerFactory {
       userRole === "superuser" &&
       eventType === "reactionRemove" &&
       emojiType === "feature" &&
-      contentType.contentType === "post"
+      contentType === "post"
     ) {
       return new FeatureRemoveReactionHandler();
     } else if (
       userRole === "superuser" &&
       eventType === "reactionRemove" &&
       emojiType === "universalPublish" &&
-      contentType.contentType === "post"
+      ["post", "newsletter"].includes(contentType)
     ) {
-      return new UPERemoveReactionHandler();
+      return new UPERemoveReactionHandler(contentType);
     } else if (
       userRole === "superuser" &&
       eventType === "reactionRemove" &&
       emojiType === "category" &&
-      contentType.contentType === "post"
+      ["post", "newsletter"].includes(contentType)
     ) {
-      return new CategoryRemoveReactionHandler();
+      return new CategoryRemoveReactionHandler(contentType);
     } else if (
       userRole === "superuser" &&
       eventType === "reactionRemove" &&
       emojiType === "payment" &&
-      contentType.contentType === "post"
+      contentType === "post"
     ) {
       return new PostPaymentReactionRemoveHandler();
     } else if (
       userRole === "superuser" &&
       eventType === "reactionRemove" &&
       emojiType === "payment" &&
-      contentType.contentType === "oddjob"
+      contentType === "oddjob"
     ) {
       return new OddJobPaymentReactionRemoveHandler();
     } else if (
       userRole === "superuser" &&
       eventType === "reactionRemove" &&
       emojiType === "payment" &&
-      contentType.contentType === "thread"
+      contentType === "thread"
     ) {
       return new ThreadPaymentReactionRemoveHandler();
     } else if (
@@ -199,14 +214,14 @@ export class ReactionHandlerFactory {
       return new NoopReactionHandler();
     } else if (eventType === "reactionAdd" && emojiType === "regular") {
       // ---- Regular Emojis Add ----
-      return new RegularReactionAddHandler(contentType.contentType, userRole);
+      return new RegularReactionAddHandler(contentType, userRole);
     } else if (eventType === "reactionRemove" && emojiType === "regular") {
       // ---- Regular Emojis Remove ----
-      return new RegularReactionRemoveHandler(contentType.contentType);
+      return new RegularReactionRemoveHandler(contentType);
     } else {
       // Return a default handler or throw an error
       throw new Error(
-        `No handlers found for contentType:${contentType.contentType}, userRole:${userRole}, emojiType:${emojiType}, and eventType:${eventType}`,
+        `No handlers found for contentType:${contentType}, userRole:${userRole}, emojiType:${emojiType}, and eventType:${eventType}`,
       );
     }
 

@@ -22,6 +22,7 @@ import {
 } from "@/data/emoji";
 import { PaymentRule } from "@prisma/client";
 import { findFirstPayment } from "@/data/payment";
+import { isChannelMonitoredForNewsletter } from "../handlers/util";
 
 export function determineContentType(message: Message | PartialMessage): {
   contentType: ContentType;
@@ -38,7 +39,8 @@ export function determineContentType(message: Message | PartialMessage): {
   if (parentId) {
     if (
       isCategoryMonitoredForPosts(parentChannel) ||
-      isChannelMonitoredForPosts(parentChannel)
+      isChannelMonitoredForPosts(parentChannel) ||
+      isChannelMonitoredForNewsletter(parentChannel)
     ) {
       contentType = "thread";
     }

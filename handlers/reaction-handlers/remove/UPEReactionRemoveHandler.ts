@@ -13,6 +13,11 @@ import { prisma } from "@/utils/prisma";
 export class UPERemoveReactionHandler extends BaseReactionRemoveHandler {
   contentType: ContentType = "post";
 
+  constructor(contentType: ContentType) {
+    super();
+    this.contentType = contentType;
+  }
+
   protected async getDbContent(
     reaction: MessageReaction,
   ): Promise<PostWithPaymentsAndCategories | null> {
@@ -42,6 +47,8 @@ export class UPERemoveReactionHandler extends BaseReactionRemoveHandler {
     }
 
     await unpublishPost(reaction.message.id);
-    logger.log(`[post] Post ${this.messageLink} is now unpublished.`);
+    logger.log(
+      `[${this.contentType}] ${this.contentType} ${this.messageLink} is now unpublished.`,
+    );
   }
 }

@@ -8,6 +8,11 @@ import { prisma } from "@/utils/prisma";
 export class CategoryRemoveReactionHandler extends BaseReactionRemoveHandler {
   contentType: ContentType = "post";
 
+  constructor(contentType: ContentType) {
+    super();
+    this.contentType = contentType;
+  }
+
   protected async processReaction(reaction, user): Promise<void> {
     const categoryRule = await findEmojiCategoryRule(this.dbEmoji.id);
     if (!categoryRule) {

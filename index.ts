@@ -132,6 +132,8 @@ discordClient.on(Events.MessageReactionRemove, async (reaction, user) => {
   } catch (error) {
     console.error("Error in messageReactionRemove event handler:", error);
   }
+
+  console.log("curate remove done");
 });
 
 discordClient.login(token);

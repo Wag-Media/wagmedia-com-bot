@@ -63,9 +63,9 @@ export class ReactionCurator {
     reaction: MessageReaction,
     user: DiscordUser,
   ): Promise<void> {
-    const { messageChannelType } = classifyMessage(reaction.message);
+    const { contentType } = determineContentType(reaction.message);
 
-    if (!messageChannelType || shouldIgnoreMessage(reaction.message)) {
+    if (!contentType || shouldIgnoreMessage(reaction.message)) {
       return;
     }
 

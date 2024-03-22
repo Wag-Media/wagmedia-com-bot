@@ -42,6 +42,12 @@ export async function upsertEntityReaction(
     return;
   }
 
+  if (!["post", "oddjob", "thread", "newsletter"].includes(entityType)) {
+    throw new Error(
+      `Invalid entityType ${entityType} in upsertEntityReaction. Skipping.`,
+    );
+  }
+
   let dbReaction;
 
   if (
@@ -77,8 +83,16 @@ export async function deleteEntityReaction(
     return;
   }
 
+  if (![contentType, "post", "thread", "newsletter"].includes(contentType)) {
+    throw new Error(
+      `Invalid contentType ${contentType} in deleteEntityReaction. Skipping.`,
+    );
+  }
+
   const whereCondition =
-    contentType === "post" || contentType === "thread"
+    contentType === "post" ||
+    contentType === "thread" ||
+    contentType === "newsletter"
       ? {
           postId_userDiscordId_emojiId: {
             postId: entity.id,
