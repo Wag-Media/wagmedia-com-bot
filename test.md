@@ -223,24 +223,21 @@ following fields is missing:
 
 ## Newsletter
 
-- 🚥⭕️ superusers🦹 can add "WMNEWSLETTER" emoji to posts inside
-  "wag-newsletter" channel
-- 🚥⭕️ superusers🦹 can add only UPE emoji to the original newsletter post
-  inside "wag-newsletter" channel
-- 🚥⭕️ after UPE is added to a post, no other payment emojis can be added
-- 🚥⭕️ adding UPE emoji publishes the newsletter posts
-- 🚥⭕️ additionally the original post can receive other category emojis also but
-  no payment emoji to the original post
+- 🚥⭕️ superusers🦹 can add the UPE emoji to the original newsletter post
+  inside the "wag-newsletter" channel
+- 🚥⭕️ after the UPE is added, no other payment emojis can be added to the original post
+- 🚥⭕️ adding the UPE emoji publishes the newsletter posts
+- 🚥⭕️ additionally the original post can receive other category emojis e.g. DeFi, NFT, etc
 - 🚥⭕️ original post thread comments can receive rewards (payment emojis)
 - 🚥⭕️ reacting with the universal publish emoji will publish a (valid) post
   even if it has no payments
 - 🚥⭕️ when UPE is removed the post is unpublished
 - 🚥⭕️ all functionality is like it was never there (payment emojis can be
   added)
-- 🚥⭕️ For the website we need a separate tab for showing all our posts which
-  are reacted with "WMNEWSLETTER"
+- 🚥⭕️ For the website we need a separate tab for showing all our newsletter posts which
+  are published from "wag-newsletter" channel
 
-## Events (Milestone X.XX)
+## Events (Milestone X.XX, for now please totally ignore.)
 
 - 🚥⭕️ superusers🦹 can add "WMEVENTS" emoji to posts inside "events-watch"
   channel
