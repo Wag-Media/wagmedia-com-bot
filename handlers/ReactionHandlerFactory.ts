@@ -45,6 +45,10 @@ export class ReactionHandlerFactory {
     // and the emoji type
     const emojiType: EmojiType = await determineEmojiType(reaction);
 
+    console.log(
+      `ReactionHandlerFactory.getHandler: contentType=${contentType.contentType}, userRole=${userRole}, emojiType=${emojiType}, eventType=${eventType}`,
+    );
+
     // select the appropriate handler based on
     // - the user role
     // - the content type
@@ -56,14 +60,14 @@ export class ReactionHandlerFactory {
       userRole === "superuser" &&
       eventType === "reactionAdd" &&
       emojiType === "category" &&
-      contentType.contentType === "post"
+      ["post", "newsletter"].includes(contentType.contentType || "")
     ) {
-      return new CategoryAddReactionHandler();
+      return new CategoryAddReactionHandler(contentType.contentType);
     } else if (
       userRole === "superuser" &&
       eventType === "reactionAdd" &&
       emojiType === "category" &&
-      contentType.contentType !== "post"
+      !["post", "newsletter"].includes(contentType.contentType || "")
     ) {
       return new NotAllowedReactionHandler(
         `You are not allowed to use category emojis in oddjobs or threads.`,
@@ -93,21 +97,21 @@ export class ReactionHandlerFactory {
       userRole === "superuser" &&
       eventType === "reactionAdd" &&
       emojiType === "feature" &&
-      contentType.contentType === "post"
+      ["post", "newsletter"].includes(contentType.contentType || "")
     ) {
-      return new FeatureAddReactionHandler();
+      return new FeatureAddReactionHandler(contentType.contentType);
     } else if (
       userRole === "superuser" &&
       eventType === "reactionAdd" &&
       emojiType === "universalPublish" &&
-      contentType.contentType === "post"
+      ["post", "newsletter"].includes(contentType.contentType || "")
     ) {
-      return new UPEAddReactionHandler();
+      return new UPEAddReactionHandler(contentType.contentType);
     } else if (
       userRole === "superuser" &&
       eventType === "reactionAdd" &&
       emojiType === "feature" &&
-      contentType.contentType !== "post"
+      !["post", "newsletter"].includes(contentType.contentType || "")
     ) {
       return new NotAllowedReactionHandler(
         `Feature emojis can only be added to posts`,

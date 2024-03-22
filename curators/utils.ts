@@ -1,6 +1,7 @@
 import {
   getGuildFromMessage,
   isCategoryMonitoredForPosts,
+  isChannelMonitoredForNewsletter,
   isChannelMonitoredForOddJobs,
   isChannelMonitoredForPosts,
 } from "@/handlers/util";
@@ -42,10 +43,15 @@ export function determineContentType(message: Message | PartialMessage): {
       contentType = "thread";
     }
   } else {
-    if (isChannelMonitoredForPosts(message.channel)) {
+    if (
+      isChannelMonitoredForPosts(message.channel) ||
+      isCategoryMonitoredForPosts(message.channel)
+    ) {
       contentType = "post";
     } else if (isChannelMonitoredForOddJobs(message.channel)) {
       contentType = "oddjob";
+    } else if (isChannelMonitoredForNewsletter(message.channel)) {
+      contentType = "newsletter";
     }
   }
 

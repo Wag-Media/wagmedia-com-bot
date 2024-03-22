@@ -241,6 +241,10 @@ export const isCategoryMonitoredForPosts = (channel: Channel) =>
   channel.parentId &&
   config.CATEGORIES_TO_MONITOR.includes(channel.parentId);
 
+export const isChannelMonitoredForNewsletter = (channel: Channel) =>
+  channel instanceof TextChannel &&
+  config.CHANNELS_NEWSLETTER.includes(channel.id);
+
 export const isParentMessageFromMonitoredCategoryOrChannel = (
   message: Message<boolean> | PartialMessage,
 ) => {

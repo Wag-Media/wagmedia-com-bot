@@ -185,8 +185,17 @@ export async function getPostOrOddjobReactionCount(
     return;
   }
 
+  if (!["newsletter", "oddjob", "post", "thread"].includes(contentType)) {
+    logger.warn(
+      `Invalid contentType ${contentType} in getPostOrOddjobReactionCount. Skipping.`,
+    );
+    return;
+  }
+
   const whereCondition =
-    contentType === "post" || contentType === "thread"
+    contentType === "post" ||
+    contentType === "thread" ||
+    contentType === "newsletter"
       ? { postId: contentId }
       : { oddJobId: contentId };
 
@@ -493,7 +502,11 @@ export async function getPostOrOddjob(
     return;
   }
 
-  if (entityType === "post" || entityType === "thread") {
+  if (
+    entityType === "post" ||
+    entityType === "thread" ||
+    entityType === "newsletter"
+  ) {
     return prisma.post.findUnique({
       where: {
         id: entityId,
@@ -502,12 +515,17 @@ export async function getPostOrOddjob(
         categories: true,
       },
     });
-  } else {
+  } else if (entityType === "oddjob") {
     return prisma.oddJob.findUnique({
       where: {
         id: entityId,
       },
     });
+  } else {
+    logger.warn(
+      `Invalid entityType ${entityType} in getPostOrOddjob. Skipping.`,
+    );
+    return;
   }
 }
 
@@ -538,4 +556,21 @@ export async function getPostOrOddjobWithEarnings(
       },
     });
   }
+}
+
+export async function postHasCategory(postId: string, categoryName: string) {
+  const post = await prisma.post.findUnique({
+    where: {
+      id: postId,
+    },
+    include: {
+      categories: true,
+    },
+  });
+
+  if (!post) {
+    return false;
+  }
+
+  return post.categories.some((category) => category.name === categoryName);
 }

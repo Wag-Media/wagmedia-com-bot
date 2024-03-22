@@ -4,6 +4,7 @@ import { ReactionTracker } from "@/reaction-tracker";
 import { ReactionDiscrepancyResolver } from "./ReactionDiscrepancyResolver";
 import { logger } from "@/client";
 import { classifyMessage, shouldIgnoreMessage } from "@/handlers/util";
+import { determineContentType } from "./utils";
 
 export class ReactionCurator {
   static isResolvingDiscrepancies = false;
@@ -14,9 +15,11 @@ export class ReactionCurator {
   ): Promise<void> {
     // the index.ts fetches PartialMessages so this is safe
     const message = reaction.message as Message;
-    const { messageChannelType } = classifyMessage(message);
+    const { contentType } = determineContentType(message);
 
-    if (!messageChannelType || shouldIgnoreMessage(message)) {
+    console.log("curateAdd contentType", contentType);
+
+    if (!contentType || shouldIgnoreMessage(message)) {
       return;
     }
 

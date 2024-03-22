@@ -25,6 +25,11 @@ import { prisma } from "@/utils/prisma";
 export class UPEAddReactionHandler extends PostPaymentReactionAddHandler {
   contentType: ContentType = "post";
 
+  constructor(contentType: ContentType) {
+    super();
+    this.contentType = contentType;
+  }
+
   protected async getDbContent(
     reaction: MessageReaction,
   ): Promise<PostWithPaymentsAndCategories | null> {
@@ -60,13 +65,11 @@ export class UPEAddReactionHandler extends PostPaymentReactionAddHandler {
     );
     await publishPost(reaction.message.id);
     logger.log(
-      `[post] Post ${this.messageLink} is now published without any payments.`,
+      `[${this.contentType}] ${this.contentType} ${this.messageLink} is now published without any payments.`,
     );
   }
 
   protected async isReactionPermitted(_, user): Promise<boolean> {
-    console.log("upe reaction permitted", this.dbContent);
-
     // can only add UPE if post was not paid before
     if (
       (this.dbContent as PostWithPaymentsAndCategories).payments?.length > 0

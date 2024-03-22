@@ -76,7 +76,12 @@ export type PostWithCategoriesTagsEmbeds = Post & {
 };
 
 export type UserRole = "superuser" | "regular";
-export type ContentType = "oddjob" | "post" | "thread" | undefined;
+export type ContentType =
+  | "oddjob"
+  | "post"
+  | "thread"
+  | "newsletter"
+  | undefined;
 export type EmojiType =
   | "regular"
   | "feature"

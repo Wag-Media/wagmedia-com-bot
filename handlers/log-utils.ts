@@ -145,6 +145,14 @@ export async function logIntroMessage(guild, discordClient) {
     const channel = guild.channels.cache.get(channelId);
     logger.info(`${space}↪ #${channel?.name} (${channel?.id})`);
   });
+
+  logger.info(
+    `🦻 Listening for newsletters and newsletter reactions in ${config.CHANNELS_NEWSLETTER.length} channels in guild ${guild.name}:`,
+  );
+  config.CHANNELS_NEWSLETTER.map((channelId) => {
+    const channel = guild.channels.cache.get(channelId);
+    logger.info(`${space}↪ #${channel?.name} (${channel?.id})`);
+  });
 }
 
 export async function logAndSend(message, user) {}

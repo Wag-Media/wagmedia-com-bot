@@ -44,12 +44,18 @@ export async function upsertEntityReaction(
 
   let dbReaction;
 
-  console.log("upsertReaction", dbEmoji);
-
-  if (entityType == "post" || entityType == "thread") {
+  if (
+    entityType == "post" ||
+    entityType == "thread" ||
+    entityType == "newsletter"
+  ) {
     dbReaction = await upsertPostReaction(entity as Post, dbUser, dbEmoji);
-  } else {
+  } else if (entityType == "oddjob") {
     dbReaction = await upsertOddjobReaction(entity as OddJob, dbUser, dbEmoji);
+  } else {
+    logger.warn(
+      `Invalid entityType ${entityType} in upsertEntityReaction. Skipping.`,
+    );
   }
 
   if (!dbReaction) {

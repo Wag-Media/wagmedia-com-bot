@@ -12,6 +12,7 @@ import {
   shouldIgnoreMessage,
 } from "@/handlers/util";
 import {
+  ContentType,
   OddjobWithEarnings,
   PostWithCategories,
   PostWithCategoriesEarnings,
@@ -26,13 +27,14 @@ import { prisma } from "@/utils/prisma";
 import { OddJob } from "@prisma/client";
 import { Message, PartialMessage } from "discord.js";
 import { determineContentType } from "./utils";
+import { handleNewsletter } from "@/utils/handle-newsletter";
 
 /**
  * A message curator handles bot internal message logic, e.g. parsing a message, deciding its type (post / oddjob)
  * and other logics related to message parsing
  */
 export class MessageCurator {
-  private static messageChannelType: "post" | "oddjob" | undefined;
+  private static messageChannelType: ContentType;
   private static parentId: string | undefined;
   private static messageLink: string;
 
@@ -45,8 +47,8 @@ export class MessageCurator {
 
     this.messageLink = `https://discord.com/channels/${message.guild?.id}/${message.channel.id}/${message.id}`;
 
-    const classifiedMessage = classifyMessage(message);
-    this.messageChannelType = classifiedMessage.messageChannelType;
+    const classifiedMessage = determineContentType(message);
+    this.messageChannelType = classifiedMessage.contentType;
     this.parentId = classifiedMessage.parentId;
 
     if (this.messageChannelType === "post" && !this.parentId) {
@@ -56,6 +58,8 @@ export class MessageCurator {
     } else if (this.messageChannelType === "post" && this.parentId) {
       // skip thread messages, they will only be added to the db after they received an emoji
       // check the reaction curator
+    } else if (this.messageChannelType === "newsletter") {
+      return await handleNewsletter(message, this.messageLink);
     } else {
       // the message is not from a monitored channel or category
       return;

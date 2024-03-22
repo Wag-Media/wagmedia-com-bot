@@ -27,6 +27,10 @@ export const CHANNELS_ODD_JOBS = process.env.CHANNELS_ODD_JOBS
   ? JSON.parse(process.env.CHANNELS_ODD_JOBS)
   : [];
 
+export const CHANNELS_NEWSLETTER = process.env.CHANNELS_NEWSLETTER
+  ? JSON.parse(process.env.CHANNELS_NEWSLETTER)
+  : [];
+
 export const CHANNEL_LOG = process.env.CHANNEL_LOG
   ? process.env.CHANNEL_LOG.toString()
   : "";
@@ -70,6 +74,8 @@ export const categoryEmojiMap: {
   Video: "WMVIDEO",
   Paraverse: "WMPARAVERSE",
 };
+
+export const NEWSLETTER_CATEGORY_NAME = "Newsletter";
 
 // the emojis that trigger payment actions, that in turn publish a post.
 

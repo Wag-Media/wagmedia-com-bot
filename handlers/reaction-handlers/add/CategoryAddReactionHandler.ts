@@ -1,6 +1,11 @@
 import { ContentType, OddJobWithOptions, PostWithOptions } from "@/types";
 import { findEmojiCategoryRule } from "@/data/emoji";
-import { addCategory, getAllCategories, setCategory } from "@/data/post";
+import {
+  addCategory,
+  getAllCategories,
+  postHasCategory,
+  setCategory,
+} from "@/data/post";
 import { logger } from "@/client";
 import { BaseReactionAddHandler } from "./_BaseReactionAddHandler";
 import { MessageReaction, User } from "discord.js";
@@ -11,6 +16,11 @@ import * as config from "@/config";
 
 export class CategoryAddReactionHandler extends BaseReactionAddHandler {
   contentType: ContentType = "post";
+
+  constructor(contentType: ContentType) {
+    super();
+    this.contentType = contentType;
+  }
 
   protected async isReactionPermitted(
     reaction: MessageReaction,
@@ -53,12 +63,15 @@ export class CategoryAddReactionHandler extends BaseReactionAddHandler {
       allCategories.some((c) => c.emojiId === r.emoji.name),
     ).size;
 
-    console.log("test");
+    const postHasNewsletterCategory = await postHasCategory(
+      reaction.message.id,
+      config.NEWSLETTER_CATEGORY_NAME,
+    );
 
     // if the count of the post's categories is 1, we can connect the post with the added
     // category and remove all other categories. This can happen in an edge case where the
     // user removed the last category of a published post and then added a new category.
-    if (messageCategoryCount === 1) {
+    if (messageCategoryCount === 1 && !postHasNewsletterCategory) {
       this.dbContent = await setCategory(
         reaction.message.id,
         categoryRule.category.id,
