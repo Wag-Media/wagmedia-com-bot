@@ -1,5 +1,4 @@
 import { featurePost } from "@/data/post";
-import { CategoryReactionHandler } from "./CategoryAddReactionHandler";
 import { logger } from "@/client";
 import { BaseReactionAddHandler } from "./_BaseReactionAddHandler";
 import { ContentType } from "@/types";

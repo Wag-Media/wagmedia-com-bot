@@ -100,8 +100,6 @@ export class ReactionDiscrepancyResolver {
 
     let expectedReactionCount = dbPostOrOddjobReactionCount || 0;
 
-    console.log("expectedReactionCount", expectedReactionCount);
-
     // as we are in an event handler we need to adjust the expected reaction count
     // - reaction was just added there should be +1 on discord
     // - reaction was just removed there should be -1 on discord
