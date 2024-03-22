@@ -227,16 +227,16 @@ following fields is missing:
 
 ## Newsletter
 
-- ✅⭕️ superusers🦹 can add the UPE emoji to the original newsletter post inside
+- ✅ superusers🦹 can add the UPE emoji to the original newsletter post inside
   the "wag-newsletter" channel
-- ✅⭕️ no payment emojis can be added to newsletters post
-- ✅⭕️ adding the UPE emoji publishes the newsletter post
-- ✅⭕️ additionally the original post can receive other category emojis e.g.
+- ✅ no payment emojis can be added to newsletters post
+- ✅ adding the UPE emoji publishes the newsletter post
+- ✅ additionally the original post can receive other category emojis e.g.
   DeFi, NFT, etc
-- ✅⭕️ original post thread comments can receive rewards (payment emojis)
-- ✅⭕️ reacting with the universal publish emoji will publish a (valid)
+- ✅ original post thread comments can receive rewards (payment emojis)
+- ✅ reacting with the universal publish emoji will publish a (valid)
   newsletter post even if it has no payments
-- ✅⭕️ when UPE is removed the post is unpublished
+- ✅ when UPE is removed the post is unpublished
 - 🚥⭕️ For the website we need a separate tab for showing all our newsletter
   posts which are published from "wag-newsletter" channel
 
