@@ -1,12 +1,15 @@
 import { Message, PartialMessage } from "discord.js";
 import { prisma } from "@/utils/prisma";
 import { logger } from "@/client";
+import { determineContentType } from "../curators/utils";
 
 export async function handleMessageDelete(
   message: Message<boolean> | PartialMessage,
 ) {
   // message = await ensureFullMessage(message);
   const channelLink = `https://discord.com/channels/${message.guild?.id}/${message.channel.id}`;
+
+  const contentType = determineContentType(message);
 
   const post = await prisma.post.findUnique({
     where: { id: message.id },

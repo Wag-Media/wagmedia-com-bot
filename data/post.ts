@@ -265,6 +265,19 @@ export async function removeReactionFromPost(
   return post;
 }
 
+export async function publishPost(postId: string) {
+  const post = await prisma.post.update({
+    where: {
+      id: postId,
+    },
+    data: {
+      isPublished: true,
+    },
+  });
+
+  return post;
+}
+
 export async function unpublishPost(postId: string) {
   const post = await prisma.post.update({
     where: {
