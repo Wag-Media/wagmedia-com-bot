@@ -100,7 +100,7 @@ following fields is missing:
 
 - ✅ if a post message that is not published yet or has no categories gets
   deleted, it will be removed from the database.
-- ✅⭕️ if a post message that is already published (=paid) gets deleted, it
+- ✅ if a post message that is already published (=paid) gets deleted, it
   stays in the db and gets flagged as deleted (https://github.com/Wag-Media/wagmedia-com-bot/issues/50)
 - ✅ if an oddjob message that is not paid yet gets deleted it will be removed
   from the database
@@ -212,14 +212,14 @@ following fields is missing:
 - ✅ superusers🦹 can add universal payment emojis (UPE) to posts
 - ✅ adding UPE emojis publishes a post
 - ✅ UPE can only be added if there are no other payment emojis
-- 🚥⭕️ after UPE is added to a post, no other payment emojis can be added (https://github.com/Wag-Media/wagmedia-com-bot/issues/54)
+- ✅ after UPE is added to a post, no other payment emojis can be added (https://github.com/Wag-Media/wagmedia-com-bot/issues/54)
 - ✅ reacting with the universal publish emoji will publish a (valid) post
   even if it has no payments
 - ✅ when UPE is removed the post is unpublished
 - ✅ all functionality is like it was never there (payment emojis can be
   added)
 - ✅ UPE will also need at least one category, for non-anglo flag + category
-- ✅⭕️ When a Post already has Payment Emojis, UPE can not be added (https://github.com/Wag-Media/wagmedia-com-bot/issues/54)
+- ✅ When a Post already has Payment Emojis, UPE can not be added (https://github.com/Wag-Media/wagmedia-com-bot/issues/54)
 
 ## Newsletter
 
