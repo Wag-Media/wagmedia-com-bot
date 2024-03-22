@@ -65,7 +65,7 @@ export class CategoryAddReactionHandler extends BaseReactionAddHandler {
       );
 
       logger.log(
-        `[category] Category ${categoryRule.category.name} replaced the out of sync category at ${this.messageLink}.`,
+        `[category] Category ${categoryRule.category.name} replaced the old or missing category at ${this.messageLink}.`,
       );
     } else {
       // connect the post with the added category

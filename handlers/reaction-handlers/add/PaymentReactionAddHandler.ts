@@ -5,25 +5,18 @@ import {
 } from "discord.js";
 import { PaymentRule, Post } from "@prisma/client";
 import { findEmojiPaymentRule } from "@/data/emoji";
-import {
-  ContentType,
-  OddJobWithOptions,
-  PostWithCategories,
-  PostWithOptions,
-} from "@/types";
+import { ContentType, OddJobWithOptions, PostWithCategories } from "@/types";
 import { prisma } from "@/utils/prisma";
 import { isPaymentUnitValid } from "../../../curators/utils";
 import { getPostReactions, upsertEntityReaction } from "@/data/reaction";
 import { logContentEarnings } from "@/handlers/log-utils";
-import { BaseReactionHandler } from "../_BaseReactionHandler";
-import { findOrCreatePost, findOrCreateThreadPost, getPost } from "@/data/post";
+import { findOrCreateThreadPost, getPost } from "@/data/post";
 import { BaseReactionAddHandler } from "./_BaseReactionAddHandler";
-import { discordClient, logger } from "@/client";
+import { logger } from "@/client";
 import { isCountryFlag } from "@/utils/is-country-flag";
 import { getOddJob } from "@/data/oddjob";
-import { ThreadPaymentReactionRemoveHandler } from "../remove/PaymentReactionRemoveHandler";
-import { slugify } from "@/handlers/util";
 import { findOrCreateUser } from "@/data/user";
+import * as config from "@/config";
 
 abstract class BasePaymentReactionAddHandler extends BaseReactionAddHandler {
   protected paymentRule: PaymentRule | null;
@@ -89,11 +82,6 @@ export class PostPaymentReactionAddHandler extends BasePaymentReactionAddHandler
     user: DiscordUser,
   ) {
     // Specific logic for processing payment for a post
-    console.log(
-      "Handling payment reaction for a post with parentId",
-      this.parentId,
-    );
-
     const { paymentAmount, paymentUnit, fundingSource } = this.paymentRule!;
 
     await prisma.contentEarnings.upsert({
@@ -193,6 +181,21 @@ export class PostPaymentReactionAddHandler extends BasePaymentReactionAddHandler
       );
 
       throw new Error("Post is translation and has no non anglo category");
+    }
+
+    // 1.5 make sure the post does not have the UPE emoji
+    const postReactions = await getPostReactions(reaction.message.id);
+    console.log("postReactions", postReactions);
+    const hasUPE = postReactions.some((reaction) =>
+      reaction.emoji?.name?.includes(config.UNIVERSAL_PUBLISH_EMOJI),
+    );
+
+    if (hasUPE) {
+      logger.logAndSend(
+        `You can't add payments to a post that has the universal publish emoji.`,
+        user,
+      );
+      throw new Error("Post has UPE emoji");
     }
 
     return true;

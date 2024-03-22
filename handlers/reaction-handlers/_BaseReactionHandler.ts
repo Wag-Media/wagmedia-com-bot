@@ -39,7 +39,7 @@ export abstract class BaseReactionHandler implements IReactionHandler {
     await this.postProcess(reaction, user);
   }
 
-  protected async initialize(reaction: MessageReaction, user: DiscordUser) {
+  protected async baseInitialize(reaction: MessageReaction, user: DiscordUser) {
     // Shared logic before processing payment, e.g., logging, validation
     this.guild = await getGuildFromMessage(reaction.message);
     this.messageLink = `https://discord.com/channels/${this.guild.id}/${reaction.message.channel.id}/${reaction.message.id}`;
@@ -64,6 +64,10 @@ export abstract class BaseReactionHandler implements IReactionHandler {
     if (!this.dbContent) {
       this.dbContent = await MessageCurator.curate(reaction.message as Message);
     }
+  }
+
+  protected async initialize(reaction: MessageReaction, user: DiscordUser) {
+    await this.baseInitialize(reaction, user);
   }
 
   protected getDbContent(

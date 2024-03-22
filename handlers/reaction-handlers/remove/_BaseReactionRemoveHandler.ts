@@ -37,7 +37,7 @@ export abstract class BaseReactionRemoveHandler extends BaseReactionHandler {
     ReactionTracker.addReactionToTrack(reaction, user.id);
     await reaction.users.remove(user.id);
     logger.log(
-      `[${this.contentType}] Reaction ${reaction.emoji} removed from ${this.messageLink} by ${user.username}#${user.discriminator}.`,
+      `[${this.contentType}] Reaction ${reaction.emoji} by ${user.username}#${user.discriminator} removed from ${this.messageLink}.`,
     );
   }
 }

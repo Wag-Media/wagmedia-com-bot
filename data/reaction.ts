@@ -44,6 +44,8 @@ export async function upsertEntityReaction(
 
   let dbReaction;
 
+  console.log("upsertReaction", dbEmoji);
+
   if (entityType == "post" || entityType == "thread") {
     dbReaction = await upsertPostReaction(entity as Post, dbUser, dbEmoji);
   } else {

@@ -44,6 +44,11 @@ export type PostWithOptions = Post & {
 };
 export type PostWithCategories = Post & { categories: Category[] };
 export type PostWithEarnings = Post & { earnings: ContentEarnings[] };
+export type PostWithPayments = Post & { payments: Payment[] };
+export type PostWithPaymentsAndCategories = Post & {
+  payments: Payment[];
+  categories: Category[];
+};
 export type PostWithCategoriesEarnings = Post & {
   categories: Category[];
   earnings: ContentEarnings[];

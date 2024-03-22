@@ -21,17 +21,19 @@ export abstract class BaseReactionAddHandler extends BaseReactionHandler {
       );
     }
 
-    // threads are a special case that only stores payment reactions and is handled separately
-    if (this.contentType !== "thread") {
-      this.dbReaction = await upsertEntityReaction(
-        this.dbContent,
-        this.contentType,
-        this.dbUser!,
-        this.dbEmoji,
-      );
-      logger.log(
-        `[${this.contentType}] Reaction ${reaction.emoji} added to ${this.messageLink} by ${user.username}#${user.discriminator}.`,
-      );
+    logger.log(
+      `[${this.contentType}] Reaction ${reaction.emoji} added to ${this.messageLink} by ${user.username}#${user.discriminator}.`,
+    );
+    if (await this.isReactionPermitted(reaction, user)) {
+      // threads are a special case that only stores payment reactions and is handled separately
+      if (this.contentType !== "thread") {
+        this.dbReaction = await upsertEntityReaction(
+          this.dbContent,
+          this.contentType,
+          this.dbUser!,
+          this.dbEmoji,
+        );
+      }
     }
   }
 }
