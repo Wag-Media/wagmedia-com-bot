@@ -140,10 +140,11 @@ export function parseOddjob(message: Message): OddJobType {
   try {
     const cleanedContent = content.replace(/\*/g, "");
 
-    const roleRegex = /Odd-Job Role:\s*(.+?)(?=\n|$)/;
-    const descriptionRegex = /Odd-Job Description:\s*(.+?)(?=\n|$)/;
-    const timelineRegex = /Odd-Job Timeline:\s*(.+?)(?=\n|$)/;
-    const paymentRegex = /Agreed Payment:\s*(.+?)(?=\n|$)/;
+    const roleRegex = /Odd-Job Role:\s*([\s\S]+?)(?=Odd-Job Description:|$)/;
+    const descriptionRegex =
+      /Odd-Job Description:\s*([\s\S]+?)(?=Odd-Job Timeline:|$)/;
+    const timelineRegex = /Odd-Job Timeline:\s*([\s\S]+?)(?=Agreed Payment:|$)/;
+    const paymentRegex = /Agreed Payment:\s*([\s\S]+?)(?=Managing Director:|$)/;
     const managerRegex = /Managing Director:\s*(.+?)(?=\n|$)/;
 
     const roleMatch = cleanedContent.match(roleRegex);
