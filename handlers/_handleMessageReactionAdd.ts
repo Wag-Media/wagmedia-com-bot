@@ -2,7 +2,7 @@ import {
   findEmojiCategoryRule,
   findEmojiPaymentRule,
   findOrCreateEmoji,
-} from "@/data/emoji.js";
+} from "@/data/emoji";
 import { userHasRole } from "@/utils/userHasRole.js";
 import {
   Category,
@@ -24,12 +24,12 @@ import {
   messageLink,
 } from "discord.js";
 
-import { logger } from "@/client.js";
+import { logger } from "@/client";
 import {
   ensureFullEntities,
-  isMessageFromMonitoredCategory,
-  isMessageFromMonitoredChannel,
-  isMessageFromOddJobsChannel,
+  isCategoryMonitoredForPosts,
+  isChannelMonitoredForPosts,
+  isChannelMonitoredForOddJobs,
   isParentMessageFromMonitoredCategoryOrChannel,
   shouldIgnoreReaction,
 } from "./util.js";
@@ -44,14 +44,14 @@ import {
   logOddjobEarnings,
   logPostEarnings,
 } from "./log-utils.js";
-import { findOrCreateUserFromDiscordUser } from "@/data/user.js";
-import { upsertOddjobReaction, upsertReaction } from "@/data/reaction.js";
-import { isCountryFlag } from "../utils/is-country-flag";
-import { fetchOddjob } from "@/data/oddjob.js";
-import { parseOddjob } from "@/utils/handle-odd-job.js";
-import { isPaymentReactionValid } from "@/utils/payment-valid.js";
+import { findOrCreateUserFromDiscordUser } from "@/data/user";
+import { upsertOddjobReaction, upsertPostReaction } from "@/data/reaction";
+import { isCountryFlag } from "../utils/is-country-flag.js";
+import { fetchOddjob } from "@/data/oddjob";
+import { parseOddjob } from "@/utils/handle-odd-job";
+import { isPaymentReactionValid } from "@/utils/payment-valid";
 
-import * as config from "../config.js";
+import * as config from "@/config";
 import { all } from "axios";
 
 const prisma = new PrismaClient();
@@ -64,7 +64,7 @@ const prisma = new PrismaClient();
  */
 export async function handleMessageReactionAdd(
   reaction: MessageReaction | PartialMessageReaction,
-  user: DiscordUser | PartialUser
+  user: DiscordUser | PartialUser,
 ) {
   // make sure the message, reaction and user are cached
   try {
@@ -87,14 +87,14 @@ export async function handleMessageReactionAdd(
     if (userHasRole(guild, user, config.ROLES_WITH_POWER)) {
       if (!reaction.message.channel.isThread()) {
         logger.warn(
-          `The message ${messageLink} is not a thread, but it passed the checks.`
+          `The message ${messageLink} is not a thread, but it passed the checks.`,
         );
         return;
       }
 
       const dbEmoji: Emoji = await findOrCreateEmoji(reaction.emoji);
       const paymentRule: PaymentRule | null = await findEmojiPaymentRule(
-        dbEmoji.id
+        dbEmoji.id,
       );
 
       if (!paymentRule) {
@@ -114,7 +114,7 @@ export async function handleMessageReactionAdd(
         logger.logAndSend(
           `Parent post is not in the database or not published yet. ${messageLink}. Payments are not possible for reviewers in this case`,
           user,
-          "warn"
+          "warn",
         );
         await reaction.users.remove(user.id);
         return;
@@ -171,8 +171,8 @@ export async function handleMessageReactionAdd(
   }
 
   if (
-    isMessageFromMonitoredCategory(reaction.message.channel) ||
-    isMessageFromMonitoredChannel(reaction.message.channel)
+    isCategoryMonitoredForPosts(reaction.message.channel) ||
+    isChannelMonitoredForPosts(reaction.message.channel)
   ) {
     //TODO record the channel information of the message
     // console.log("channel", reaction.message.channel);
@@ -180,10 +180,10 @@ export async function handleMessageReactionAdd(
       const post = await fetchPost(reaction);
       if (!post || post.isDeleted) {
         await user.send(
-          `The post ${messageLink} you reacted to is not valid (e.g. no title / description).`
+          `The post ${messageLink} you reacted to is not valid (e.g. no title / description).`,
         );
         logger.log(
-          `Informed ${user.tag} about the post ${messageLink} not being valid.`
+          `Informed ${user.tag} about the post ${messageLink} not being valid.`,
         );
         await reaction.users.remove(user.id);
         return;
@@ -206,7 +206,7 @@ export async function handleMessageReactionAdd(
           dbUser,
           post,
           dbEmoji,
-          messageLink
+          messageLink,
         );
       } else {
         await processRegularUserPostReaction(
@@ -215,20 +215,20 @@ export async function handleMessageReactionAdd(
           dbUser,
           post,
           dbEmoji,
-          messageLink
+          messageLink,
         );
       }
     } catch (error) {
       logger.error("Error querying the database for the post:", error);
       return;
     }
-  } else if (isMessageFromOddJobsChannel(reaction.message.channel)) {
+  } else if (isChannelMonitoredForOddJobs(reaction.message.channel)) {
     if (!userHasRole(guild, user, config.ROLES_WITH_POWER)) {
       await user.send(
-        `You do not have permission to add reactions to odd jobs in ${messageLink}`
+        `You do not have permission to add reactions to odd jobs in ${messageLink}`,
       );
       logger.log(
-        `Informed ${user.tag} about not having permission to add reactions in ${messageLink}`
+        `Informed ${user.tag} about not having permission to add reactions in ${messageLink}`,
       );
       await reaction.users.remove(user.id);
       return;
@@ -237,15 +237,15 @@ export async function handleMessageReactionAdd(
     const oddJob = parseOddjob(
       reaction.message.content || "",
       reaction.message.mentions,
-      reaction.message.attachments
+      reaction.message.attachments,
     );
 
     if (!oddJob) {
       await user.send(
-        `The oddjob ${messageLink} you reacted to is not valid - not in the correct format. Please correct it before adding emojis`
+        `The oddjob ${messageLink} you reacted to is not valid - not in the correct format. Please correct it before adding emojis`,
       );
       logger.log(
-        `Informed ${user.tag} about the post ${messageLink} not being valid.`
+        `Informed ${user.tag} about the post ${messageLink} not being valid.`,
       );
       await reaction.users.remove(user.id);
       return;
@@ -258,14 +258,14 @@ export async function handleMessageReactionAdd(
 export async function processSuperuserOddJobReaction(
   reaction: MessageReaction,
   discordUser: DiscordUser,
-  messageLink: string
+  messageLink: string,
 ) {
   const oddjob = await fetchOddjob(reaction);
 
   if (!oddjob) {
     logger.logAndSend(
       `The oddjob ${messageLink} you reacted to is not valid - not in the correct format. Please correct it before adding emojis`,
-      discordUser
+      discordUser,
     );
     await reaction.users.remove(discordUser.id);
     return;
@@ -284,7 +284,7 @@ export async function processSuperuserOddJobReaction(
     if (oddjob.managerId !== dbUser.discordId) {
       logger.logAndSend(
         `You do not have permission to add payment reactions in ${messageLink}, only the assigned manager can do that.`,
-        discordUser
+        discordUser,
       );
       await reaction.users.remove(discordUser.id);
       return;
@@ -294,7 +294,7 @@ export async function processSuperuserOddJobReaction(
     const valid = await isPaymentReactionValid(
       reaction.message as Message,
       reaction,
-      messageLink
+      messageLink,
     );
     if (valid) {
       handleOddjobPaymentRule(
@@ -302,12 +302,12 @@ export async function processSuperuserOddJobReaction(
         dbUser.id,
         paymentRule,
         dbReaction.id,
-        messageLink
+        messageLink,
       );
     } else {
       logger.logAndSend(
         `You do not have permission to add payment reactions in ${messageLink}, that differ from the first payment unit and funding source.`,
-        discordUser
+        discordUser,
       );
       await reaction.users.remove(discordUser.id);
     }
@@ -320,31 +320,28 @@ export async function processRegularUserPostReaction(
   dbUser: User,
   post: (Post & { categories: Category[] }) | null,
   dbEmoji: Emoji,
-  messageLink: string
+  messageLink: string,
 ) {
   if (!post) {
     logger.log(
-      `Ignoring user reaction to post ${messageLink}, as it is not valid.`
+      `Ignoring user reaction to post ${messageLink}, as it is not valid.`,
     );
     return;
-  } else if (
-    reaction.emoji.name?.startsWith("WM") ||
-    reaction.emoji.name?.includes("WM")
-  ) {
+  } else if (reaction.emoji.name?.includes("WM")) {
     // Remove WM emojis if the user does not have the power role
     logger.logAndSend(
       `You do not have permission to add WagMedia emojis in ${messageLink}`,
-      discordUser
+      discordUser,
     );
     await reaction.users.remove(discordUser.id);
   } else if (isCountryFlag(reaction.emoji.name)) {
     logger.logAndSend(
       `You do not have permission to add country flag emojis in ${messageLink}`,
-      discordUser
+      discordUser,
     );
     await reaction.users.remove(discordUser.id);
   } else {
-    await upsertReaction(post, dbUser, dbEmoji);
+    await upsertPostReaction(post, dbUser, dbEmoji);
     logNewRegularUserEmojiReceived(reaction, discordUser, messageLink);
   }
 }
@@ -355,13 +352,14 @@ export async function processSuperuserPostReaction(
   dbUser: User,
   post: Post & { categories: Category[] } & { earnings: ContentEarnings[] },
   dbEmoji: Emoji,
-  messageLink: string
+  messageLink: string,
 ) {
   const postId = reaction.message.id;
-  const dbReaction = await upsertReaction(post, dbUser, dbEmoji);
+  const dbReaction = await upsertPostReaction(post, dbUser, dbEmoji);
   logNewEmojiReceived(reaction, discordUser, messageLink);
 
   // process possible rules for the emoji
+  // 0. Deleted Posts
   // 1. Category Rule
   // 2. Payment Rule
   // 3. Feature Rule
@@ -369,7 +367,7 @@ export async function processSuperuserPostReaction(
   if (post.isDeleted) {
     logger.logAndSend(
       `The post ${messageLink} you reacted to is not valid, skipping processing superuser reactions.`,
-      discordUser
+      discordUser,
     );
     await reaction.users.remove(discordUser.id);
     return;
@@ -390,7 +388,7 @@ export async function processSuperuserPostReaction(
       const isPostIncomplete = await handlePostIncomplete(
         post,
         discordUser,
-        reaction
+        reaction,
       );
 
       // if the post is complete, process the payment rule (=add payment and publish post)
@@ -398,7 +396,7 @@ export async function processSuperuserPostReaction(
         const valid = await isPaymentReactionValid(
           reaction.message as Message,
           reaction,
-          messageLink
+          messageLink,
         );
         if (valid) {
           await handlePostPaymentRule(
@@ -406,12 +404,12 @@ export async function processSuperuserPostReaction(
             dbUser.id,
             paymentRule,
             dbReaction.id,
-            messageLink
+            messageLink,
           );
         } else {
           logger.logAndSend(
             `You do not have permission to add payment reactions in ${messageLink}, that differ from the first payment unit and funding source.`,
-            discordUser
+            discordUser,
           );
           await reaction.users.remove(discordUser.id);
         }
@@ -448,7 +446,7 @@ export async function processSuperuserPostReaction(
 async function handlePostIncomplete(
   post: Post & { categories: Category[] },
   discordUser: DiscordUser,
-  reaction: MessageReaction
+  reaction: MessageReaction,
 ) {
   const postCategories = post.categories;
   const messageLink = `https://discord.com/channels/${reaction.message.guild?.id}/${reaction.message.channel.id}/${reaction.message.id}`;
@@ -457,7 +455,7 @@ async function handlePostIncomplete(
   if (post.isDeleted) {
     await logger.logAndSend(
       `The post ${messageLink} you reacted to is deleted and cannot be published. `,
-      discordUser
+      discordUser,
     );
     await reaction.users.remove(discordUser.id);
     return true;
@@ -466,10 +464,10 @@ async function handlePostIncomplete(
   // 0. make sure the post has a title and description
   if (!post.title || !post.content) {
     await discordUser.send(
-      `Before you can publish the post ${messageLink}, make sure it has a title and description.`
+      `Before you can publish the post ${messageLink}, make sure it has a title and description.`,
     );
     logger.log(
-      `Informed ${discordUser.tag} about the post not having a title or description when trying to publish.`
+      `Informed ${discordUser.tag} about the post not having a title or description when trying to publish.`,
     );
     await reaction.users.remove(discordUser.id);
     return true;
@@ -478,10 +476,10 @@ async function handlePostIncomplete(
   // 1. make sure the post has a category
   if (postCategories.length === 0) {
     await discordUser.send(
-      `Before you can publish the post ${messageLink}, make sure it has a category.`
+      `Before you can publish the post ${messageLink}, make sure it has a category.`,
     );
     logger.log(
-      `Informed ${discordUser.tag} about the post not having a category when trying to publish.`
+      `Informed ${discordUser.tag} about the post not having a category when trying to publish.`,
     );
     await reaction.users.remove(discordUser.id);
     return true;
@@ -489,7 +487,7 @@ async function handlePostIncomplete(
 
   // 2. make sure non anglo posts have a flag
   const isNonAnglo = postCategories.some((category) =>
-    category.name.includes("Non Anglo")
+    category.name.includes("Non Anglo"),
   );
 
   if (isNonAnglo) {
@@ -501,15 +499,15 @@ async function handlePostIncomplete(
 
     // check if the post has a flag
     const hasFlag = postReactions.some((reaction) =>
-      isCountryFlag(reaction.emoji?.id)
+      isCountryFlag(reaction.emoji?.id),
     );
 
     if (!hasFlag) {
       await discordUser.send(
-        `Before you can publish the post ${messageLink}, with non-anglo category, make sure it has a flag.`
+        `Before you can publish the post ${messageLink}, with non-anglo category, make sure it has a flag.`,
       );
       logger.log(
-        `Informed ${discordUser.tag} about the post not having a flag when trying to publish.`
+        `Informed ${discordUser.tag} about the post not having a flag when trying to publish.`,
       );
       await reaction.users.remove(discordUser.id);
       return true;
@@ -518,15 +516,15 @@ async function handlePostIncomplete(
 
   // 3. make sure translation posts have a non anglo category
   const isTranslation = postCategories.some((category) =>
-    category.name.includes("Translations")
+    category.name.includes("Translations"),
   );
 
   if (isTranslation && !isNonAnglo) {
     await discordUser.send(
-      `Before you can publish the post ${messageLink} with a translation category, make sure it also has a Non Anglo category.`
+      `Before you can publish the post ${messageLink} with a translation category, make sure it also has a Non Anglo category.`,
     );
     logger.log(
-      `Informed ${discordUser.tag} about a translated post not having a Non Anglo category when trying to publish.`
+      `Informed ${discordUser.tag} about a translated post not having a Non Anglo category when trying to publish.`,
     );
     await reaction.users.remove(discordUser.id);
     return true;
@@ -540,7 +538,7 @@ async function handleOddjobPaymentRule(
   userId: number,
   paymentRule: PaymentRule,
   reactionId: number,
-  messageLink
+  messageLink,
 ) {
   const amount = paymentRule.paymentAmount;
   const unit = paymentRule.paymentUnit;
@@ -588,13 +586,13 @@ async function handlePostPaymentRule(
   userId: number,
   paymentRule: PaymentRule,
   reactionId: number,
-  messageLink: string
+  messageLink: string,
 ) {
   const amount = paymentRule.paymentAmount;
   const unit = paymentRule.paymentUnit;
 
   const postTotalEarningsInUnit = post.earnings.find(
-    (e) => e.unit === unit
+    (e) => e.unit === unit,
   )?.totalAmount;
 
   if (!postTotalEarningsInUnit) {
@@ -647,7 +645,7 @@ async function handleCategoryRule(
   reaction: MessageReaction,
   postId: string,
   categoryRule: CategoryRule & { category: Category },
-  messageLink: string
+  messageLink: string,
 ) {
   // make sure the message is cached
   const message = reaction.message;
@@ -655,7 +653,7 @@ async function handleCategoryRule(
   // fetch all category emojis from the message
   const allCategories = await prisma.category.findMany();
   const messageCategoryCount = message.reactions.cache.filter((r) =>
-    allCategories.some((c) => c.emojiId === r.emoji.name)
+    allCategories.some((c) => c.emojiId === r.emoji.name),
   ).size;
 
   // if the count of the post's categories is 1, we can connect the post with the added
@@ -683,6 +681,6 @@ async function handleCategoryRule(
   }
 
   logger.log(
-    `[category] Category ${categoryRule.category.name} added to ${messageLink}.`
+    `[category] Category ${categoryRule.category.name} added to ${messageLink}.`,
   );
 }

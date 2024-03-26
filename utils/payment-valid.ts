@@ -16,7 +16,7 @@ import { findEmojiPaymentRule, findOrCreateEmoji } from "@/data/emoji";
 export async function isPaymentReactionValid(
   message: Message,
   reaction: MessageReaction,
-  messageLink?: string
+  messageLink?: string,
 ): Promise<boolean> {
   // Try to determine the type (Post or OddJob) based on the discordLink or other identifiers
   let entityType = ""; // 'post' or 'oddjob'
@@ -40,7 +40,7 @@ export async function isPaymentReactionValid(
     entityId = oddJob.id;
   } else {
     logger.warn(
-      `No associated Post or OddJob found for this message ${messageLink}`
+      `No associated Post or OddJob found for this message ${messageLink}`,
     );
     return false;
   }
@@ -65,7 +65,7 @@ export async function isPaymentReactionValid(
 
   if (!firstPayment || !firstPayment.reaction) {
     logger.info(
-      `Payment for ${messageLink} is valid because it is the first payment.`
+      `Payment for ${messageLink} is valid because it is the first payment.`,
     );
     return true;
   }

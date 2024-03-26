@@ -27,9 +27,15 @@ export const CHANNELS_ODD_JOBS = process.env.CHANNELS_ODD_JOBS
   ? JSON.parse(process.env.CHANNELS_ODD_JOBS)
   : [];
 
+export const CHANNELS_NEWSLETTER = process.env.CHANNELS_NEWSLETTER
+  ? JSON.parse(process.env.CHANNELS_NEWSLETTER)
+  : [];
+
 export const CHANNEL_LOG = process.env.CHANNEL_LOG
   ? process.env.CHANNEL_LOG.toString()
   : "";
+
+export const LOG_THE_LEVEL_IN_DISCORD = false;
 
 // Define the discord roles that have the power to trigger actions from EmojiActions
 export const ROLES_WITH_POWER = ["Director"];
@@ -37,6 +43,9 @@ export const ROLES_WITH_POWER = ["Director"];
 /////// Emoji + DB Settings ///////
 // the emoji that marks a post as featured
 export const FEATURE_EMOJI = "WMFEATURED";
+
+// the emoji that can publish a post without payment
+export const UNIVERSAL_PUBLISH_EMOJI = "WMZERODOTPUB";
 
 // the max file size for oddjob attachments
 export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -66,6 +75,8 @@ export const categoryEmojiMap: {
   Paraverse: "WMPARAVERSE",
 };
 
+export const NEWSLETTER_CATEGORY_NAME = "Newsletter";
+
 // the emojis that trigger payment actions, that in turn publish a post.
 
 // 🚨 The following values are only used for
@@ -76,6 +87,10 @@ export const categoryEmojiMap: {
 export const paymentEmojiMap: {
   [key in string]: { amount: number; currency: string; fundingSource: string };
 } = {
+  "0005WMDOT": { amount: 0.005, currency: "DOT", fundingSource: "OpenGov-365" },
+  "001WMDOT": { amount: 0.01, currency: "DOT", fundingSource: "OpenGov-365" },
+  "002WMDOT": { amount: 0.02, currency: "DOT", fundingSource: "OpenGov-365" },
+  "003WMDOT": { amount: 0.03, currency: "DOT", fundingSource: "OpenGov-365" },
   "005WMDOT": { amount: 0.05, currency: "DOT", fundingSource: "OpenGov-365" },
   "01WMDOT": { amount: 0.1, currency: "DOT", fundingSource: "OpenGov-365" },
   "02WMDOT": { amount: 0.2, currency: "DOT", fundingSource: "OpenGov-365" },
@@ -94,6 +109,10 @@ export const paymentEmojiMap: {
   "300WMDOT": { amount: 300, currency: "DOT", fundingSource: "OpenGov-365" },
   "500WMDOT": { amount: 500, currency: "DOT", fundingSource: "OpenGov-365" },
 
+  "01WMUSD": { amount: 0.1, currency: "USD", fundingSource: "OpenGov-365" },
+  "02WMUSD": { amount: 0.2, currency: "USD", fundingSource: "OpenGov-365" },
+  "03WMUSD": { amount: 0.3, currency: "USD", fundingSource: "OpenGov-365" },
+  "05WMUSD": { amount: 0.5, currency: "USD", fundingSource: "OpenGov-365" },
   "1WMUSD": { amount: 1, currency: "USD", fundingSource: "OpenGov-365" },
   "2WMUSD": { amount: 2, currency: "USD", fundingSource: "OpenGov-365" },
   "3WMUSD": { amount: 3, currency: "USD", fundingSource: "OpenGov-365" },

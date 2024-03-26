@@ -1,5 +1,3 @@
-import { logger } from "@/client";
-import { ensureFullEntities } from "@/handlers/util";
 import { PrismaClient } from "@prisma/client";
 import {
   Message,
@@ -10,7 +8,7 @@ import {
 const prisma = new PrismaClient();
 
 export const findOrCreateUser = async (
-  message: Message<boolean> | PartialMessage
+  message: Message<boolean> | PartialMessage,
 ) => {
   if (!message.author) {
     throw new Error("Message must have a member");

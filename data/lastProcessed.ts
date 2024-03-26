@@ -17,7 +17,7 @@ export async function getLastProcessedTimestamp() {
 
 export async function upsertLastProcessedPost(
   channelId: string,
-  postId: string
+  postId: string,
 ) {
   await prisma.lastProcessedPost.upsert({
     where: {

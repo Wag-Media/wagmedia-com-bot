@@ -1,5 +1,6 @@
 import { wrapUrlsInMessage } from "@/handlers/log-utils";
 import { Client, PermissionsBitField, TextChannel, User } from "discord.js";
+import * as config from "@/config";
 
 export class DiscordLogger {
   private discordClient: Client;
@@ -35,14 +36,18 @@ export class DiscordLogger {
     // Combine all messages into a single string
     const combinedMessage = messages
       .map((message) =>
-        typeof message === "object" ? JSON.stringify(message) : message
+        typeof message === "object" ? JSON.stringify(message) : message,
       )
       .join("");
 
     try {
       const channel = (await this.discordClient.channels.fetch(
-        this.channelId
+        this.channelId,
       )) as TextChannel;
+
+      const logLevelPrefix = config.LOG_THE_LEVEL_IN_DISCORD
+        ? `[${level.toUpperCase()}]`
+        : "";
 
       if (this.discordClient.user && channel) {
         const permissions = channel.permissionsFor(this.discordClient.user);
@@ -50,10 +55,10 @@ export class DiscordLogger {
           permissions &&
           permissions.has(PermissionsBitField.Flags.SendMessages)
         ) {
-          channel.send(`[${level}]${combinedMessage}`);
+          channel.send(`${logLevelPrefix}${combinedMessage}`);
         } else {
           console.warn(
-            `DiscordLogger: Missing 'SEND_MESSAGES' permission in channel ${this.channelId}.`
+            `DiscordLogger: Missing 'SEND_MESSAGES' permission in channel ${this.channelId}.`,
           );
         }
       } else {
@@ -63,7 +68,7 @@ export class DiscordLogger {
       // Handle specific DiscordAPIError for missing access
       if (error.code === 50001) {
         console.error(
-          `DiscordLogger Error: Missing access to the channel (ID: ${this.channelId}).`
+          `DiscordLogger Error: Missing access to the channel (ID: ${this.channelId}).`,
         );
       } else {
         console.error(`DiscordLogger Error: ${error}`);
@@ -95,7 +100,7 @@ export class DiscordLogger {
     const logFunction = this[level || "log"];
 
     user.send(message).catch(console.error);
-    logFunction.call(this, `Informed user ${user.tag}: ${message}`);
+    logFunction.call(this, `[info] Informed user ${user.tag}: ${message}`);
   }
 }
 

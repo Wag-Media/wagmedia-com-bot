@@ -8,9 +8,13 @@ import {
   TextChannel,
   Channel,
   ThreadChannel,
+  Guild,
 } from "discord.js";
-import * as config from "../config.js";
-import { logger } from "@/client.js";
+import * as config from "@/config";
+import { discordClient, logger } from "@/client";
+import { findEmojiCategoryRule, findEmojiPaymentRule } from "@/data/emoji";
+import { Emoji } from "@prisma/client";
+import { emojiType } from "@/types";
 
 /**
  * Just a simple delay function.
@@ -44,70 +48,122 @@ export function slugify(text: string) {
  * @returns
  */
 export function shouldIgnoreReaction(
-  reaction: MessageReaction | PartialMessageReaction
+  reaction: MessageReaction | PartialMessageReaction,
 ): boolean {
   return shouldIgnoreMessage(reaction.message);
 }
 
 /**
+ *
+ * TODO can this be removed?
  * Check if a message should be ignored. Ignore:
  * - not from a monitored channel or category
  * - bot reactions
  * - DMs
- * - from all other channels
+ * - from not text or thread channels
  * @param message
  * @param user
  * @returns
  */
-export function shouldIgnoreMessage(
-  message: Message<boolean> | PartialMessage
-) {
+export function shouldIgnoreMessage(message: Message | PartialMessage) {
   const user = message.author;
   // Ignore DMs
-  if (!message.guild) return true;
+  if (!message.guild && !message.guildId) return true;
 
-  if (user?.bot || message.author?.bot) {
-    console.log("message is from bot");
-    console.log("user.bot", user?.bot);
-    console.log("message.author.bot", message.author?.bot);
-  }
-  console.log("message ");
+  // if (user?.bot || message.author?.bot) {
+  //   console.log("message is from bot");
+  //   console.log("user.bot", user?.bot);
+  //   console.log("message.author.bot", message.author?.bot);
+  // }
 
-  // Ignore bot reactions
-  if (!user || user.bot) return true;
+  // Ignore bot messages or reactions to bot messages
+  if (!user || user.bot || message.author?.bot) return true;
 
-  // Ignore bot messages
-  if (message.author?.bot) return true;
-
-  // Ignore reactions from other channels
+  // Ignore reactions from non text or thread channels
   const channel = message.channel;
-  if (!(channel instanceof TextChannel || channel instanceof ThreadChannel))
-    return true;
 
-  if (
-    !isMessageFromMonitoredChannel(channel) &&
-    !isMessageFromOddJobsChannel(channel) &&
-    !isMessageFromMonitoredCategory(channel) &&
-    !isParentMessageFromMonitoredCategoryOrChannel(message)
-  )
+  if (!(channel instanceof TextChannel || channel instanceof ThreadChannel))
     return true;
 
   return false;
 }
 
-export async function ensureFullMessage(
-  message: Message<boolean> | PartialMessage
-): Promise<Message> {
-  if (message.partial) {
-    try {
-      message = (await message.fetch()) as Message;
-    } catch (error) {
-      logger.error("Something went wrong when fetching the message:", error);
-      throw new Error("Something went wrong when fetching the message:");
+/**
+ *
+ * @param message classify
+ * @returns
+ */
+export function classifyMessage(message: Message | PartialMessage) {
+  let parentChannel, parentId;
+  let messageChannelType: "post" | "oddjob" | undefined;
+
+  if (message.channel.isThread()) {
+    parentChannel = message.channel.parent;
+    parentId = message.channelId;
+  }
+
+  if (parentId) {
+    if (
+      isCategoryMonitoredForPosts(parentChannel) ||
+      isChannelMonitoredForPosts(parentChannel)
+    ) {
+      messageChannelType = "post";
+    }
+  } else {
+    if (isChannelMonitoredForPosts(message.channel)) {
+      messageChannelType = "post";
+    } else if (isChannelMonitoredForOddJobs(message.channel)) {
+      messageChannelType = "oddjob";
     }
   }
 
-  return message;
+  return {
+    messageChannelType,
+    parentId,
+  };
+}
+
+export async function classifyReaction(dbEmoji: Emoji): Promise<emojiType> {
+  // 1. Check for Feature Rule
+  if (dbEmoji.name === config.FEATURE_EMOJI) {
+    return "feature";
+  }
+
+  // 2. Check for Category Rule
+  const categoryRule = await findEmojiCategoryRule(dbEmoji.id);
+  if (categoryRule) {
+    return "category";
+  }
+
+  // 3. Check for Payment Rule
+  const paymentRule = await findEmojiPaymentRule(dbEmoji.id);
+  if (paymentRule) {
+    return "payment";
+  }
+
+  return "regular";
+}
+
+export async function ensureFullMessage(
+  message: Message<boolean> | PartialMessage,
+): Promise<{ message: Message; wasPartial: boolean }> {
+  let wasPartial = false;
+  if (message.partial) {
+    wasPartial = true;
+    try {
+      message = (await message.fetch()) as Message;
+    } catch (error) {
+      logger.error(
+        "Something went wrong when fetching the partial message:",
+        error,
+      );
+      throw new Error(
+        "Something went wrong when fetching the partial message:",
+      );
+    }
+  }
+
+  return { message, wasPartial };
 }
 
 /**
@@ -118,11 +174,18 @@ export async function ensureFullMessage(
  */
 export async function ensureFullEntities(
   reaction: MessageReaction | PartialMessageReaction | null,
-  user: DiscordUser | PartialUser | null
+  user: DiscordUser | PartialUser | null,
 ): Promise<{
   reaction: MessageReaction;
   user: DiscordUser;
+  wasPartial: { reaction: boolean; message: boolean; user: boolean };
 }> {
+  let wasPartial = {
+    reaction: false,
+    message: false,
+    user: false,
+  };
+
   if (!reaction) {
     throw new Error("Reaction is null");
   }
@@ -130,16 +193,8 @@ export async function ensureFullEntities(
     throw new Error("User is null");
   }
 
-  if (reaction.message.partial) {
-    try {
-      await reaction.message.fetch();
-    } catch (error) {
-      logger.error("Something went wrong when fetching the message:", error);
-      throw new Error("Something went wrong when fetching the message:");
-    }
-  }
-
   if (reaction.partial) {
+    wasPartial.reaction = true;
     try {
       reaction = (await reaction.fetch()) as MessageReaction;
     } catch (error) {
@@ -148,7 +203,18 @@ export async function ensureFullEntities(
     }
   }
 
+  if (reaction.message.partial) {
+    wasPartial.message = true;
+    try {
+      reaction.message = await reaction.message.fetch();
+    } catch (error) {
+      logger.error("Something went wrong when fetching the message:", error);
+      throw new Error("Something went wrong when fetching the message:");
+    }
+  }
+
   if (user.partial) {
+    wasPartial.user = true;
     try {
       user = (await user.fetch()) as DiscordUser;
     } catch (error) {
@@ -160,30 +226,35 @@ export async function ensureFullEntities(
   return {
     reaction: reaction as MessageReaction,
     user: user as DiscordUser,
+    wasPartial,
   };
 }
 
-export const isMessageFromMonitoredChannel = (channel: Channel) =>
+export const isChannelMonitoredForPosts = (channel: Channel) =>
   config.CHANNELS_TO_MONITOR.includes(channel.id);
 
-export const isMessageFromOddJobsChannel = (channel: Channel) =>
+export const isChannelMonitoredForOddJobs = (channel: Channel) =>
   config.CHANNELS_ODD_JOBS.includes(channel.id);
 
-export const isMessageFromMonitoredCategory = (channel: Channel) =>
+export const isCategoryMonitoredForPosts = (channel: Channel) =>
   channel instanceof TextChannel &&
   channel.parentId &&
   config.CATEGORIES_TO_MONITOR.includes(channel.parentId);
 
+export const isChannelMonitoredForNewsletter = (channel: Channel) =>
+  channel instanceof TextChannel &&
+  config.CHANNELS_NEWSLETTER.includes(channel.id);
+
 export const isParentMessageFromMonitoredCategoryOrChannel = (
-  message: Message<boolean> | PartialMessage
+  message: Message<boolean> | PartialMessage,
 ) => {
   if (message.channel.isThread()) {
     // Access thread details
     const parent = message.channel.parent;
     return (
       parent &&
-      (isMessageFromMonitoredChannel(parent) ||
-        isMessageFromMonitoredCategory(parent))
+      (isChannelMonitoredForPosts(parent) ||
+        isCategoryMonitoredForPosts(parent))
     );
   }
   return false;
@@ -199,4 +270,18 @@ export function parseDiscordUserId(message: string): string | null {
   const match = message.match(mentionRegex);
 
   return match ? match[1] : null;
+}
+
+export async function getGuildFromMessage(
+  message: Message | PartialMessage,
+): Promise<Guild> {
+  if (!message.guildId) {
+    throw new Error("Message must have a guildId");
+  }
+  // Set the guild from the reaction message, which might involve fetching it if not readily available
+  const guild =
+    message.guild ||
+    (await discordClient.guilds.fetch(message.guildId as string));
+
+  return guild;
 }

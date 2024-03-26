@@ -111,6 +111,34 @@ After you made changes to the schema in `prisma/schema.prisma`
 
 `npm run start`
 
+### seeding the database
+
+To seed the db or when you changed something in the config (i.e. added new
+payment emojis to monitor), you can rerun the seed command:
+
+1. make sure you have the correct db connection string in your `.env` (e.g. if
+   you want to update the staging db, make sure that connection string is in
+   `DATABASE_URL` in your `.env`)
+2. run `npx prisma db seed` which will execute `prisma/seed.ts` to upsert
+   emojis, category rules and payment rules
+
+Example:
+
+You want to add a new monitoring of a payment emoji because the dot value 10x
+ed. You want to add a new emoji which represents 0.01 DOT.
+
+1. look into `config.ts` and see how emojis are setup there in `paymentEmojiMap`
+   object
+2. add a new line to the `paymentEmojiMap` object making sure the key is set to
+   the name the emoji has in discord :
+
+```
+"001WMDOT": { amount: 0.005, currency: "DOT", fundingSource: "OpenGov-365" },
+```
+
+3. make sure the db connection string is correct
+4. `npx prisma db seed` to upsert the new emoji
+
 ## Production Setup (only for information)
 
 - The bot can run on any server you want but the first installation will run on
