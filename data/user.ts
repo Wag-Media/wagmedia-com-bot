@@ -40,17 +40,17 @@ export const findOrCreateUserFromDiscordUser = async (user: DiscordUser) => {
     update: {
       // Update the avatar every time the user posts something
       avatar: user?.displayAvatarURL(),
-      avatarDecoration: user?.avatarDecoration,
-      banner: user?.banner,
-      accentColor: user?.accentColor,
+      avatarDecoration: user.avatarDecorationURL(),
+      banner: user?.bannerURL(),
+      accentColor: user?.hexAccentColor,
       name: user?.displayName,
     },
     create: {
       discordId: user.id,
       avatar: user?.displayAvatarURL(),
-      avatarDecoration: user?.avatarDecoration,
-      banner: user?.banner,
-      accentColor: user?.accentColor,
+      avatarDecoration: user.avatarDecorationURL(),
+      banner: user?.bannerURL(),
+      accentColor: user?.hexAccentColor,
       name: user?.displayName,
     },
   });

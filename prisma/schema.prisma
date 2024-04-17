@@ -90,7 +90,7 @@ model User {
   avatar           String?
   avatarDecoration String?
   banner           String?
-  accentColor      Int?
+  accentColor      String?
   bio              String?
   name             String?
   Payment          Payment[]
