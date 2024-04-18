@@ -33,19 +33,27 @@ export const findOrCreateUser = async (
 };
 
 export const findOrCreateUserFromDiscordUser = async (user: DiscordUser) => {
+  const fullUser = await user.fetch(true);
+
   const dbUser = await prisma.user.upsert({
     where: {
-      discordId: user.id,
+      discordId: fullUser.id,
     },
     update: {
-      // Update the avatar every time the user posts something
-      avatar: user?.displayAvatarURL(),
-      name: user?.displayName,
+      // Update the avatar every time the fullUser posts something
+      avatar: fullUser?.displayAvatarURL(),
+      avatarDecoration: fullUser.avatarDecorationURL(),
+      banner: fullUser?.bannerURL(),
+      accentColor: fullUser?.hexAccentColor,
+      name: fullUser?.displayName,
     },
     create: {
-      discordId: user.id,
-      avatar: user?.displayAvatarURL(),
-      name: user?.displayName,
+      discordId: fullUser.id,
+      avatar: fullUser?.displayAvatarURL(),
+      avatarDecoration: fullUser.avatarDecorationURL(),
+      banner: fullUser?.bannerURL(),
+      accentColor: fullUser?.hexAccentColor,
+      name: fullUser?.displayName,
     },
   });
   return dbUser;
