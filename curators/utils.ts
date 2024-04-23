@@ -22,7 +22,6 @@ import {
 } from "@/data/emoji";
 import { PaymentRule } from "@prisma/client";
 import { findFirstPayment } from "@/data/payment";
-import { isChannelMonitoredForNewsletter } from "../handlers/util";
 
 export function determineContentType(message: Message | PartialMessage): {
   contentType: ContentType;

@@ -49,6 +49,8 @@ export const findOrCreatePost = async (
 
   const messageLink = `https://discord.com/channels/${message.guild?.id}/${message.channel.id}/${message.id}`;
 
+  const contentType = determinePostType(messageLink);
+
   const user = await findOrCreateUser(message);
 
   // Ensure all tags exist
@@ -79,6 +81,7 @@ export const findOrCreatePost = async (
         set: [], // Disconnect any existing tags
         connect: tagInstances.map((tag) => ({ id: tag.id })), // Connect new tags
       },
+      contentType,
     },
     create: {
       id: message.id,
@@ -94,6 +97,7 @@ export const findOrCreatePost = async (
       isPublished: false,
       isDeleted: false,
       isFeatured: false,
+      contentType,
     },
     include: {
       categories: true,
@@ -573,4 +577,23 @@ export async function postHasCategory(postId: string, categoryName: string) {
   }
 
   return post.categories.some((category) => category.name === categoryName);
+}
+
+export function determinePostType(
+  messageLink: string,
+): "article" | "news" | undefined {
+  const channelNewsIds = JSON.parse(process.env.CHANNELS_NEWS || "[]");
+  const channelArticleIds = JSON.parse(process.env.CHANNELS_ARTICLES || "[]");
+
+  for (const channelId of channelNewsIds) {
+    if (messageLink.includes(channelId)) {
+      return "news";
+    }
+  }
+
+  for (const channelId of channelArticleIds) {
+    if (messageLink.includes(channelId)) {
+      return "article";
+    }
+  }
 }

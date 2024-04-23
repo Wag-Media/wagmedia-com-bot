@@ -7,6 +7,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ContentType {
+  news
+  article
+}
+
 model Post {
   id      String @id
   title   String
@@ -36,7 +41,8 @@ model Post {
 
   parentPostId   String? // Foreign key for Post
   // Payments associated with threads under this post
-  threadPayments Payment[] @relation(name: "PaymentThreadParent")
+  threadPayments Payment[]    @relation(name: "PaymentThreadParent")
+  contentType    ContentType? // Nullable field for post type
 }
 
 model OddJob {
