@@ -23,4 +23,15 @@ async function main() {
 `;
 
   console.log("Posts with multiple contentEarnings:", posts);
+
+  const postIds = posts.map((post) => post.id);
+  const duplicateEarnings = await prisma.contentEarnings.findMany({
+    where: {
+      postId: {
+        in: postIds,
+      },
+    },
+  });
+
+  console.log("Duplicate contentEarnings:", duplicateEarnings);
 }
