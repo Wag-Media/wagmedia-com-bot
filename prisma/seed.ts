@@ -1,7 +1,5 @@
 import { PrismaClient } from "@prisma/client";
 import * as config from "../config";
-import { logger } from "../client";
-
 const prisma = new PrismaClient();
 
 async function main() {
@@ -47,7 +45,7 @@ async function main() {
         },
       });
     } catch (e) {
-      logger.log("error seeding category", categoryName, e);
+      console.log("error seeding category", categoryName, e);
     }
   }
 
@@ -83,14 +81,14 @@ async function main() {
         },
       });
     } catch (e) {
-      logger.log("error seeding payment", paymentEmojiName, e);
+      console.log("error seeding payment", paymentEmojiName, e);
     }
   }
 }
 
 main()
   .catch((e) => {
-    logger.log("error seeding the db", e);
+    console.log("error seeding the db", e);
     process.exit(1);
   })
   .finally(async () => {
