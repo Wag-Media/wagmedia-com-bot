@@ -2,8 +2,7 @@ import { MessageReaction, User as DiscordUser, Message } from "discord.js";
 import { ReactionHandlerFactory } from "../handlers/ReactionHandlerFactory";
 import { ReactionTracker } from "@/reaction-tracker";
 import { ReactionDiscrepancyResolver } from "./ReactionDiscrepancyResolver";
-import { logger } from "@/client";
-import { classifyMessage, shouldIgnoreMessage } from "@/handlers/util";
+import { shouldIgnoreMessage } from "@/handlers/util";
 import { determineContentType } from "./utils";
 
 export class ReactionCurator {
@@ -34,6 +33,9 @@ export class ReactionCurator {
       this.isResolvingDiscrepancies = false;
 
       if (hadDiscrepancies) {
+        console.log(
+          `discrepancies were handled for reaction ${reaction.emoji.name || reaction.emoji.id}, returning`,
+        );
         return;
       }
     }
@@ -79,34 +81,5 @@ export class ReactionCurator {
     } catch (error) {
       console.error("Error handling reaction:", error);
     }
-
-    // const message = reaction.message as Message;
-
-    // // Only check for discrepancies if not currently resolving them
-    // if (!this.isResolvingDiscrepancies) {
-    //   this.isResolvingDiscrepancies = true;
-    //   const hadDiscrepancies =
-    //     await ReactionDiscrepancyResolver.checkAndResolve(
-    //       message,
-    //       "reactionRemove"
-    //     );
-    //   this.isResolvingDiscrepancies = false;
-
-    //   if (hadDiscrepancies) {
-    //     console.log("discrepancies were handled, returning");
-    //     return;
-    //   }
-    // }
-
-    // try {
-    //   const handler = await ReactionHandlerFactory.getHandler(
-    //     reaction,
-    //     user,
-    //     "reactionRemove"
-    //   );
-    //   await handler.handle(reaction, user);
-    // } catch (error) {
-    //   logger.error("Error handling reaction:", error.message);
-    // }
   }
 }

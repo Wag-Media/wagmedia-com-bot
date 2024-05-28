@@ -185,7 +185,6 @@ export class PostPaymentReactionAddHandler extends BasePaymentReactionAddHandler
 
     // 1.5 make sure the post does not have the UPE emoji
     const postReactions = await getPostReactions(reaction.message.id);
-    console.log("postReactions", postReactions);
     const hasUPE = postReactions.some((reaction) =>
       reaction.emoji?.name?.includes(config.UNIVERSAL_PUBLISH_EMOJI),
     );
