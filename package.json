@@ -26,7 +26,7 @@
   "license": "ISC",
   "dependencies": {
     "@discord-fp/djs": "4.0.1",
-    "@prisma/client": "^5.9.1",
+    "@prisma/client": "^5.20.0",
     "@typescript-eslint/eslint-plugin": "^7.3.1",
     "@typescript-eslint/parser": "^7.3.1",
     "axios": "^1.6.7",
@@ -48,9 +48,10 @@
     "@types/jest": "^29.5.11",
     "@types/node": "^20.10.7",
     "corde": "^4.8.0",
-    "prisma": "^5.9.1",
+    "prisma": "^5.20.0",
     "simple-git-hooks": "^2.11.0",
     "ts-jest": "^29.1.1",
     "tsconfig-paths-jest": "^0.0.1"
-  }
+  },
+  "packageManager": "pnpm@8.10.5+sha1.4370a069f21873a0ad83c785b8048ed8caf6e6e9"
 }
