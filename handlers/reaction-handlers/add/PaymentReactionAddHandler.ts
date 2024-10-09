@@ -32,6 +32,11 @@ abstract class BasePaymentReactionAddHandler extends BaseReactionAddHandler {
     if (!this.paymentRule) {
       throw new Error(`Payment rule for ${this.messageLink} not found.`);
     }
+    if (this.paymentRule.fundingSource !== "OpenGov-1130") {
+      throw new Error(
+        `Payment rule for ${this.messageLink} has outdated funding source: ${this.paymentRule.fundingSource}.`,
+      );
+    }
 
     await this.isPaymentReactionValid(reaction, user);
   }

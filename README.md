@@ -111,7 +111,7 @@ After you made changes to the schema in `prisma/schema.prisma`
 
 `npm run start`
 
-### seeding the database
+### Seeding the database
 
 To seed the db or when you changed something in the config (i.e. added new
 payment emojis to monitor), you can rerun the seed command:

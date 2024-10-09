@@ -87,6 +87,7 @@ export const NEWSLETTER_CATEGORY_NAME = "Newsletter";
 export const paymentEmojiMap: {
   [key in string]: { amount: number; currency: string; fundingSource: string };
 } = {
+  // funding source: OpenGov-365
   "0005WMDOT": { amount: 0.005, currency: "DOT", fundingSource: "OpenGov-365" },
   "001WMDOT": { amount: 0.01, currency: "DOT", fundingSource: "OpenGov-365" },
   "002WMDOT": { amount: 0.02, currency: "DOT", fundingSource: "OpenGov-365" },
@@ -133,5 +134,74 @@ export const paymentEmojiMap: {
     amount: 10000,
     currency: "USD",
     fundingSource: "OpenGov-365",
+  },
+
+  // funding source: OpenGov-1130
+  "0005WMDOTU": {
+    amount: 0.005,
+    currency: "DOT",
+    fundingSource: "OpenGov-1130",
+  },
+  "001WMDOTU": { amount: 0.01, currency: "DOT", fundingSource: "OpenGov-1130" },
+  "002WMDOTU": { amount: 0.02, currency: "DOT", fundingSource: "OpenGov-1130" },
+  "003WMDOTU": { amount: 0.03, currency: "DOT", fundingSource: "OpenGov-1130" },
+  "005WMDOTU": { amount: 0.05, currency: "DOT", fundingSource: "OpenGov-1130" },
+  "01WMDOTU": { amount: 0.1, currency: "DOT", fundingSource: "OpenGov-1130" },
+  "02WMDOTU": { amount: 0.2, currency: "DOT", fundingSource: "OpenGov-1130" },
+  "03WMDOTU": { amount: 0.3, currency: "DOT", fundingSource: "OpenGov-1130" },
+  "05WMDOTU": { amount: 0.5, currency: "DOT", fundingSource: "OpenGov-1130" },
+  "1WMDOTU": { amount: 1, currency: "DOT", fundingSource: "OpenGov-1130" },
+  "2WMDOTU": { amount: 2, currency: "DOT", fundingSource: "OpenGov-1130" },
+  "3WMDOTU": { amount: 3, currency: "DOT", fundingSource: "OpenGov-1130" },
+  "5WMDOTU": { amount: 5, currency: "DOT", fundingSource: "OpenGov-1130" },
+  "10WMDOTU": { amount: 10, currency: "DOT", fundingSource: "OpenGov-1130" },
+  "20WMDOTU": { amount: 20, currency: "DOT", fundingSource: "OpenGov-1130" },
+  "30WMDOTU": { amount: 30, currency: "DOT", fundingSource: "OpenGov-1130" },
+  "50WMDOTU": { amount: 50, currency: "DOT", fundingSource: "OpenGov-1130" },
+  "100WMDOTU": { amount: 100, currency: "DOT", fundingSource: "OpenGov-1130" },
+  "200WMDOTU": { amount: 200, currency: "DOT", fundingSource: "OpenGov-1130" },
+  "300WMDOTU": { amount: 300, currency: "DOT", fundingSource: "OpenGov-1130" },
+  "500WMDOTU": { amount: 500, currency: "DOT", fundingSource: "OpenGov-1130" },
+
+  "01WMUSDC": { amount: 0.1, currency: "USD", fundingSource: "OpenGov-1130" },
+  "02WMUSDC": { amount: 0.2, currency: "USD", fundingSource: "OpenGov-1130" },
+  "03WMUSDC": { amount: 0.3, currency: "USD", fundingSource: "OpenGov-1130" },
+  "05WMUSDC": { amount: 0.5, currency: "USD", fundingSource: "OpenGov-1130" },
+  "1WMUSDC": { amount: 1, currency: "USD", fundingSource: "OpenGov-1130" },
+  "2WMUSDC": { amount: 2, currency: "USD", fundingSource: "OpenGov-1130" },
+  "3WMUSDC": { amount: 3, currency: "USD", fundingSource: "OpenGov-1130" },
+  "5WMUSDC": { amount: 5, currency: "USD", fundingSource: "OpenGov-1130" },
+  "10WMUSDC": { amount: 10, currency: "USD", fundingSource: "OpenGov-1130" },
+  "20WMUSDC": { amount: 20, currency: "USD", fundingSource: "OpenGov-1130" },
+  "30WMUSDC": { amount: 30, currency: "USD", fundingSource: "OpenGov-1130" },
+  "50WMUSDC": { amount: 50, currency: "USD", fundingSource: "OpenGov-1130" },
+  "100WMUSDC": { amount: 100, currency: "USD", fundingSource: "OpenGov-1130" },
+  "200WMUSDC": { amount: 200, currency: "USD", fundingSource: "OpenGov-1130" },
+  "300WMUSDC": { amount: 300, currency: "USD", fundingSource: "OpenGov-1130" },
+  "500WMUSDC": { amount: 500, currency: "USD", fundingSource: "OpenGov-1130" },
+  "1000WMUSDC": {
+    amount: 1000,
+    currency: "USD",
+    fundingSource: "OpenGov-1130",
+  },
+  "2000WMUSDC": {
+    amount: 2000,
+    currency: "USD",
+    fundingSource: "OpenGov-1130",
+  },
+  "3000WMUSDC": {
+    amount: 3000,
+    currency: "USD",
+    fundingSource: "OpenGov-1130",
+  },
+  "5000WMUSDC": {
+    amount: 5000,
+    currency: "USD",
+    fundingSource: "OpenGov-1130",
+  },
+  "10000WMUSDC": {
+    amount: 10000,
+    currency: "USD",
+    fundingSource: "OpenGov-1130",
   },
 };
