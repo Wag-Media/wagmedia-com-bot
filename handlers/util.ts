@@ -194,6 +194,7 @@ export async function ensureFullEntities(
   }
 
   if (reaction.partial) {
+    console.log("reaction was partial");
     wasPartial.reaction = true;
     try {
       reaction = (await reaction.fetch()) as MessageReaction;
@@ -204,6 +205,7 @@ export async function ensureFullEntities(
   }
 
   if (reaction.message.partial) {
+    console.log("reaction.message was partial");
     wasPartial.message = true;
     try {
       reaction.message = await reaction.message.fetch();
@@ -214,6 +216,7 @@ export async function ensureFullEntities(
   }
 
   if (user.partial) {
+    console.log("user was partial");
     wasPartial.user = true;
     try {
       user = (await user.fetch()) as DiscordUser;
