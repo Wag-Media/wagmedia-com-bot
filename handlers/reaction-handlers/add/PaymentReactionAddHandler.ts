@@ -32,6 +32,11 @@ abstract class BasePaymentReactionAddHandler extends BaseReactionAddHandler {
     if (!this.paymentRule) {
       throw new Error(`Payment rule for ${this.messageLink} not found.`);
     }
+    if (this.paymentRule.fundingSource !== "OpenGov-1130") {
+      throw new Error(
+        `Payment rule for ${this.messageLink} has outdated funding source: ${this.paymentRule.fundingSource}.`,
+      );
+    }
 
     await this.isPaymentReactionValid(reaction, user);
   }
@@ -185,7 +190,6 @@ export class PostPaymentReactionAddHandler extends BasePaymentReactionAddHandler
 
     // 1.5 make sure the post does not have the UPE emoji
     const postReactions = await getPostReactions(reaction.message.id);
-    console.log("postReactions", postReactions);
     const hasUPE = postReactions.some((reaction) =>
       reaction.emoji?.name?.includes(config.UNIVERSAL_PUBLISH_EMOJI),
     );
