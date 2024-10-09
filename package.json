@@ -52,5 +52,6 @@
     "simple-git-hooks": "^2.11.0",
     "ts-jest": "^29.1.1",
     "tsconfig-paths-jest": "^0.0.1"
-  }
+  },
+  "packageManager": "pnpm@8.10.5+sha1.4370a069f21873a0ad83c785b8048ed8caf6e6e9"
 }
