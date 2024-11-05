@@ -143,6 +143,8 @@ export class MessageCurator {
 
       const oldOddJobHasEarnings = await oddJobHasEarnings(oldFullMessage.id);
 
+      console.warn("oldOddJobHasEarnings", oldOddJobHasEarnings);
+
       if (oldOddJobHasEarnings) {
         logger.logAndSend(
           `The oddjob ${this.messageLink} is already paid and cannot be edited.`,

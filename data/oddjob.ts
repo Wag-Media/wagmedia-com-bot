@@ -112,7 +112,7 @@ export async function oddJobHasEarnings(oddJobId: string): Promise<boolean> {
     where: { oddJobId },
   });
 
-  return earnings.length > 0;
+  return earnings.length > 0 && earnings[0].totalAmount > 0;
 }
 
 export async function getOddjobWithEarnings(
