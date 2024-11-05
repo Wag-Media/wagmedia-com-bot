@@ -42,6 +42,7 @@ export class ReactionHandlerFactory {
     const { contentType } = determineContentType(message);
     // and the user role (e.g., poweruser, regularuser)
     const userRole = await determineUserRole(message, user);
+
     // and the emoji type
     const emojiType: EmojiType = await determineEmojiType(reaction);
 
@@ -52,7 +53,7 @@ export class ReactionHandlerFactory {
     }
 
     console.log(
-      `ReactionHandlerFactory.getHandler: contentType=${contentType}, userRole=${userRole}, emojiType=${emojiType}, eventType=${eventType}`,
+      `ReactionHandlerFactory.getHandler: contentType=${contentType}, userRole=${userRole}, emojiType=${emojiType}, eventType=${eventType}, user=${user.username}`,
     );
 
     // select the appropriate handler based on

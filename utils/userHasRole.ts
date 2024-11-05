@@ -1,14 +1,14 @@
 import { Guild, User } from "discord.js";
 
-export const userHasRole = (
+export const userHasRole = async (
   guild: Guild,
   user: User,
   roles: string[],
-): boolean => {
+): Promise<boolean> => {
   if (!guild) return false; // Ignore DMs
 
   // Get the member object from the user ID
-  const member = guild.members.cache.get(user.id);
+  const member = await guild.members.fetch(user.id);
 
   // Check if the member object is found
   if (!member) return false;

@@ -68,7 +68,7 @@ export async function determineUserRole(
 ): Promise<UserRole> {
   const guild = await getGuildFromMessage(message);
 
-  if (userHasRole(guild, user, config.ROLES_WITH_POWER)) {
+  if (await userHasRole(guild, user, config.ROLES_WITH_POWER)) {
     return "superuser";
   }
 
