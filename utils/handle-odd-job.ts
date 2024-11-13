@@ -202,6 +202,9 @@ function parsePayment(paymentString: string): {
     .replace(/^\$/, "USD ")
     .replace(/\$$/, " USD");
 
+  // Remove commas used as thousand separators
+  normalizedPaymentString = normalizedPaymentString.replace(/,/g, "");
+
   // read accepted units from config
   const acceptedUnits = findUniqueUnitsFromConfig();
 
