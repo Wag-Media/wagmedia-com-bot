@@ -199,7 +199,8 @@ export const paymentEmojiMap: {
     currency: "USD",
     fundingSource: "OpenGov-1130",
   },
-  "10000WMUSDC": {
+  // Warning 🔥 the following deviates from the WMUSDC naming convention, an "M" is missing
+  "10000WUSDC": {
     amount: 10000,
     currency: "USD",
     fundingSource: "OpenGov-1130",
