@@ -2,6 +2,7 @@ import { MessageReaction, User as DiscordUser } from "discord.js";
 import { BaseReactionHandler } from "../_BaseReactionHandler";
 import { upsertEntityReaction } from "@/data/reaction";
 import { logger } from "@/client";
+import { findOrCreateUserFromDiscordUser, findUserById } from "@/data/user";
 
 /**
  * Base class for reaction handlers that handle reaction adds.
@@ -27,6 +28,11 @@ export abstract class BaseReactionAddHandler extends BaseReactionHandler {
     if (await this.isReactionPermitted(reaction, user)) {
       // threads are a special case that only stores payment reactions and is handled separately
       if (this.contentType !== "thread") {
+        // make sure the author is in the db when adding reactions to posts
+        if (reaction.message.author) {
+          await findOrCreateUserFromDiscordUser(reaction.message.author);
+        }
+
         this.dbReaction = await upsertEntityReaction(
           this.dbContent,
           this.contentType,

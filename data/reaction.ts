@@ -3,7 +3,7 @@ import { prisma } from "@/utils/prisma";
 import { Emoji, OddJob, Post, User } from "@prisma/client";
 import { MessageReaction } from "discord.js";
 import { findEmoji } from "./emoji";
-import { findUserById } from "./user";
+import { findOrCreateUserFromDiscordUser, findUserById } from "./user";
 import { ContentType } from "@/types";
 
 export async function findReaction(postId, userId, emojiId) {
@@ -46,6 +46,10 @@ export async function upsertEntityReaction(
     throw new Error(
       `Invalid entityType ${entityType} in upsertEntityReaction. Skipping.`,
     );
+  }
+
+  if (!dbUser && entityType !== "post") {
+    dbUser = await findOrCreateUserFromDiscordUser(entity.author);
   }
 
   let dbReaction;
