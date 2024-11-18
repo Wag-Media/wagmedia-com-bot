@@ -9,6 +9,7 @@ import { ensureFullEntities, ensureFullMessage } from "./handlers/util.js";
 import { MessageCurator } from "@/curators/message-curator";
 import { ReactionCurator } from "@/curators/ReactionCurator.js";
 import { ReactionTracker } from "@/reaction-tracker.js";
+import { deployCommands } from "./commands/deploy-commands.js";
 
 //store your token in environment variable in .env
 const token = process.env["DISCORD_BOT_TOKEN"];
@@ -40,7 +41,7 @@ discordClient.once(Events.ClientReady, async () => {
     process.exit(1);
   }
 
-  let onCorrectGuild = false;
+  // let onCorrectGuild = false;
 
   // Iterate over all guilds the bot is part of
   discordClient.guilds.cache.forEach(async (guild) => {
@@ -48,19 +49,20 @@ discordClient.once(Events.ClientReady, async () => {
       console.warn(
         `Guild is not configured as the guild the bot should work with, guild: ${guild.name}`,
       );
+      process.exit(1);
       // guild.leave();
     } else {
       logIntroMessage(guild, discordClient);
-      onCorrectGuild = true;
+      await deployCommands({ guildId: guild.id });
     }
   });
 
-  if (!onCorrectGuild) {
-    console.error(
-      `The bot is not part of the guild with the ID ${config.GUILD_ID}. Please add the bot to the correct guild and try again.`,
-    );
-    process.exit(1);
-  }
+  // if (!onCorrectGuild) {
+  //   console.error(
+  //     `The bot is not part of the guild with the ID ${config.GUILD_ID}. Please add the bot to the correct guild and try again.`
+  //   );
+  //   process.exit(1);
+  // }
 
   await discordClient.user?.setActivity(config.BOT_ACTIVITY);
 });
@@ -134,6 +136,16 @@ discordClient.on(Events.MessageReactionRemove, async (reaction, user) => {
   }
 
   console.log("curate remove done");
+});
+
+discordClient.on(Events.InteractionCreate, async (interaction) => {
+  if (!interaction.isCommand()) return;
+
+  const { commandName } = interaction;
+
+  if (discordClient.commands?.has(commandName)) {
+    discordClient.commands.get(commandName)?.execute(interaction);
+  }
 });
 
 discordClient.login(token);

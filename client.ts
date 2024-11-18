@@ -1,8 +1,12 @@
 import DiscordLogger from "./utils/DiscordLogger";
-import { Client, GatewayIntentBits, Partials } from "discord.js";
+import { Client, GatewayIntentBits, Partials, Collection } from "discord.js";
 import * as config from "./config";
 
-const discordClient = new Client<true>({
+interface ExtendedClient extends Client<true> {
+  commands?: Collection<string, any>;
+}
+
+const discordClient: ExtendedClient = new Client<true>({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.MessageContent,
@@ -19,6 +23,8 @@ const discordClient = new Client<true>({
     Partials.User,
   ],
 });
+
+discordClient.commands = new Collection();
 
 const logger = new DiscordLogger(discordClient, config.CHANNEL_LOG);
 
