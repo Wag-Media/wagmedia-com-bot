@@ -15,7 +15,7 @@
     "data-migration:test": "ts-node prisma/log-multiple-post-earnings.ts"
   },
   "simple-git-hooks": {
-    "pre-commit": "npx lint-staged",
+    "pre-commit": "npx lint-staged --allow-empty",
     "preserveUnused": true
   },
   "prisma": {
