@@ -10,6 +10,7 @@ import { MessageCurator } from "@/curators/message-curator";
 import { ReactionCurator } from "@/curators/ReactionCurator.js";
 import { ReactionTracker } from "@/reaction-tracker.js";
 import { deployCommands } from "./commands/deploy-commands.js";
+import * as commands from "@/commands";
 
 //store your token in environment variable in .env
 const token = process.env["DISCORD_BOT_TOKEN"];
@@ -53,7 +54,7 @@ discordClient.once(Events.ClientReady, async () => {
       // guild.leave();
     } else {
       logIntroMessage(guild, discordClient);
-      await deployCommands({ guildId: guild.id });
+      // await deployCommands({ guildId: guild.id });
     }
   });
 
@@ -143,8 +144,8 @@ discordClient.on(Events.InteractionCreate, async (interaction) => {
 
   const { commandName } = interaction;
 
-  if (discordClient.commands?.has(commandName)) {
-    discordClient.commands.get(commandName)?.execute(interaction);
+  if (commands[commandName]) {
+    commands[commandName]?.execute(interaction);
   }
 });
 

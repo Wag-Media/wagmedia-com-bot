@@ -193,7 +193,7 @@ export function parseOddjob(message: Message): OddJobType {
  * @param paymentString
  * @returns
  */
-function parsePayment(paymentString: string): {
+export function parsePayment(paymentString: string): {
   amount: number | null;
   unit: string | null;
 } {

@@ -5,6 +5,7 @@ import * as commands from "./";
 const commandsData = Object.values(commands).map((command) =>
   command.data.toJSON(),
 );
+
 const token = process.env["DISCORD_BOT_TOKEN"];
 
 if (!token) {
@@ -13,7 +14,7 @@ if (!token) {
 }
 
 const rest = new REST().setToken(token);
-const clientId = "1195395899489275988";
+const clientId = "1191784282742595735";
 
 type DeployCommandsProps = {
   guildId: string;
@@ -22,11 +23,11 @@ type DeployCommandsProps = {
 export async function deployCommands({ guildId }: DeployCommandsProps) {
   try {
     console.log(
-      `Started refreshing ${commandsData.length} application (/) commands.`,
+      `Started refreshing ${commandsData.length} application (/) commands on guild ${guildId}`,
     );
     const data = await rest.put(
       Routes.applicationGuildCommands(clientId, guildId),
-      { body: commandsData },
+      { body: [] },
     );
 
     console.log(

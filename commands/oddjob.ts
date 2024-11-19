@@ -1,102 +1,144 @@
-import { command } from "@/utils/dfp.js";
+import { SlashCommandBuilder } from "@discordjs/builders";
 import {
   ActionRowBuilder,
+  AutocompleteInteraction,
+  Interaction,
   StringSelectMenuBuilder,
   StringSelectMenuInteraction,
 } from "discord.js";
-import { handleOddJob } from "@/utils/handle-odd-job";
+import { handleOddJob, parsePayment } from "@/utils/handle-odd-job";
 import { OddJob } from "@prisma/client";
+import { ODDJOB_ROLE_OPTIONS } from "@/config";
+import { options } from "@discord-fp/djs";
 
-export default command.slash({
-  description: "Start the odd job creation process",
-  execute: async ({ event }) => {
-    const user = event.user;
-    const channel = event.channel;
+export const data = new SlashCommandBuilder()
+  .setName("oddjob")
+  .setDescription("Start the odd job creation process")
+  .addStringOption((option) =>
+    option
+      .setName("description")
+      .setDescription("The description of the odd job")
+      .setRequired(true),
+  )
+  .addStringOption((option) =>
+    option
+      .setName("role")
+      .setDescription("The role of the odd job")
+      .setRequired(true)
+      .addChoices(ODDJOB_ROLE_OPTIONS),
+  )
+  .addUserOption((option) =>
+    option
+      .setName("manager")
+      .setDescription("The manager of the odd job")
+      .setRequired(true),
+  )
+  .addStringOption((option) =>
+    option
+      .setName("requested-amount")
+      .setDescription("The requested amount of the odd job (xx.yy USD / DOT)")
+      .setRequired(true),
+  )
+  .addStringOption((option) =>
+    option
+      .setName("timeline")
+      .setDescription("The timeline of the odd job")
+      .setRequired(true),
+  )
+  .addAttachmentOption((option) =>
+    option.setName("invoice").setDescription("Any Invoices you want to attach"),
+  );
 
-    const oddJobData: Partial<OddJob> = {};
+export async function execute(interaction: any) {
+  //   const user = event.user;
+  //   const channel = event.channel;
 
-    const roleOptions = [
-      { label: "Developer", value: "developer" },
-      { label: "Designer", value: "designer" },
-      { label: "Manager", value: "manager" },
-    ];
+  const oddJobData: Partial<OddJob> = {};
 
-    const paymentUnitOptions = [
-      { label: "USD", value: "usd" },
-      { label: "EUR", value: "eur" },
-      { label: "BTC", value: "btc" },
-    ];
+  await interaction.deferReply({ ephemeral: true });
 
-    const roleSelectMenu = new StringSelectMenuBuilder()
-      .setCustomId("select-role")
-      .setPlaceholder("Select a role")
-      .addOptions(roleOptions);
+  oddJobData.description = interaction.options.getString("description");
+  oddJobData.role = interaction.options.getString("role");
+  oddJobData.manager = interaction.options.getUser("manager");
+  oddJobData.requestedAmount =
+    interaction.options.getString("requested-amount");
+  oddJobData.timeline = interaction.options.getString("timeline");
 
-    const paymentUnitSelectMenu = new StringSelectMenuBuilder()
-      .setCustomId("select-payment-unit")
-      .setPlaceholder("Select a payment unit")
-      .addOptions(paymentUnitOptions);
+  const payment = parsePayment(
+    interaction.options.getString("requested-amount"),
+  );
 
-    const roleRow =
-      new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-        roleSelectMenu,
-      );
-    const paymentUnitRow =
-      new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-        paymentUnitSelectMenu,
-      );
+  console.log("received", oddJobData);
 
-    await channel.send({
-      content: `${user}, please select the role for the Odd-Job.`,
-      components: [roleRow],
-    });
+  //   const roleOptions = [
+  //     { label: "Developer", value: "developer" },
+  //     { label: "Designer", value: "designer" },
+  //     { label: "Manager", value: "manager" },
+  //   ];
 
-    const collector = channel.createMessageComponentCollector({
-      filter: (interaction) => interaction.user.id === user.id,
-      componentType: "SELECT_MENU",
-      time: 60000, // 1 minute to make a selection
-    });
+  //   const paymentUnitOptions = [
+  //     { label: "USD", value: "usd" },
+  //     { label: "EUR", value: "eur" },
+  //     { label: "BTC", value: "btc" },
+  //   ];
 
-    collector.on(
-      "collect",
-      async (interaction: StringSelectMenuInteraction) => {
-        if (interaction.customId === "select-role") {
-          oddJobData.role = interaction.values[0];
-          await interaction.update({
-            content: "Role selected. Now, please select the payment unit.",
-            components: [paymentUnitRow],
-          });
-        } else if (interaction.customId === "select-payment-unit") {
-          oddJobData.paymentUnit = interaction.values[0];
-          await interaction.update({
-            content: "Payment unit selected. Thank you!",
-            components: [],
-          });
-          collector.stop();
-          processOddJob();
-        }
-      },
-    );
+  //   const roleSelectMenu = new StringSelectMenuBuilder()
+  //     .setCustomId("select-role")
+  //     .setPlaceholder("Select a role")
+  //     .addOptions(roleOptions);
 
-    collector.on("end", (collected, reason) => {
-      if (reason === "time") {
-        channel.send("Time expired. Please start the process again.");
-      }
-    });
+  //   const paymentUnitSelectMenu = new StringSelectMenuBuilder()
+  //     .setCustomId("select-payment-unit")
+  //     .setPlaceholder("Select a payment unit")
+  //     .addOptions(paymentUnitOptions);
 
-    const processOddJob = async () => {
-      // Validate and process the collected data
-      const messageLink = `https://discord.com/channels/${channel.guild.id}/${channel.id}/${event.id}`;
-      const message = await channel.messages.fetch(event.id);
+  //   const roleRow = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+  //     roleSelectMenu
+  //   );
 
-      const oddJob = await handleOddJob(message, messageLink);
-      if (oddJob) {
-        channel.send("Odd job created successfully!");
-      } else {
-        channel.send(
-          "There was an error creating the odd job. Please try again.",
-        );
-      }
-    };
-  },
-});
+  //   const paymentUnitRow =
+  //     new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+  //       paymentUnitSelectMenu
+  //     );
+
+  await interaction.editReply("yep");
+
+  //   collector.on("collect", async (interaction: StringSelectMenuInteraction) => {
+  //     if (interaction.customId === "select-role") {
+  //       oddJobData.role = interaction.values[0];
+  //       await interaction.update({
+  //         content: "Role selected. Now, please select the payment unit.",
+  //         components: [paymentUnitRow],
+  //       });
+  //     } else if (interaction.customId === "select-payment-unit") {
+  //       oddJobData.paymentUnit = interaction.values[0];
+  //       await interaction.update({
+  //         content: "Payment unit selected. Thank you!",
+  //         components: [],
+  //       });
+  //       collector.stop();
+  //       processOddJob();
+  //     }
+  //   });
+
+  //   collector.on("end", (collected, reason) => {
+  //     if (reason === "time") {
+  //       channel.send("Time expired. Please start the process again.");
+  //     }
+  //   });
+
+  //   const processOddJob = async () => {
+  //     // Validate and process the collected data
+  //     const messageLink = `https://discord.com/channels/${channel.guild.id}/${channel.id}/${event.id}`;
+  //     const message = await channel.messages.fetch(event.id);
+
+  //     const oddJob = await handleOddJob(message, messageLink);
+  //     if (oddJob) {
+  //       channel.send("Odd job created successfully!");
+  //     } else {
+  //       channel.send(
+  //         "There was an error creating the odd job. Please try again."
+  //       );
+  //     }
+  //   };
+}
