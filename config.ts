@@ -40,6 +40,30 @@ export const LOG_THE_LEVEL_IN_DISCORD = false;
 // Define the discord roles that have the power to trigger actions from EmojiActions
 export const ROLES_WITH_POWER = ["Director"];
 
+// the options for the role select menu in the /oddjob command
+export const ODDJOB_ROLE_OPTIONS: { name: string; value: string }[] = [
+  // Website and Discord Bot Development
+  { name: "Developer", value: "Developer" },
+  { name: "QA and Product Owner", value: "QA and Product Owner" },
+  { name: "QA", value: "QA" },
+  { name: "Product Owner", value: "Product Owner" },
+  { name: "WagTool", value: "WagTool" },
+  { name: "Infra", value: "Infra" },
+  { name: "Web Designer", value: "Web Designer" },
+
+  // Management / Team
+  { name: "Director", value: "Director" },
+  { name: "Social Media", value: "Social Media" },
+  { name: "Intern", value: "Intern" },
+  { name: "Treasury Management", value: "Treasury Management" },
+  { name: "Designer", value: "Designer" },
+
+  // Marketing
+  { name: "Ads", value: "Ads" },
+  { name: "KaitoAI", value: "KaitoAI" },
+  { name: "Analytics", value: "Analytics" },
+];
+
 /////// Emoji + DB Settings ///////
 // the emoji that marks a post as featured
 export const FEATURE_EMOJI = "WMFEATURED";
