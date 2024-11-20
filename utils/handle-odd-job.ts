@@ -1,17 +1,10 @@
+import { Message, User } from "discord.js";
 import { logger } from "@/client";
 import { findOrCreateOddJob } from "@/data/oddjob";
-import {
-  Attachment,
-  Collection,
-  Message,
-  MessageMentions,
-  PartialMessage,
-  User,
-} from "discord.js";
-import { OddJob } from "@prisma/client";
 import { storeAttachment } from "@/data/attachment";
 import * as config from "@/config";
-import { OddjobWithEarnings } from "@/types";
+
+import type { OddjobWithEarnings } from "@/types";
 
 export type OddJobType = {
   role: string | undefined;
@@ -22,6 +15,12 @@ export type OddJobType = {
     | undefined;
   manager: User | null;
 };
+
+function isValidRole(role: string): boolean {
+  return config.ODDJOB_ROLE_OPTIONS.some(
+    (option) => option.value.toLowerCase() === role.toLowerCase(),
+  );
+}
 
 export async function handleOddJob(
   message: Message<boolean>,
@@ -54,13 +53,21 @@ export async function handleOddJob(
   if (missingFields.length > 0) {
     let extraInfo = "";
     if (!payment?.unit) {
-      extraInfo = `Accepted units: ${findUniqueUnitsFromConfig().join(", ")}`;
+      extraInfo += `Accepted units: ${findUniqueUnitsFromConfig()
+        .map((u) => `\`${u}\``)
+        .join(", ")}\n`;
     }
 
-    logger.warn(
-      `[oddjob] Oddjob ${messageLink} is missing required fields: ${missingFields.join(
+    if (!role) {
+      extraInfo += `Accepted roles: ${config.ODDJOB_ROLE_OPTIONS.map((option) => `\`${option.name}\``).join(", ")}\n`;
+    }
+
+    logger.logAndSend(
+      `Odd job ${messageLink} is missing required fields: ${missingFields.join(
         ", ",
-      )}. ${extraInfo}`,
+      )}.\n\n${extraInfo}`,
+      message.author!,
+      "warn",
     );
     return;
   }
@@ -164,8 +171,11 @@ export function parseOddjob(message: Message): OddJobType {
 
     const parsedPayment = paymentMatch ? parsePayment(paymentMatch[1]) : null;
 
+    let role = roleMatch?.[1].trim();
+    role = role && isValidRole(role) ? role.toLowerCase() : undefined;
+
     return {
-      role: roleMatch?.[1].trim(),
+      role,
       description: descriptionMatch?.[1].trim(),
       timeline: timelineMatch?.[1].trim(),
       payment: {

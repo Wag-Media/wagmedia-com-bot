@@ -41,7 +41,7 @@ export const LOG_THE_LEVEL_IN_DISCORD = false;
 export const ROLES_WITH_POWER = ["Director"];
 
 // the options for the role select menu in the /oddjob command
-export const ODDJOB_ROLE_OPTIONS = [
+export const ODDJOB_ROLE_OPTIONS: { name: string; value: string }[] = [
   // Website and Discord Bot Development
   { name: "Developer", value: "Developer" },
   { name: "QA and Product Owner", value: "QA and Product Owner" },
