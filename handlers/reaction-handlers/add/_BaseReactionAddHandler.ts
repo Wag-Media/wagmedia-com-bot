@@ -3,6 +3,8 @@ import { BaseReactionHandler } from "../_BaseReactionHandler";
 import { upsertEntityReaction } from "@/data/reaction";
 import { logger } from "@/client";
 import { findOrCreateUserFromDiscordUser, findUserById } from "@/data/user";
+import { determineEmojiType } from "@/curators/utils";
+import { EmojiType } from "@/types";
 
 /**
  * Base class for reaction handlers that handle reaction adds.
@@ -22,9 +24,18 @@ export abstract class BaseReactionAddHandler extends BaseReactionHandler {
       );
     }
 
-    logger.log(
-      `[${this.contentType}] Reaction ${reaction.emoji} added to ${this.messageLink} by ${user.username}#${user.discriminator}.`,
-    );
+    const emojiType: EmojiType = await determineEmojiType(reaction);
+
+    if (emojiType === "payment") {
+      logger.log(
+        `[${this.contentType}] Reaction ${reaction.emoji} added to ${this.messageLink} by <@${user.id}>.`,
+      );
+    } else {
+      logger.log(
+        `[${this.contentType}] Reaction ${reaction.emoji} added to ${this.messageLink} by ${user.username}#${user.discriminator}.`,
+      );
+    }
+
     if (await this.isReactionPermitted(reaction, user)) {
       // threads are a special case that only stores payment reactions and is handled separately
       if (this.contentType !== "thread") {
