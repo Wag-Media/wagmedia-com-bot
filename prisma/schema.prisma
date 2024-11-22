@@ -24,11 +24,12 @@ model Post {
   categories Category[]
   tags       Tag[]      @relation("PostTags")
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  isPublished Boolean  @default(false)
-  isFeatured  Boolean  @default(false)
-  isDeleted   Boolean  @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  firstPaymentAt DateTime?
+  isPublished    Boolean   @default(false)
+  isFeatured     Boolean   @default(false)
+  isDeleted      Boolean   @default(false)
 
   discordLink String? // Discord link to the original post, if applicable
   embeds      Embed[]
@@ -66,9 +67,10 @@ model OddJob {
 
   discordLink String? // Discord link to the original post, if applicable
 
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
-  earnings  ContentEarnings[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  firstPaymentAt DateTime?
+  earnings       ContentEarnings[]
 
   attachments Attachment[]
 }
