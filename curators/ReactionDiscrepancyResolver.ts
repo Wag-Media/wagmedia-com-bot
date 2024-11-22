@@ -7,13 +7,19 @@ import {
   resetPostOrOddjobReactions,
 } from "@/data/post";
 import { logger } from "@/client";
-import { ContentType, DiscordReaction, ReactionEventType } from "@/types";
+import {
+  ContentType,
+  DiscordReaction,
+  ReactionEventType,
+  ReactionWithEmoji,
+} from "@/types";
 import { getPostOrOddjobReactions, removeReactions } from "@/data/reaction";
 import { Reaction } from "@prisma/client";
+import { loggableDbEmoji, loggableDiscordEmoji } from "@/handlers/log-utils";
 
 export interface ReactionDiscrepancies {
   missingInDb: DiscordReaction[];
-  extraInDb: Reaction[];
+  extraInDb: ReactionWithEmoji[];
 }
 
 /**
@@ -42,20 +48,17 @@ export class ReactionDiscrepancyResolver {
       discrepancies.missingInDb.length > 0
     ) {
       const messageLink = `https://discord.com/channels/${message.guild?.id}/${message.channel.id}/${message.id}`;
+
       logger.warn(
-        `[${this.contentType}] 👀 reaction discrepancies detected on ${messageLink}`,
-      );
-      logger.warn(
-        "extras in db:",
-        discrepancies.extraInDb
-          .map((r) => `${r.emojiId} by <@${r.userDiscordId}>`)
-          .join(", "),
-      );
-      logger.warn(
-        "missing in db:",
-        discrepancies.missingInDb
-          .map((r) => `${r.emoji.name || r.emoji.id} by <@${r.user.id}>`)
-          .join(", "),
+        `[${this.contentType}] 👀 reaction discrepancies detected on ${messageLink}
+        ${discrepancies.extraInDb.length > 0 ? "**extras in db:**" : ""}
+        ${discrepancies.extraInDb
+          .map((r) => `${loggableDbEmoji(r.emoji)} by <@${r.userDiscordId}>`)
+          .join(", ")}
+        ${discrepancies.missingInDb.length > 0 ? "**missing in db:**" : ""}
+        ${discrepancies.missingInDb
+          .map((r) => `${loggableDiscordEmoji(r.emoji)} by <@${r.user.id}>`)
+          .join(", ")}`,
       );
 
       if (discrepancies.extraInDb.length > 0) {
@@ -95,23 +98,10 @@ export class ReactionDiscrepancyResolver {
         }
       }
 
-      // // 1. remove all reactions and payments and connected entities from the db
-      // await resetPostOrOddjobReactions(message.id);
-
-      // // 2. iterate over all reactions and re-add them
-      // for (const [_, messageReaction] of message.reactions.cache) {
-      //   const users = await messageReaction.users.fetch();
-      //   for (const user of users.values()) {
-      //     // Directly reprocess each reaction. Thanks to the flag in ReactionCurator,
-      //     // this won't trigger an additional discrepancy check.
-      //     await ReactionCurator.curateAdd(messageReaction, user);
-      //   }
-      // }
-
       const dbReactionsAfterResolution = (
         await getPostOrOddjobReactions(message.id, this.contentType)
       )
-        .map((r) => `${r.emojiId}`)
+        .map((r) => loggableDbEmoji(r.emoji))
         .join(", ");
 
       logger.log(

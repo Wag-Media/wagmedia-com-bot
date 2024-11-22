@@ -1,7 +1,12 @@
 import { logger } from "@/client";
 import { prisma } from "@/utils/prisma";
-import { OddJob, Post } from "@prisma/client";
-import { MessageReaction, User as DiscordUser, ChannelType } from "discord.js";
+import { Emoji, OddJob, Post } from "@prisma/client";
+import {
+  MessageReaction,
+  User as DiscordUser,
+  ChannelType,
+  Emoji as DiscordEmoji,
+} from "discord.js";
 import * as config from "@/config";
 import { ContentType } from "@/types";
 
@@ -168,4 +173,14 @@ export function wrapUrlsInMessage(message: string): string {
     /(\bhttps?:\/\/[-A-Z0-9+&@#/%?=~_|!:,.;]*[-A-Z0-9+&@#/%=~_|])/gi;
   // Replace each URL with the same URL wrapped in <>
   return message.replace(urlRegex, "<$1>");
+}
+
+export function loggableDiscordEmoji(emoji: DiscordEmoji) {
+  return emoji.id ? `<:${emoji.name}:${emoji.id}> ` : `${emoji.name}`;
+}
+
+export function loggableDbEmoji(emoji: Emoji) {
+  return emoji.discordId
+    ? `<:${emoji.name || emoji.id}:${emoji.discordId}> `
+    : `${emoji.name || emoji.id}`;
 }

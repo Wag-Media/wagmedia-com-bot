@@ -4,7 +4,7 @@ import { Emoji, OddJob, Post, User } from "@prisma/client";
 import { MessageReaction } from "discord.js";
 import { findEmoji } from "./emoji";
 import { findOrCreateUserFromDiscordUser, findUserById } from "./user";
-import { ContentType } from "@/types";
+import { ContentType, ReactionWithEmoji } from "@/types";
 import { DiscordReaction } from "../types";
 
 export async function findReaction(postId, userId, emojiId) {
@@ -35,7 +35,7 @@ export async function getPostReactions(postId: string) {
 export async function getPostOrOddjobReactions(
   contentId: string,
   contentType: ContentType,
-) {
+): Promise<ReactionWithEmoji[]> {
   const whereCondition =
     contentType === "post" ||
     contentType === "thread" ||
@@ -47,6 +47,9 @@ export async function getPostOrOddjobReactions(
     where: whereCondition,
     orderBy: {
       createdAt: "asc",
+    },
+    include: {
+      emoji: true,
     },
   });
   return dbReactions;

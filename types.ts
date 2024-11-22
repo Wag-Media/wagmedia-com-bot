@@ -9,6 +9,7 @@ import {
   Tag,
   Embed,
   Payment,
+  Reaction,
 } from "@prisma/client";
 import {
   MessageReaction,
@@ -96,3 +97,4 @@ export type EmojiType =
   | "category"
   | "payment";
 export type ReactionEventType = "reactionAdd" | "reactionRemove";
+export type ReactionWithEmoji = Reaction & { emoji: Emoji };

@@ -13,7 +13,6 @@ import {
 } from "../curators/utils";
 import { ensureFullMessage } from "@/handlers/util";
 import { NotAllowedReactionHandler } from "./reaction-handlers/NotAllowedReactionHandler";
-import { ReactionDiscrepancyResolver } from "../curators/ReactionDiscrepancyResolver";
 import { CategoryAddReactionHandler } from "./reaction-handlers/add/CategoryAddReactionHandler";
 import { RegularReactionAddHandler } from "./reaction-handlers/add/RegularReactionAddHandler";
 import { RegularReactionRemoveHandler } from "./reaction-handlers/remove/RegularReactionRemoveHandler";
@@ -27,7 +26,6 @@ import {
 } from "./reaction-handlers/remove/PaymentReactionRemoveHandler";
 import { CategoryRemoveReactionHandler } from "./reaction-handlers/remove/CategoryRemoveReactionHandler";
 import { UPEAddReactionHandler } from "./reaction-handlers/add/UPEAddReactionHandler";
-import { BaseReactionRemoveHandler } from "./reaction-handlers/remove/_BaseReactionRemoveHandler";
 import { UPERemoveReactionHandler } from "./reaction-handlers/remove/UPEReactionRemoveHandler";
 
 export class ReactionHandlerFactory {
