@@ -1,4 +1,3 @@
-import { OddJob } from "@prisma/client";
 import {
   Category,
   Emoji,
@@ -16,6 +15,8 @@ import {
   PartialMessageReaction,
   PartialUser,
   User as DiscordUser,
+  GuildEmoji,
+  ReactionEmoji,
 } from "discord.js";
 
 export interface ReactionContext {
@@ -28,6 +29,12 @@ export interface ReactionContext {
   post?: Post & { categories: Category[] } & { earnings: ContentEarnings[] };
   oddJob?: OddJob;
   isSuperUser: boolean;
+}
+
+export interface DiscordReaction {
+  user: DiscordUser;
+  emoji: GuildEmoji | ReactionEmoji;
+  reaction?: MessageReaction;
 }
 
 export type PostEmbed = {

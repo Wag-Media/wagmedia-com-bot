@@ -6,14 +6,8 @@ import {
 } from "discord.js";
 import { IReactionHandler } from "./_IReactionHandler";
 import { getGuildFromMessage } from "@/handlers/util";
-import {
-  ContentType,
-  OddJobWithOptions,
-  OddjobWithEarnings,
-  PostWithEarnings,
-  PostWithOptions,
-} from "@/types";
-import { Emoji, PaymentRule, Reaction, User } from "@prisma/client";
+import { ContentType, OddJobWithOptions, PostWithOptions } from "@/types";
+import { Emoji, Reaction, User } from "@prisma/client";
 import { findOrCreateEmoji } from "@/data/emoji";
 import { findOrCreateUserFromDiscordUser } from "@/data/user";
 import { getPostOrOddjobWithEarnings } from "@/data/post";
@@ -90,7 +84,7 @@ export abstract class BaseReactionHandler implements IReactionHandler {
     reaction: MessageReaction,
     user: DiscordUser,
   ): Promise<void> {
-    console.log("BaseReactionHandler: Post-processing reaction");
+    // console.log("BaseReactionHandler: Post-processing reaction");
     // Shared logic after processing payment, e.g., logging, validation
     return Promise.resolve();
   }

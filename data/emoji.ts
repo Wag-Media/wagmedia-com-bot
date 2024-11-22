@@ -30,7 +30,7 @@ export const findEmoji = async (
   }
 
   const dbEmoji = await prisma.emoji.findUnique({
-    where: { id: emojiId || "unknown" },
+    where: { id: emojiId },
     include: {
       PaymentRule: true, // Include PaymentRule in the emoji
     },
@@ -53,7 +53,7 @@ export const findOrCreateEmoji = async (emoji: GuildEmoji | ReactionEmoji) => {
     discordEmojiId = emoji.id;
     isAnimated = emoji.animated ?? false;
     emojiId = emoji.name ?? undefined;
-    emojiUrl = emoji.imageURL() ?? undefined;
+    emojiUrl = emoji.imageURL?.() ?? undefined;
   } else {
     // This is a native emoji
     emojiChar = emoji.name || undefined; // Emoji itself for native emojis

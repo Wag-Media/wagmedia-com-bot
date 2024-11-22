@@ -5,6 +5,7 @@ import { MessageReaction } from "discord.js";
 import { findEmoji } from "./emoji";
 import { findOrCreateUserFromDiscordUser, findUserById } from "./user";
 import { ContentType } from "@/types";
+import { DiscordReaction } from "../types";
 
 export async function findReaction(postId, userId, emojiId) {
   const dbReaction = await prisma.reaction.findUnique({
@@ -31,6 +32,26 @@ export async function getPostReactions(postId: string) {
   return dbReactions;
 }
 
+export async function getPostOrOddjobReactions(
+  contentId: string,
+  contentType: ContentType,
+) {
+  const whereCondition =
+    contentType === "post" ||
+    contentType === "thread" ||
+    contentType === "newsletter"
+      ? { postId: contentId }
+      : { oddJobId: contentId };
+
+  const dbReactions = await prisma.reaction.findMany({
+    where: whereCondition,
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+  return dbReactions;
+}
+
 export async function upsertEntityReaction(
   entity: Post | OddJob | undefined | null,
   entityType: ContentType,
@@ -46,10 +67,6 @@ export async function upsertEntityReaction(
     throw new Error(
       `Invalid entityType ${entityType} in upsertEntityReaction. Skipping.`,
     );
-  }
-
-  if (!dbUser && entityType !== "post") {
-    dbUser = await findOrCreateUserFromDiscordUser(entity.author);
   }
 
   let dbReaction;
@@ -199,6 +216,38 @@ export async function deleteReaction(
       },
     },
   });
+}
+
+export async function removeReactions(
+  messageId: string,
+  reactions: DiscordReaction[],
+) {
+  const emojiIds = reactions
+    .map((r) => r.emojiId)
+    .filter((id): id is string => id !== null);
+  const userDiscordIds = reactions.map((r) => r.userDiscordId);
+
+  if (
+    emojiIds.length === 0 ||
+    userDiscordIds.length === 0 ||
+    emojiIds.length !== userDiscordIds.length
+  ) {
+    console.warn("remove reactions strange case", reactions);
+    return;
+  }
+
+  const deletedReactions = await prisma.reaction.deleteMany({
+    where: {
+      userDiscordId: { in: userDiscordIds },
+      emojiId: { in: emojiIds },
+      OR: [{ postId: messageId }, { oddJobId: messageId }],
+    },
+  });
+
+  logger.log(
+    `removed ${deletedReactions.count} reactions from message ${messageId}: 
+    ${reactions.map((r) => `${r.userDiscordId}-${r.emojiId} `)}`,
+  );
 }
 
 export async function getPostUserEmojiFromReaction(
