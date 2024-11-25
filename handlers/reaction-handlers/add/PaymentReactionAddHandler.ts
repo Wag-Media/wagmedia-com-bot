@@ -124,7 +124,7 @@ export class PostPaymentReactionAddHandler extends BasePaymentReactionAddHandler
     if (this.contentType === "post" && !(this.dbContent as Post).isPublished) {
       await prisma.post.update({
         where: { id: this.dbContent!.id },
-        data: { isPublished: true },
+        data: { isPublished: true, firstPaymentAt: new Date() },
       });
     }
   }
@@ -279,6 +279,14 @@ export class OddJobPaymentReactionAddHandler extends BasePaymentReactionAddHandl
         threadParentId: (this.dbContent as Post).parentPostId,
       },
     });
+
+    // if this is the first payment, set firstPaymentAt
+    if (!this.dbContent?.firstPaymentAt) {
+      await prisma.oddJob.update({
+        where: { id: this.dbContent!.id },
+        data: { firstPaymentAt: new Date() },
+      });
+    }
   }
 }
 
