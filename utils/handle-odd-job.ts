@@ -18,7 +18,7 @@ export type OddJobType = {
 
 function isValidRole(role: string): boolean {
   return config.ODDJOB_ROLE_OPTIONS.some(
-    (option) => option.value.toLowerCase() === role.toLowerCase(),
+    (option) => option.name.toLowerCase() === role.toLowerCase(),
   );
 }
 
@@ -172,7 +172,12 @@ export function parseOddjob(message: Message): OddJobType {
     const parsedPayment = paymentMatch ? parsePayment(paymentMatch[1]) : null;
 
     let role = roleMatch?.[1].trim();
-    role = role && isValidRole(role) ? role.toLowerCase() : undefined;
+    role =
+      role && isValidRole(role)
+        ? config.ODDJOB_ROLE_OPTIONS.find(
+            (option) => option.name.toLowerCase() === role!.toLowerCase(),
+          )?.value
+        : undefined;
 
     return {
       role,

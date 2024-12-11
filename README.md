@@ -175,3 +175,16 @@ Edit your `.env` file for configure bot token & Database url
 
 Probably the bot is setup to log but cannot access the log channel, give bot
 rights and restart bot.
+
+- mirror db from prod => staging
+
+```bash
+heroku pg:copy wagmedia-com-bot::DATABASE_URL DATABASE_URL --app wagmedia-com-bot-staging
+```
+
+might need to run migrations again on staging afterwards
+
+````bash
+npx prisma migrate deploy
+```
+````

@@ -9,7 +9,6 @@ import {
 import { handleOddJob, parsePayment } from "@/utils/handle-odd-job";
 import { OddJob } from "@prisma/client";
 import { ODDJOB_ROLE_OPTIONS } from "@/config";
-import { options } from "@discord-fp/djs";
 
 export const data = new SlashCommandBuilder()
   .setName("oddjob")
@@ -59,7 +58,7 @@ export async function execute(interaction: any) {
 
   oddJobData.description = interaction.options.getString("description");
   oddJobData.role = interaction.options.getString("role");
-  oddJobData.manager = interaction.options.getUser("manager");
+  oddJobData.managerId = interaction.options.getUser("manager").id;
   oddJobData.requestedAmount =
     interaction.options.getString("requested-amount");
   oddJobData.timeline = interaction.options.getString("timeline");

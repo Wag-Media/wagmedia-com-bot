@@ -92,7 +92,7 @@ export class PostPaymentReactionRemoveHandler extends BasePaymentReactionRemoveH
         // unpublish the post
         await prisma.post.update({
           where: { id: this.dbContent!.id },
-          data: { isPublished: false },
+          data: { isPublished: false, firstPaymentAt: null },
         });
         logger.log(
           `[post] Post ${this.messageLink} has been unpublished due to no remaining payment emojis.`,
@@ -151,6 +151,14 @@ export class OddJobPaymentReactionRemoveHandler extends BasePaymentReactionRemov
     const remainingPaymentEmojis = remainingOddJobReactions.filter(
       (r) => r.emoji.PaymentRule && r.emoji.PaymentRule.length > 0,
     );
+
+    // if no payment emojis are left, remove firstPaymentAt
+    if (remainingPaymentEmojis.length === 0) {
+      await prisma.oddJob.update({
+        where: { id: this.dbContent!.id },
+        data: { firstPaymentAt: null },
+      });
+    }
 
     // Aggregate the total payment amount for the specific unit
     const updatedTotalEarnings = remainingPaymentEmojis.reduce((total, r) => {

@@ -2,11 +2,14 @@
   "compilerOptions": {
     "outDir": "dist",
     "esModuleInterop": true,
-    "module": "es2020",
-    "moduleResolution": "nodenext",
-    "target": "ES2022",
+    "module": "CommonJS",
+    "target": "ESNext",
     "strictNullChecks": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
     "noImplicitThis": true,
     "paths": { "@/*": ["./*"] }
-  }
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules", "**/*.spec.ts"]
 }
