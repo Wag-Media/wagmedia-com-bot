@@ -1,6 +1,11 @@
-import { Message, MessageReaction, PartialMessage } from "discord.js";
+import {
+  Message,
+  MessageReaction,
+  PartialMessage,
+  User as DiscordUser,
+} from "discord.js";
 import { ReactionCurator } from "./ReactionCurator";
-import { determineContentType } from "./utils";
+import { determineContentType, determineUserRole } from "./utils";
 import {
   getPostOrOddjob,
   getPostOrOddjobReactionCount,
@@ -16,6 +21,8 @@ import {
 import { getPostOrOddjobReactions, removeReactions } from "@/data/reaction";
 import { Reaction } from "@prisma/client";
 import { loggableDbEmoji, loggableDiscordEmoji } from "@/handlers/log-utils";
+import { FORCE_REACTION_RESOLUTION_EMOJI } from "@/config";
+import { ensureFullMessage } from "@/handlers/util";
 
 export interface ReactionDiscrepancies {
   missingInDb: DiscordReaction[];
@@ -36,12 +43,19 @@ export class ReactionDiscrepancyResolver {
   static async checkAndResolve(
     message: Message,
     event: ReactionEventType,
+    reaction?: MessageReaction,
+    user?: DiscordUser,
   ): Promise<boolean> {
     const { contentType, parentId } = determineContentType(message);
     this.contentType = contentType;
     this.parentId = parentId;
 
-    const discrepancies = await this.detectDiscrepancies(message, event);
+    const discrepancies = await this.detectDiscrepancies(
+      message,
+      event,
+      reaction,
+      user,
+    );
 
     if (
       discrepancies.extraInDb.length > 0 ||
@@ -51,7 +65,7 @@ export class ReactionDiscrepancyResolver {
 
       logger.warn(
         `[${this.contentType}] 👀 reaction discrepancies detected on ${messageLink}
-        ${discrepancies.extraInDb.length > 0 ? "**extras in db:**" : ""}
+        ${discrepancies.extraInDb.length > 0 ? "\n**extras in db:**" : ""}
         ${discrepancies.extraInDb
           .map((r) => `${loggableDbEmoji(r.emoji)} by <@${r.userDiscordId}>`)
           .join(", ")}
@@ -79,6 +93,7 @@ export class ReactionDiscrepancyResolver {
               discordId: emojiId,
             },
           };
+
           // remove the reaction from discord
           await ReactionCurator.curateRemove(
             // todo is this really safe?
@@ -127,6 +142,8 @@ export class ReactionDiscrepancyResolver {
   private static async detectDiscrepancies(
     message: Message,
     event: ReactionEventType,
+    reaction?: MessageReaction,
+    user?: DiscordUser,
   ): Promise<ReactionDiscrepancies> {
     const noDiscrepancies: ReactionDiscrepancies = {
       missingInDb: [],
@@ -157,7 +174,10 @@ export class ReactionDiscrepancyResolver {
       }
     }
 
-    if (this.isDbReactionStateSuspicious(message, dbReactions, event)) {
+    if (
+      this.isDbReactionStateSuspicious(message, dbReactions, event) ||
+      (await this.forceReactionResolution(reaction, user))
+    ) {
       // fetch all reactions from discord in a long lasting operation
       const discordReactions: DiscordReaction[] = [];
       for (const [_, messageReaction] of message.reactions.cache) {
@@ -175,38 +195,27 @@ export class ReactionDiscrepancyResolver {
     }
 
     return noDiscrepancies;
+  }
 
-    // const dbPostOrOddjobReactionCount = await getPostOrOddjobReactionCount(
-    //   message.id,
-    //   this.contentType,
-    // );
+  private static async forceReactionResolution(
+    reaction?: MessageReaction,
+    user?: DiscordUser,
+  ): Promise<boolean> {
+    if (!reaction || !user) {
+      return false;
+    }
 
-    // let discordReactionCount = 0;
-    // message.reactions.cache.forEach((messageReaction) => {
-    //   discordReactionCount += messageReaction.count;
-    // });
+    const message = (await ensureFullMessage(reaction.message)).message;
+    const userRole = await determineUserRole(message, user);
 
-    // let expectedReactionCount = dbPostOrOddjobReactionCount || 0;
+    if (
+      reaction.emoji.name === FORCE_REACTION_RESOLUTION_EMOJI &&
+      userRole === "superuser"
+    ) {
+      return true;
+    }
 
-    // // as we are in an event handler we need to adjust the expected reaction count
-    // // - reaction was just added there should be +1 on discord
-    // // - reaction was just removed there should be -1 on discord
-    // if (event === "reactionAdd") {
-    //   expectedReactionCount += 1;
-    // } else if (event === "reactionRemove") {
-    //   expectedReactionCount -= 1;
-    // }
-
-    // if (discordReactionCount !== expectedReactionCount) {
-    //   logger.warn(
-    //     `[${this.contentType}] ${this.contentType} with ID ${message.id} has a different number of reactions in the database on ${event}.`,
-    //     ` discord: ${discordReactionCount}`,
-    //     ` db: ${dbPostOrOddjobReactionCount}`,
-    //   );
-    //   return true;
-    // }
-
-    // return false;
+    return false;
   }
 
   // returns true if either the count or the last emojiId is different from the discord count
@@ -249,19 +258,19 @@ export class ReactionDiscrepancyResolver {
 
     //todo flow
     if (discordReactions.length > 1) {
-      return false;
-    }
+      const lastDiscordReaction = discordReactions[discordReactions.length - 2];
 
-    const lastDiscordReaction = discordReactions[discordReactions.length - 2];
+      const lastDiscordEmojiId =
+        lastDiscordReaction.emoji.name || lastDiscordReaction.emoji.id;
 
-    const lastDiscordEmojiId =
-      lastDiscordReaction.emoji.name || lastDiscordReaction.emoji.id;
+      console.log("lastDbReaction.emojiId", lastDbReaction.emojiId);
 
-    if (lastDbReaction.emojiId !== lastDiscordEmojiId) {
-      console.warn(
-        `[${this.contentType}] Discrepancy detected: last emojiId in the database (${lastDbReaction.emojiId}) is different from the last emojiId in Discord (${lastDiscordEmojiId})`,
-      );
-      return true;
+      if (lastDbReaction.emojiId !== lastDiscordEmojiId) {
+        console.warn(
+          `[${this.contentType}] Discrepancy detected: last emojiId in the database (${lastDbReaction.emojiId}) is different from the last emojiId in Discord (${lastDiscordEmojiId})`,
+        );
+        return true;
+      }
     }
 
     return false;

@@ -23,10 +23,13 @@ export class ReactionCurator {
     // Only check for discrepancies if not currently resolving them
     if (!this.isResolvingDiscrepancies) {
       this.isResolvingDiscrepancies = true;
+
       const hadDiscrepancies =
         await ReactionDiscrepancyResolver.checkAndResolve(
           message,
           "reactionAdd",
+          reaction,
+          user,
         );
       this.isResolvingDiscrepancies = false;
 
