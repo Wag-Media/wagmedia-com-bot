@@ -47,10 +47,10 @@ async function migrateRoles() {
 
       if (normalizedRole && normalizedRole !== oddJob.role) {
         // Update the role if it needs normalization
-        // await prisma.oddJob.update({
-        //   where: { id: oddJob.id },
-        //   data: { role: normalizedRole },
-        // });
+        await prisma.oddJob.update({
+          where: { id: oddJob.id },
+          data: { role: normalizedRole },
+        });
         console.log(
           `Updated role for OddJob ID ${oddJob.id} from ${oddJob.role} to ${normalizedRole}`,
         );
