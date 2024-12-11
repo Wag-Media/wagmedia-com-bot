@@ -12,7 +12,8 @@
     "start": "tsx ./index.ts",
     "test": "jest",
     "data-migration:add-content-type": "ts-node prisma/migrations/20240422153641_add_content_type/data-migration.ts",
-    "data-migration:test": "ts-node prisma/log-multiple-post-earnings.ts"
+    "data-migration:test": "ts-node prisma/log-multiple-post-earnings.ts",
+    "migrate-roles": "ts-node prisma/migrate-roles.ts"
   },
   "simple-git-hooks": {
     "pre-commit": "npx lint-staged",

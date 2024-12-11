@@ -43,25 +43,25 @@ export const ROLES_WITH_POWER = ["Director"];
 // the options for the role select menu in the /oddjob command
 export const ODDJOB_ROLE_OPTIONS: { name: string; value: string }[] = [
   // Website and Discord Bot Development
-  { name: "Developer", value: "Developer" },
-  { name: "QA and Product Owner", value: "QA and Product Owner" },
-  { name: "QA", value: "QA" },
-  { name: "Product Owner", value: "Product Owner" },
-  { name: "WagTool", value: "WagTool" },
-  { name: "Infra", value: "Infra" },
-  { name: "Web Designer", value: "Web Designer" },
+  { name: "Developer", value: "developer" },
+  { name: "QA and Product Owner", value: "qa_and_product_owner" },
+  { name: "QA", value: "qa" },
+  { name: "Product Owner", value: "product_owner" },
+  { name: "WagTool", value: "wagtool" },
+  { name: "Infra", value: "infra" },
+  { name: "Web Designer", value: "web_designer" },
 
   // Management / Team
-  { name: "Director", value: "Director" },
-  { name: "Social Media", value: "Social Media" },
-  { name: "Intern", value: "Intern" },
-  { name: "Treasury Management", value: "Treasury Management" },
-  { name: "Designer", value: "Designer" },
+  { name: "Director", value: "director" },
+  { name: "Social Media", value: "social_media" },
+  { name: "Intern", value: "intern" },
+  { name: "Treasury Management", value: "treasury_management" },
+  { name: "Designer", value: "designer" },
 
   // Marketing
-  { name: "Ads", value: "Ads" },
-  { name: "KaitoAI", value: "KaitoAI" },
-  { name: "Analytics", value: "Analytics" },
+  { name: "Ads", value: "ads" },
+  { name: "KaitoAI", value: "kaitoai" },
+  { name: "Analytics", value: "analytics" },
 ];
 
 /////// Emoji + DB Settings ///////
