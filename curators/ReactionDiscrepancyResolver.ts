@@ -129,17 +129,6 @@ export class ReactionDiscrepancyResolver {
       }
     }
 
-    const dbReactionsAfterResolution = (
-      await getPostOrOddjobReactions(message.id, this.contentType)
-    )
-      .map((r) => loggableDbEmoji(r.emoji))
-      .join(", ");
-
-    logger.log(
-      `[${this.contentType}] Discrepancies were handled successfully, the reactions state in the database is now in sync with Discord ${messageLink}:
-        ${dbReactionsAfterResolution}`,
-    );
-
     return (
       discrepancies.extraInDb.length > 0 || discrepancies.missingInDb.length > 0
     );

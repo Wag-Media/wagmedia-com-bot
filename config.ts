@@ -73,6 +73,10 @@ export const FEATURE_EMOJI = "WMFEATURED";
 // the emoji that can publish a post without payment
 export const UNIVERSAL_PUBLISH_EMOJI = "WMZERODOTPUB";
 
+// the emoji that triggers the force reaction resolution, i.e. when this is added a post or oddjob reaction
+// is forcefully synced from discord -> db
+export const FORCE_REACTION_RESOLUTION_EMOJI = "♻️";
+
 // the max file size for oddjob attachments
 export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
