@@ -40,8 +40,6 @@ export const LOG_THE_LEVEL_IN_DISCORD = false;
 // Define the discord roles that have the power to trigger actions from EmojiActions
 export const ROLES_WITH_POWER = ["Director"];
 
-export const FORCE_REACTION_RESOLUTION_EMOJI = "♻️";
-
 // the options for the role select menu in the /oddjob command
 export const ODDJOB_ROLE_OPTIONS: { name: string; value: string }[] = [
   // Website and Discord Bot Development
@@ -72,6 +70,10 @@ export const FEATURE_EMOJI = "WMFEATURED";
 
 // the emoji that can publish a post without payment
 export const UNIVERSAL_PUBLISH_EMOJI = "WMZERODOTPUB";
+
+// the emoji that triggers the force reaction resolution, i.e. when this is added a post or oddjob reaction
+// is forcefully synced from discord -> db
+export const FORCE_REACTION_RESOLUTION_EMOJI = "♻️";
 
 // the max file size for oddjob attachments
 export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
