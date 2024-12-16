@@ -2,7 +2,7 @@ import { MessageReaction, User as DiscordUser, Message } from "discord.js";
 import { ReactionHandlerFactory } from "../handlers/ReactionHandlerFactory";
 import { ReactionTracker } from "@/reaction-tracker";
 import { ReactionDiscrepancyResolver } from "./ReactionDiscrepancyResolver";
-import { shouldIgnoreMessage } from "@/handlers/util";
+import { ensureFullMessage, shouldIgnoreMessage } from "@/handlers/util";
 import { determineContentType } from "./utils";
 
 export class ReactionCurator {
@@ -16,8 +16,6 @@ export class ReactionCurator {
     const message = reaction.message as Message;
     const { contentType } = determineContentType(message);
 
-    console.log("curateAdd contentType", contentType);
-
     if (!contentType || shouldIgnoreMessage(message)) {
       return;
     }
@@ -25,10 +23,13 @@ export class ReactionCurator {
     // Only check for discrepancies if not currently resolving them
     if (!this.isResolvingDiscrepancies) {
       this.isResolvingDiscrepancies = true;
+
       const hadDiscrepancies =
         await ReactionDiscrepancyResolver.checkAndResolve(
           message,
           "reactionAdd",
+          reaction,
+          user,
         );
       this.isResolvingDiscrepancies = false;
 
@@ -36,6 +37,7 @@ export class ReactionCurator {
         console.log(
           `discrepancies were handled for reaction ${reaction.emoji.name || reaction.emoji.id}, returning`,
         );
+        // return as the ReactionDiscrepancyResolver will handle the reactions including the latest one
         return;
       }
     }
@@ -65,7 +67,8 @@ export class ReactionCurator {
     reaction: MessageReaction,
     user: DiscordUser,
   ): Promise<void> {
-    const { contentType } = determineContentType(reaction.message);
+    const { message } = await ensureFullMessage(reaction.message);
+    const { contentType } = determineContentType(message);
 
     if (!contentType || shouldIgnoreMessage(reaction.message)) {
       return;

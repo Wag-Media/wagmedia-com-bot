@@ -14,7 +14,7 @@ import * as config from "@/config";
 import { discordClient, logger } from "@/client";
 import { findEmojiCategoryRule, findEmojiPaymentRule } from "@/data/emoji";
 import { Emoji } from "@prisma/client";
-import { emojiType } from "@/types";
+import { EmojiType } from "@/types";
 
 /**
  * Just a simple delay function.
@@ -123,7 +123,7 @@ export function classifyMessage(message: Message | PartialMessage) {
   };
 }
 
-export async function classifyReaction(dbEmoji: Emoji): Promise<emojiType> {
+export async function classifyReaction(dbEmoji: Emoji): Promise<EmojiType> {
   // 1. Check for Feature Rule
   if (dbEmoji.name === config.FEATURE_EMOJI) {
     return "feature";
