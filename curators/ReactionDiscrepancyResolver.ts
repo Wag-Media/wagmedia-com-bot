@@ -50,80 +50,95 @@ export class ReactionDiscrepancyResolver {
     this.contentType = contentType;
     this.parentId = parentId;
 
+    const isForced = await this.forceReactionResolution(reaction, user);
+
     const discrepancies = await this.detectDiscrepancies(
       message,
       event,
       reaction,
       user,
+      isForced,
     );
 
-    if (
+    const messageLink = `https://discord.com/channels/${message.guild?.id}/${message.channel.id}/${message.id}`;
+
+    if (isForced) {
+      logger.warn(
+        `[${this.contentType}] Forcing reaction resolution on ${messageLink}`,
+      );
+    } else if (
       discrepancies.extraInDb.length > 0 ||
       discrepancies.missingInDb.length > 0
     ) {
-      const messageLink = `https://discord.com/channels/${message.guild?.id}/${message.channel.id}/${message.id}`;
-
       logger.warn(
-        `[${this.contentType}] 👀 reaction discrepancies detected on ${messageLink}
-        ${discrepancies.extraInDb.length > 0 ? "\n**extras in db:**" : ""}
-        ${discrepancies.extraInDb
-          .map((r) => `${loggableDbEmoji(r.emoji)} by <@${r.userDiscordId}>`)
-          .join(", ")}
-        ${discrepancies.missingInDb.length > 0 ? "**missing in db:**" : ""}
-        ${discrepancies.missingInDb
-          .map((r) => `${loggableDiscordEmoji(r.emoji)} by <@${r.user.id}>`)
-          .join(", ")}`,
-      );
-
-      if (discrepancies.extraInDb.length > 0) {
-        for (const { userDiscordId, emojiId } of discrepancies.extraInDb) {
-          const reactionGuildMember =
-            await message.guild?.members.fetch(userDiscordId);
-
-          if (!reactionGuildMember) {
-            continue;
-          }
-
-          const mockDiscordReaction = {
-            message: message,
-            emoji: {
-              name: emojiId,
-              animated: false,
-              imageURL: undefined,
-              discordId: emojiId,
-            },
-          };
-
-          // remove the reaction from discord
-          await ReactionCurator.curateRemove(
-            // todo is this really safe?
-            mockDiscordReaction as unknown as MessageReaction,
-            reactionGuildMember.user,
-          );
-        }
-      }
-
-      if (discrepancies.missingInDb.length > 0) {
-        for (const { reaction, user } of discrepancies.missingInDb) {
-          if (!reaction) {
-            continue;
-          }
-
-          await ReactionCurator.curateAdd(reaction, user);
-        }
-      }
-
-      const dbReactionsAfterResolution = (
-        await getPostOrOddjobReactions(message.id, this.contentType)
-      )
-        .map((r) => loggableDbEmoji(r.emoji))
-        .join(", ");
-
-      logger.log(
-        `[${this.contentType}] Discrepancies were handled successfully, the reactions state in the database is now in sync with Discord ${messageLink}:
-        ${dbReactionsAfterResolution}`,
+        `[${this.contentType}] 👀 reaction discrepancies detected on ${messageLink}${
+          discrepancies.extraInDb.length > 0
+            ? `\n**extras in db:** ${discrepancies.extraInDb
+                .map(
+                  (r) => `${loggableDbEmoji(r.emoji)} by <@${r.userDiscordId}>`,
+                )
+                .join(", ")}`
+            : ""
+        }${
+          discrepancies.missingInDb.length > 0
+            ? `\n**missing in db:** ${discrepancies.missingInDb
+                .map(
+                  (r) => `${loggableDiscordEmoji(r.emoji)} by <@${r.user.id}>`,
+                )
+                .join(", ")}`
+            : ""
+        }`,
       );
     }
+
+    if (discrepancies.extraInDb.length > 0) {
+      for (const { userDiscordId, emojiId } of discrepancies.extraInDb) {
+        const reactionGuildMember =
+          await message.guild?.members.fetch(userDiscordId);
+
+        if (!reactionGuildMember) {
+          continue;
+        }
+
+        const mockDiscordReaction = {
+          message: message,
+          emoji: {
+            name: emojiId,
+            animated: false,
+            imageURL: undefined,
+            discordId: emojiId,
+          },
+        };
+
+        // remove the reaction from discord
+        await ReactionCurator.curateRemove(
+          // todo is this really safe?
+          mockDiscordReaction as unknown as MessageReaction,
+          reactionGuildMember.user,
+        );
+      }
+    }
+
+    if (discrepancies.missingInDb.length > 0) {
+      for (const { reaction, user } of discrepancies.missingInDb) {
+        if (!reaction) {
+          continue;
+        }
+
+        await ReactionCurator.curateAdd(reaction, user);
+      }
+    }
+
+    const dbReactionsAfterResolution = (
+      await getPostOrOddjobReactions(message.id, this.contentType)
+    )
+      .map((r) => loggableDbEmoji(r.emoji))
+      .join(", ");
+
+    logger.log(
+      `[${this.contentType}] Discrepancies were handled successfully, the reactions state in the database is now in sync with Discord ${messageLink}:
+        ${dbReactionsAfterResolution}`,
+    );
 
     return (
       discrepancies.extraInDb.length > 0 || discrepancies.missingInDb.length > 0
@@ -144,6 +159,7 @@ export class ReactionDiscrepancyResolver {
     event: ReactionEventType,
     reaction?: MessageReaction,
     user?: DiscordUser,
+    isForceResolution?: boolean,
   ): Promise<ReactionDiscrepancies> {
     const noDiscrepancies: ReactionDiscrepancies = {
       missingInDb: [],
@@ -176,7 +192,7 @@ export class ReactionDiscrepancyResolver {
 
     if (
       this.isDbReactionStateSuspicious(message, dbReactions, event) ||
-      (await this.forceReactionResolution(reaction, user))
+      isForceResolution
     ) {
       // fetch all reactions from discord in a long lasting operation
       const discordReactions: DiscordReaction[] = [];
@@ -256,7 +272,6 @@ export class ReactionDiscrepancyResolver {
       return false;
     }
 
-    //todo flow
     if (discordReactions.length > 1) {
       const lastDiscordReaction = discordReactions[discordReactions.length - 2];
 
