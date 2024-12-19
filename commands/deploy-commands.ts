@@ -1,5 +1,4 @@
 import { DiscordAPIError, REST, Routes } from "discord.js";
-import * as config from "@/config";
 import * as commands from "./";
 
 const commandsData = Object.values(commands).map((command) =>
@@ -27,11 +26,11 @@ export async function deployCommands({ guildId }: DeployCommandsProps) {
     );
     const data = await rest.put(
       Routes.applicationGuildCommands(clientId, guildId),
-      { body: [] },
+      { body: commandsData },
     );
 
     console.log(
-      `Successfully reloaded ${data.length} application (/) commands.`,
+      `Successfully reloaded ${commandsData.length} application (/) commands.`,
     );
   } catch (error) {
     if (error instanceof DiscordAPIError) {

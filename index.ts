@@ -54,7 +54,7 @@ discordClient.once(Events.ClientReady, async () => {
       // guild.leave();
     } else {
       logIntroMessage(guild, discordClient);
-      // await deployCommands({ guildId: guild.id });
+      await deployCommands({ guildId: guild.id });
     }
   });
 

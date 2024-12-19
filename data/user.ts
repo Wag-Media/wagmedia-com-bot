@@ -80,3 +80,18 @@ export const findOrCreateUserById = async (userId: string) => {
   });
   return dbUser;
 };
+
+export const updateUserBio = async (userId: string, bio: string) => {
+  const dbUser = await prisma.user.update({
+    where: { discordId: userId },
+    data: { bio },
+  });
+  return dbUser;
+};
+
+export const getPostsByUser = async (userId: string) => {
+  const posts = await prisma.post.findMany({
+    where: { user: { discordId: userId }, isPublished: true },
+  });
+  return posts;
+};
