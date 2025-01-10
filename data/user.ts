@@ -89,6 +89,22 @@ export const updateUserBio = async (userId: string, bio: string) => {
   return dbUser;
 };
 
+export const updateUserTwitter = async (userId: string, twitter: string) => {
+  const dbUser = await prisma.user.update({
+    where: { discordId: userId },
+    data: { twitterUsername: twitter },
+  });
+  return dbUser;
+};
+
+export const updateUserDomain = async (userId: string, domain: string) => {
+  const dbUser = await prisma.user.update({
+    where: { discordId: userId },
+    data: { domain },
+  });
+  return dbUser;
+};
+
 export const getPostsByUser = async (userId: string) => {
   const posts = await prisma.post.findMany({
     where: { user: { discordId: userId }, isPublished: true },

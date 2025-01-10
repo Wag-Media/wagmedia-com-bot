@@ -140,12 +140,33 @@ discordClient.on(Events.MessageReactionRemove, async (reaction, user) => {
 });
 
 discordClient.on(Events.InteractionCreate, async (interaction) => {
-  if (!interaction.isCommand()) return;
+  if (!interaction.isChatInputCommand()) return;
 
-  const { commandName } = interaction;
+  console.log("Available commands:", Object.keys(commands));
+  console.log("Requested command:", interaction.commandName);
 
-  if (commands[commandName]) {
-    commands[commandName]?.execute(interaction);
+  const command = commands[interaction.commandName];
+
+  if (!command) {
+    logger.error(
+      `No command matching ${interaction.commandName} was found. Execution attempted by ${interaction.user.username}`,
+    );
+    return;
+  }
+
+  try {
+    await command.execute(interaction);
+  } catch (error) {
+    logger.error(
+      `Error executing command ${interaction.commandName}. Execution attempted by ${interaction.user.username}`,
+      error,
+    );
+    await interaction
+      .reply({
+        content: "There was an error while executing this command!",
+        ephemeral: true,
+      })
+      .catch(console.error);
   }
 });
 
