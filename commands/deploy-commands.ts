@@ -1,5 +1,6 @@
 import { DiscordAPIError, REST, Routes } from "discord.js";
 import * as commands from "./";
+import { logger } from "@/client";
 
 const commandsData = Object.values(commands).map((command) =>
   command.data.toJSON(),
@@ -29,7 +30,7 @@ export async function deployCommands({ guildId }: DeployCommandsProps) {
       { body: commandsData },
     );
 
-    console.log(
+    logger.log(
       `Successfully reloaded ${commandsData.length} application (/) commands.`,
     );
   } catch (error) {
