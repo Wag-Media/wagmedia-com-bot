@@ -14,7 +14,12 @@ if (!token) {
 }
 
 const rest = new REST().setToken(token);
-const clientId = "1191784282742595735";
+const clientId = process.env["DISCORD_CLIENT_ID"];
+
+if (!clientId) {
+  console.error("DISCORD_CLIENT_ID is not set in the environment variables.");
+  process.exit(1);
+}
 
 type DeployCommandsProps = {
   guildId: string;
