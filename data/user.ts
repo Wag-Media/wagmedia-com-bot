@@ -14,6 +14,8 @@ export const findOrCreateUser = async (
     throw new Error("Message must have a member");
   }
 
+  const roles = message.member?.roles.cache.map((role) => role.name);
+
   const user = await prisma.user.upsert({
     where: {
       discordId: message.author.id,
@@ -21,12 +23,17 @@ export const findOrCreateUser = async (
     update: {
       // Update the avatar every time the user posts something
       avatar: message.member?.displayAvatarURL(),
+      avatarDecoration: message.author.avatarDecorationURL(),
+      banner: message.author.bannerURL(),
+      accentColor: message.author.hexAccentColor,
       name: message.member?.displayName,
+      roles,
     },
     create: {
       discordId: message.author.id,
       avatar: message.member?.displayAvatarURL(),
       name: message.member?.displayName,
+      roles: [],
     },
   });
   return user;
