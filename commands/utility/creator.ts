@@ -10,6 +10,8 @@ import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
 
 import validator from "validator";
 
+const pageUrl = process.env.PAGE_URL || "http://localhost:3000";
+
 function sanitizeBio(input: string): string {
   return validator
     .escape(validator.stripLow(validator.trim(input)))
@@ -123,7 +125,8 @@ export async function executeBio(interaction: ChatInputCommandInteraction) {
     await updateUserBio(dbUser.discordId, sanitizedBio);
 
     await interaction.editReply({
-      content: `Your bio has been added: ${sanitizedBio}.\n\nYou can now edit it again with \`/bio\` if you want to change it and [view it on WagMedia](http://localhost:3000/creator/${dbUser.name})`,
+      content: `Your bio has been added: ${sanitizedBio}.
+You can now edit it again with \`/creator bio\` if you want to change it and [view it on WagMedia](${pageUrl}/creator/${dbUser.name})`,
     });
   } catch (error) {
     console.error(error);
@@ -161,7 +164,8 @@ export async function executeDomain(interaction: ChatInputCommandInteraction) {
   await updateUserDomain(dbUser.discordId, rawDomain);
 
   await interaction.editReply({
-    content: "Domain added",
+    content: `Domain added: ${rawDomain}.
+You can now edit it again with \`/creator domain\` if you want to change it and [view it on WagMedia](${pageUrl}/creator/${dbUser.name})`,
   });
 }
 
@@ -211,6 +215,7 @@ export async function executeTwitter(interaction: ChatInputCommandInteraction) {
   await updateUserTwitter(dbUser.discordId, sanitizedTwitterUsername);
 
   await interaction.editReply({
-    content: "Twitter username added",
+    content: `Twitter username added: ${sanitizedTwitterUsername}.
+You can now edit it again with \`/creator twitter\` if you want to change it and [view it on WagMedia](${pageUrl}/creator/${dbUser.name})`,
   });
 }
