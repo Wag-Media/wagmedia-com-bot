@@ -111,7 +111,7 @@ export async function executeBio(interaction: ChatInputCommandInteraction) {
     if (sanitizedBio.length < 10) {
       return await interaction.editReply({
         content:
-          "Bio must be at least 15 characters long after removing invalid characters.",
+          "Bio must be at least 10 characters long after removing invalid characters.",
       });
     }
 
@@ -161,9 +161,9 @@ export async function executeDomain(interaction: ChatInputCommandInteraction) {
     });
   }
 
-  if (!rawDomain.startsWith("https://") && !rawDomain.startsWith("http://")) {
+  if (!validator.isURL(rawDomain)) {
     return await interaction.editReply({
-      content: "Domain must start with https:// or http://",
+      content: `"${rawDomain}" is not a valid URL.`,
     });
   }
 

@@ -15,6 +15,7 @@ import { discordClient, logger } from "@/client";
 import { findEmojiCategoryRule, findEmojiPaymentRule } from "@/data/emoji";
 import { Emoji } from "@prisma/client";
 import { EmojiType } from "@/types";
+import validator from "validator";
 
 /**
  * Just a simple delay function.
