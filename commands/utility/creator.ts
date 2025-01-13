@@ -30,7 +30,7 @@ export const data = new SlashCommandBuilder()
       .addStringOption((option) =>
         option
           .setName("bio")
-          .setDescription("The bio you want to add")
+          .setDescription("The bio you want to add (max 300 characters)")
           .setRequired(true),
       ),
   )
@@ -69,8 +69,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const subcommand = interaction.options.getSubcommand();
 
   logger.log(
-    `[command] /creator ${subcommand} executed by ${interaction.user.username} with options: 
-      ${interaction.options.data.map((option) => `${option.options?.map((o) => `${o.name}: ${o.value}`).join(", ")}`).join(", ")}`,
+    `[command] \`/creator ${subcommand}\` executed by ${interaction.user.username} with options: 
+${interaction.options.data.map((option) => `${option.options?.map((o) => `${o.name}: ${o.value?.toString().slice(0, 100)}`).join(", ")}`).join(", ")}`,
   );
 
   if (subcommand === "biography") {
@@ -111,7 +111,13 @@ export async function executeBio(interaction: ChatInputCommandInteraction) {
     if (sanitizedBio.length < 10) {
       return await interaction.editReply({
         content:
-          "Bio must be at least 10 characters long after removing invalid characters.",
+          "Bio must be at least 15 characters long after removing invalid characters.",
+      });
+    }
+
+    if (sanitizedBio.length > 300) {
+      return await interaction.editReply({
+        content: "Bio must be less than 300 characters.",
       });
     }
 
