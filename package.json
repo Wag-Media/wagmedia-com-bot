@@ -13,7 +13,8 @@
     "test": "jest",
     "data-migration:add-content-type": "ts-node prisma/migrations/20240422153641_add_content_type/data-migration.ts",
     "data-migration:test": "ts-node prisma/log-multiple-post-earnings.ts",
-    "migrate-roles": "ts-node prisma/migrate-roles.ts"
+    "migrate-roles": "ts-node prisma/migrate-roles.ts",
+    "postinstall": "pnpm prisma generate"
   },
   "simple-git-hooks": {
     "pre-commit": "npx lint-staged",
@@ -29,6 +30,7 @@
     "@discord-fp/djs": "4.0.1",
     "@discordjs/builders": "^1.9.0",
     "@prisma/client": "^6.0.1",
+    "@types/validator": "^13.12.2",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "axios": "^1.7.7",
@@ -43,6 +45,7 @@
     "tsx": "^3.14.0",
     "typescript": "^5.6.3",
     "undici": "^6.20.1",
+    "validator": "^13.12.0",
     "viem": "^2.21.40"
   },
   "devDependencies": {
@@ -55,5 +58,5 @@
     "ts-jest": "^29.2.5",
     "tsconfig-paths-jest": "^0.0.1"
   },
-  "packageManager": "pnpm@8.10.5+sha1.4370a069f21873a0ad83c785b8048ed8caf6e6e9"
+  "packageManager": "pnpm@9.15.3+sha512.1f79bc245a66eb0b07c5d4d83131240774642caaa86ef7d0434ab47c0d16f66b04e21e0c086eb61e62c77efc4d7f7ec071afad3796af64892fae66509173893a"
 }

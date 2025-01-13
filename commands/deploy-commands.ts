@@ -1,20 +1,6 @@
 import { DiscordAPIError, REST, Routes } from "discord.js";
-import * as config from "@/config";
 import * as commands from "./";
-
-const commandsData = Object.values(commands).map((command) =>
-  command.data.toJSON(),
-);
-
-const token = process.env["DISCORD_BOT_TOKEN"];
-
-if (!token) {
-  console.error("DISCORD_BOT_TOKEN is not set in the environment variables.");
-  process.exit(1);
-}
-
-const rest = new REST().setToken(token);
-const clientId = "1191784282742595735";
+import { logger } from "@/client";
 
 type DeployCommandsProps = {
   guildId: string;
@@ -22,16 +8,40 @@ type DeployCommandsProps = {
 
 export async function deployCommands({ guildId }: DeployCommandsProps) {
   try {
-    console.log(
-      `Started refreshing ${commandsData.length} application (/) commands on guild ${guildId}`,
-    );
-    const data = await rest.put(
-      Routes.applicationGuildCommands(clientId, guildId),
-      { body: [] },
+    const commandsData = Object.values(commands).map((command) =>
+      command.data.toJSON(),
     );
 
     console.log(
-      `Successfully reloaded ${data.length} application (/) commands.`,
+      `Started refreshing ${commandsData.length} application (/) commands on guild ${guildId}`,
+    );
+
+    const token = process.env["DISCORD_BOT_TOKEN"];
+
+    if (!token) {
+      console.error(
+        "DISCORD_BOT_TOKEN is not set in the environment variables.",
+      );
+      process.exit(1);
+    }
+
+    const rest = new REST().setToken(token);
+    const clientId = process.env["DISCORD_CLIENT_ID"];
+
+    if (!clientId) {
+      console.error(
+        "DISCORD_CLIENT_ID is not set in the environment variables.",
+      );
+      process.exit(1);
+    }
+
+    const data = await rest.put(
+      Routes.applicationGuildCommands(clientId, guildId),
+      { body: commandsData },
+    );
+
+    logger.log(
+      `Successfully reloaded ${commandsData.length} application (/) commands.`,
     );
   } catch (error) {
     if (error instanceof DiscordAPIError) {

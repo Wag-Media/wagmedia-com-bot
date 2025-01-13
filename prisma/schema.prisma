@@ -102,6 +102,9 @@ model User {
   bio              String?
   name             String?
   Payment          Payment[]
+  domain           String?
+  twitterUsername  String?
+  roles            String[]   @default([])
 
   oddjobsposted  OddJob[] @relation(name: "PostedUser")
   oddjobsmanaged OddJob[] @relation(name: "ManagerUser")

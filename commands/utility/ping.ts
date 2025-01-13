@@ -5,5 +5,6 @@ export const data = new SlashCommandBuilder()
   .setDescription("Replies with Pong!");
 
 export async function execute(interaction) {
+  console.log(`Starting ping command for user ${interaction.user.id}`);
   await interaction.reply("Pong!");
 }

@@ -185,6 +185,7 @@ heroku pg:copy wagmedia-com-bot::DATABASE_URL DATABASE_URL --app wagmedia-com-bo
 might need to run migrations again on staging afterwards
 
 ````bash
+npx prisma migrate dev #development
 npx prisma migrate deploy
 ```
 ````

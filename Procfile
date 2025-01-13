@@ -1,2 +1,2 @@
 release: npx prisma migrate deploy
-worker: npm run start
+worker: pnpm run start
