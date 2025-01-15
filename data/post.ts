@@ -587,16 +587,8 @@ export function determinePostType(
   const channelNewsIds = JSON.parse(process.env.CHANNELS_NEWS || "[]");
   const channelArticleIds = JSON.parse(process.env.CHANNELS_ARTICLES || "[]");
 
-  console.log(
-    "aaa determinePostType",
-    messageLink,
-    channelNewsIds,
-    channelArticleIds,
-  );
-
   for (const channelId of channelNewsIds) {
     if (messageLink.includes(channelId)) {
-      console.log("aaa determinePostType news");
       return "news";
     }
   }
