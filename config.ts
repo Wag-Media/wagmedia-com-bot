@@ -107,7 +107,7 @@ export const categoryEmojiMap: {
   RWA: "WMRWA",
   Rollup: "WMROLLUP",
   Meme: "WMMEME",
-  Jam: "WMJAM",
+  JAM: "WMJAM",
   Grant: "WMGRANT",
   Events: "WMEVENTS",
   DV: "WMDV",
