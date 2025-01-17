@@ -21,6 +21,7 @@ import {
   PostWithCategoriesTagsEmbeds,
   PostWithEarnings,
 } from "@/types";
+import { replaceAuthorLinks } from "@/utils/replace-author-links";
 const prisma = new PrismaClient();
 
 export type PostCreateType = {
@@ -68,6 +69,9 @@ export const findOrCreatePost = async (
     }),
   );
 
+  let slug = await replaceAuthorLinks(title, false);
+  slug = slugify(slug);
+
   // Upsert the post
   const post = await prisma.post.upsert({
     where: { id: message.id },
@@ -75,7 +79,7 @@ export const findOrCreatePost = async (
       title,
       content: description,
       discordLink: messageLink,
-      slug: slugify(title),
+      slug,
       isDeleted: false,
       parentPostId: parentId,
       // Update tags connection
@@ -90,7 +94,7 @@ export const findOrCreatePost = async (
       title,
       content: description,
       discordLink: messageLink,
-      slug: slugify(title),
+      slug,
       userId: user.id, // Assuming you have the user's ID
       parentPostId: parentId,
       tags: {

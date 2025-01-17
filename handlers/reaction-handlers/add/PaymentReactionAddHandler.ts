@@ -121,6 +121,9 @@ export class PostPaymentReactionAddHandler extends BasePaymentReactionAddHandler
       },
     });
 
+    console.log("this.contentType", this.contentType);
+    console.log("this.dbContent", this.dbContent);
+
     if (this.contentType === "post" && !(this.dbContent as Post).isPublished) {
       await prisma.post.update({
         where: { id: this.dbContent!.id },
@@ -360,7 +363,14 @@ export class ThreadPaymentReactionAddHandler extends PostPaymentReactionAddHandl
       console.info("parentPost created");
     }
 
-    // 4. process the payment as in posts
+    if (!this.dbContent?.firstPaymentAt) {
+      await prisma.post.update({
+        where: { id: this.dbContent!.id },
+        data: { firstPaymentAt: new Date() },
+      });
+    }
+
+    // 4. process the payment as in posts (i.e. add the payment to the db)
     await super.processReaction(reaction, user);
   }
 }

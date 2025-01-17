@@ -11,6 +11,7 @@
     "lint:fix": "prettier . --write",
     "start": "tsx ./index.ts",
     "test": "jest",
+    "data-migration:backfill-first-payment-at": "ts-node prisma/migrations/20250117153800_backfill_first_payment_at.ts",
     "data-migration:add-content-type": "ts-node prisma/migrations/20240422153641_add_content_type/data-migration.ts",
     "data-migration:test": "ts-node prisma/log-multiple-post-earnings.ts",
     "migrate-roles": "ts-node prisma/migrate-roles.ts",
