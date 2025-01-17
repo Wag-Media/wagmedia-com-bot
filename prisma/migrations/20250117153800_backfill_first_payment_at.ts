@@ -25,16 +25,16 @@ async function main() {
     if (post.payments[0]) {
       console.log(
         "updating post",
-        post.id,
+        post.title,
         ": ",
         post.createdAt,
         "with",
         post.payments[0].createdAt,
       );
-      // await prisma.post.update({
-      //   where: { id: post.id },
-      //   data: { firstPaymentAt: post.payments[0].createdAt },
-      // });
+      await prisma.post.update({
+        where: { id: post.id },
+        data: { firstPaymentAt: post.payments[0].createdAt },
+      });
     }
   }
 
@@ -66,10 +66,10 @@ async function main() {
         "with",
         oddJob.payments[0].createdAt,
       );
-      // await prisma.oddJob.update({
-      //   where: { id: oddJob.id },
-      //   data: { firstPaymentAt: oddJob.payments[0].createdAt },
-      // });
+      await prisma.oddJob.update({
+        where: { id: oddJob.id },
+        data: { firstPaymentAt: oddJob.payments[0].createdAt },
+      });
     }
   }
 }
