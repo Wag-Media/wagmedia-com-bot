@@ -1,3 +1,4 @@
+import { Events } from "discord.js";
 import dotenv from "dotenv";
 
 // use .env  without extension file if node_env is not defined otherwise use .env.${node_env}
@@ -101,6 +102,17 @@ export const categoryEmojiMap: {
   Bounty: "WMBOUNTY",
   Video: "WMVIDEO",
   Paraverse: "WMPARAVERSE",
+  Tip: "WMTIP",
+  Wallet: "WMWALLET",
+  RWA: "WMRWA",
+  Rollup: "WMROLLUP",
+  Meme: "WMMEME",
+  JAM: "WMJAM",
+  Grant: "WMGRANT",
+  Events: "WMEVENTS",
+  DV: "WMDV",
+  DAO: "WMDAO",
+  Coretime: "WMCORETIME",
 };
 
 export const NEWSLETTER_CATEGORY_NAME = "Newsletter";
