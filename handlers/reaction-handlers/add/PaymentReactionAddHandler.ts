@@ -121,9 +121,6 @@ export class PostPaymentReactionAddHandler extends BasePaymentReactionAddHandler
       },
     });
 
-    console.log("this.contentType", this.contentType);
-    console.log("this.dbContent", this.dbContent);
-
     if (this.contentType === "post" && !(this.dbContent as Post).isPublished) {
       await prisma.post.update({
         where: { id: this.dbContent!.id },

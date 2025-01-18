@@ -42,6 +42,8 @@ export type PostEmbed = {
   url: string | null;
   imageUrl: string | null;
   color: number | null;
+  width: number | null;
+  height: number | null;
 };
 
 export type PostWithOptions = Post & {

@@ -224,6 +224,8 @@ model Embed {
   id         String   @id @default(uuid())
   embedUrl   String?
   embedImage String?
+  width      Int?
+  height     Int?
   embedColor Int?
   postId     String
   post       Post     @relation(fields: [postId], references: [id])

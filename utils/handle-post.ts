@@ -101,10 +101,10 @@ export function parseMessage(message: Message): PostType {
         embed.thumbnail?.url ||
         embed.thumbnail?.proxyURL ||
         null,
+      width: embed.image?.width || embed.thumbnail?.width || null,
+      height: embed.image?.height || embed.thumbnail?.height || null,
       color: embed.color || null,
     }));
-
-    // console.log("embeds", embedData);
 
     return { title, description, tags, embeds: embedData };
   } catch (error) {

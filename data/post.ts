@@ -52,8 +52,6 @@ export const findOrCreatePost = async (
 
   const contentType = determinePostType(messageLink);
 
-  console.log("aaa contentType", contentType);
-
   const user = await findOrCreateUser(message);
 
   // Ensure all tags exist
@@ -139,6 +137,8 @@ async function _manageEmbedsForPost(
           embedImage: embed.imageUrl,
           embedColor: embed.color,
           postId: postId,
+          width: embed.width,
+          height: embed.height,
         },
       }),
     ),
