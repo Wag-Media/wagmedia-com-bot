@@ -237,8 +237,6 @@ export class OddJobPaymentReactionAddHandler extends BasePaymentReactionAddHandl
     reaction: MessageReaction,
     user: DiscordUser,
   ) {
-    console.log("Handling payment reaction for oddjob");
-
     const { paymentAmount, paymentUnit, fundingSource } = this.paymentRule!;
 
     const dbReaction = await upsertEntityReaction(
@@ -297,10 +295,7 @@ export class ThreadPaymentReactionAddHandler extends PostPaymentReactionAddHandl
     reaction: MessageReaction,
     user: DiscordUser,
   ): Promise<void> {
-    console.log("Initializing payment reaction for a thread");
     await super.initialize(reaction, user);
-
-    // If the message is a thread, set the parentId
     this.parentId = reaction.message.channelId;
   }
 
@@ -313,8 +308,6 @@ export class ThreadPaymentReactionAddHandler extends PostPaymentReactionAddHandl
     reaction: MessageReaction,
     user: DiscordUser,
   ) {
-    console.log("Handling payment reaction for a thread");
-
     // 1. if the thread is not in the database, create it on payment
     if (!this.dbContent) {
       this.dbContent = await findOrCreateThreadPost({

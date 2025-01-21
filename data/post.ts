@@ -161,10 +161,7 @@ export async function findOrCreateThreadPost(attributes: {
 }): Promise<PostWithEarnings> {
   const { message, content, url } = attributes;
 
-  const parentId = message.channel.isThread()
-    ? message.channel.parent!.id
-    : undefined;
-  console.log("findOrCreateThreadPost parentId", parentId);
+  const parentId = message.channel.isThread() ? message.channelId : undefined;
 
   const threadPost = findOrCreatePost({
     message,
