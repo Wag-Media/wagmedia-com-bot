@@ -6,7 +6,12 @@ import {
 } from "discord.js";
 import { IReactionHandler } from "./_IReactionHandler";
 import { getGuildFromMessage } from "@/handlers/util";
-import { ContentType, OddJobWithOptions, PostWithOptions } from "@/types";
+import {
+  ContentType,
+  EventWithOptions,
+  OddJobWithOptions,
+  PostWithOptions,
+} from "@/types";
 import { Emoji, Reaction, User } from "@prisma/client";
 import { findOrCreateEmoji } from "@/data/emoji";
 import { findOrCreateUserFromDiscordUser } from "@/data/user";
@@ -22,7 +27,12 @@ export abstract class BaseReactionHandler implements IReactionHandler {
   protected guild: Guild | null;
   protected dbEmoji: Emoji;
   protected dbUser: User | undefined;
-  protected dbContent: PostWithOptions | OddJobWithOptions | null | undefined;
+  protected dbContent:
+    | PostWithOptions
+    | OddJobWithOptions
+    | EventWithOptions
+    | null
+    | undefined;
   protected dbReaction: Reaction | null | undefined;
 
   async handle(reaction, user) {
@@ -66,7 +76,9 @@ export abstract class BaseReactionHandler implements IReactionHandler {
 
   protected getDbContent(
     reaction: MessageReaction,
-  ): Promise<PostWithOptions | OddJobWithOptions | null | undefined> {
+  ): Promise<
+    PostWithOptions | OddJobWithOptions | EventWithOptions | null | undefined
+  > {
     return getPostOrOddjobWithEarnings(reaction.message.id, this.contentType);
   }
 

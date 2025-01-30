@@ -32,6 +32,10 @@ export const CHANNELS_NEWSLETTER = process.env.CHANNELS_NEWSLETTER
   ? JSON.parse(process.env.CHANNELS_NEWSLETTER)
   : [];
 
+export const CHANNELS_EVENTS = process.env.CHANNELS_EVENTS
+  ? JSON.parse(process.env.CHANNELS_EVENTS)
+  : [];
+
 export const CHANNEL_LOG = process.env.CHANNEL_LOG
   ? process.env.CHANNEL_LOG.toString()
   : "";

@@ -36,6 +36,8 @@
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "axios": "^1.7.9",
+    "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
     "discord.js": "^14.17.3",
     "dotenv": "^16.4.7",
     "eslint": "^8.57.1",
