@@ -14,6 +14,7 @@ import {
 import {
   ContentType,
   OddjobWithEarnings,
+  PolkadotEventWithTagsEmbeds,
   PostWithCategories,
   PostWithCategoriesEarnings,
 } from "@/types";
@@ -23,6 +24,7 @@ import {
   parseOddjob,
 } from "@/utils/handle-odd-job";
 import { handlePost, isPostValid, parseMessage } from "@/utils/handle-post";
+import { handleEvent, isEventValid, parseEvent } from "@/utils/handle-event";
 import { prisma } from "@/utils/prisma";
 import { OddJob } from "@prisma/client";
 import { Message, PartialMessage } from "discord.js";
@@ -40,7 +42,12 @@ export class MessageCurator {
 
   static async curate(
     message: Message,
-  ): Promise<PostWithCategoriesEarnings | OddjobWithEarnings | undefined> {
+  ): Promise<
+    | PostWithCategoriesEarnings
+    | OddjobWithEarnings
+    | PolkadotEventWithTagsEmbeds
+    | undefined
+  > {
     if (shouldIgnoreMessage(message)) {
       return;
     }
@@ -60,6 +67,8 @@ export class MessageCurator {
       // check the reaction curator
     } else if (this.messageChannelType === "newsletter") {
       return await handleNewsletter(message, this.messageLink);
+    } else if (this.messageChannelType === "event") {
+      return await handleEvent(message, this.messageLink);
     } else {
       // the message is not from a monitored channel or category
       return;

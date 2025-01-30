@@ -1,6 +1,7 @@
 import {
   getGuildFromMessage,
   isCategoryMonitoredForPosts,
+  isChannelMonitoredForEvents,
   isChannelMonitoredForNewsletter,
   isChannelMonitoredForOddJobs,
   isChannelMonitoredForPosts,
@@ -53,6 +54,8 @@ export function determineContentType(message: Message): {
       contentType = "oddjob";
     } else if (isChannelMonitoredForNewsletter(message.channel)) {
       contentType = "newsletter";
+    } else if (isChannelMonitoredForEvents(message.channel)) {
+      contentType = "event";
     }
   }
 

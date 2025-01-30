@@ -1,6 +1,7 @@
 import { MessageReaction, User as DiscordUser } from "discord.js";
 import { IReactionHandler } from "./reaction-handlers/_IReactionHandler";
 import {
+  EventPaymentReactionAddHandler,
   OddJobPaymentReactionAddHandler,
   PostPaymentReactionAddHandler,
   ThreadPaymentReactionAddHandler,
@@ -38,6 +39,8 @@ export class ReactionHandlerFactory {
 
     // Determine the type of content (e.g., post, oddjob, thread)
     const { contentType } = determineContentType(message);
+
+    console.log(`reactionHandlerFactory: contentType: ${contentType}`);
     // and the user role (e.g., poweruser, regularuser)
     const userRole = await determineUserRole(message, user);
 
@@ -75,7 +78,7 @@ export class ReactionHandlerFactory {
       !["post", "newsletter"].includes(contentType)
     ) {
       return new NotAllowedReactionHandler(
-        `You are not allowed to use category emojis in oddjobs or threads.`,
+        `You are not allowed to use category emojis in oddjobs, threads, or events.`,
       );
     } else if (
       userRole === "superuser" &&
@@ -98,6 +101,13 @@ export class ReactionHandlerFactory {
       contentType === "thread"
     ) {
       return new ThreadPaymentReactionAddHandler();
+    } else if (
+      userRole === "superuser" &&
+      eventType === "reactionAdd" &&
+      emojiType === "payment" &&
+      contentType === "event"
+    ) {
+      return new EventPaymentReactionAddHandler();
     } else if (
       userRole === "superuser" &&
       ["reactionAdd", "reactionRemove"].includes(eventType) &&

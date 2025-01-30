@@ -249,6 +249,9 @@ export const isChannelMonitoredForNewsletter = (channel: Channel) =>
   channel instanceof TextChannel &&
   config.CHANNELS_NEWSLETTER.includes(channel.id);
 
+export const isChannelMonitoredForEvents = (channel: Channel) =>
+  channel instanceof TextChannel && config.CHANNELS_EVENTS.includes(channel.id);
+
 export const isParentMessageFromMonitoredCategoryOrChannel = (
   message: Message<boolean> | PartialMessage,
 ) => {

@@ -84,10 +84,13 @@ model ContentEarnings {
   post   Post?   @relation(fields: [postId], references: [id])
 
   oddJobId String? // Foreign key for OddJob
-  oddJob   OddJob? @relation(fields: [oddJobId], references: [id])
+  oddJob   OddJob?        @relation(fields: [oddJobId], references: [id])
+  Event    PolkadotEvent? @relation(fields: [eventId], references: [id])
+  eventId  String?
 
   @@unique([postId, unit])
   @@unique([oddJobId, unit])
+  @@unique([eventId, unit])
 }
 
 model User {
@@ -106,8 +109,9 @@ model User {
   twitterUsername  String?
   roles            String[]   @default([])
 
-  oddjobsposted  OddJob[] @relation(name: "PostedUser")
-  oddjobsmanaged OddJob[] @relation(name: "ManagerUser")
+  oddjobsposted  OddJob[]        @relation(name: "PostedUser")
+  oddjobsmanaged OddJob[]        @relation(name: "ManagerUser")
+  Event          PolkadotEvent[]
 }
 
 model Reaction {
@@ -123,12 +127,15 @@ model Reaction {
   oddJobId String?
   OddJob   OddJob? @relation(fields: [oddJobId], references: [id])
 
-  createdAt        DateTime  @default(now())
-  initiatesPayment Boolean   @default(false)
+  createdAt        DateTime       @default(now())
+  initiatesPayment Boolean        @default(false)
   Payment          Payment[]
+  Event            PolkadotEvent? @relation(fields: [eventId], references: [id])
+  eventId          String?
 
   @@unique([postId, userDiscordId, emojiId])
   @@unique([oddJobId, userDiscordId, emojiId])
+  @@unique([eventId, userDiscordId, emojiId])
 }
 
 model Category {
@@ -159,9 +166,10 @@ model Emoji {
 }
 
 model Tag {
-  id    Int    @id @default(autoincrement())
-  name  String @unique
-  posts Post[] @relation("PostTags")
+  id     Int             @id @default(autoincrement())
+  name   String          @unique
+  posts  Post[]          @relation("PostTags")
+  events PolkadotEvent[] @relation("EventTags")
 }
 
 model LastProcessedPost {
@@ -188,6 +196,9 @@ model Payment {
   threadParentId String?
   threadParent   Post?   @relation(name: "PaymentThreadParent", fields: [threadParentId], references: [id])
 
+  eventId String?
+  Event   PolkadotEvent? @relation(fields: [eventId], name: "EventPayments", references: [id])
+
   userId     Int
   user       User     @relation(fields: [userId], references: [id])
   reactionId Int
@@ -197,6 +208,8 @@ model Payment {
   updatedAt DateTime @updatedAt
 
   @@unique([postId, userId, reactionId])
+  // @@unique([oddJobId, userId, reactionId])
+  @@unique([eventId, userId, reactionId])
 }
 
 // Rules for how much to pay for a given reaction
@@ -221,16 +234,18 @@ model CategoryRule {
 }
 
 model Embed {
-  id         String   @id @default(uuid())
-  embedUrl   String?
-  embedImage String?
-  width      Int?
-  height     Int?
-  embedColor Int?
-  postId     String
-  post       Post     @relation(fields: [postId], references: [id])
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id              String         @id @default(uuid())
+  embedUrl        String?
+  embedImage      String?
+  width           Int?
+  height          Int?
+  embedColor      Int?
+  postId          String?
+  post            Post?          @relation(fields: [postId], references: [id])
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  PolkadotEvent   PolkadotEvent? @relation("EventEmbeds", fields: [polkadotEventId], references: [id])
+  polkadotEventId String?
 }
 
 model Attachment {
@@ -243,9 +258,54 @@ model Attachment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  data Bytes? // Optional: store the file data directly in the database
+  data Bytes? //store the file data directly in the database
 
   oddJob OddJob @relation(fields: [oddJobId], references: [id]) // Relation to OddJob
 
-  @@index([oddJobId]) // Optional: improve query performance
+  @@index([oddJobId]) // improve query performance
+}
+
+model PolkadotEvent {
+  id          String  @id @default(uuid())
+  title       String
+  description String
+  embeds      Embed[] @relation("EventEmbeds")
+  tags        Tag[]   @relation("EventTags")
+
+  location String?
+  link     String?
+  image    String?
+
+  // core datetime fields 
+  startsAt DateTime? // stored in utc
+  endsAt   DateTime? // optional stored in utc
+  isAllDay Boolean?  @default(false)
+
+  // computed fields
+  startDate DateTime? @db.Date
+  endDate   DateTime? @db.Date
+
+  //recurrence
+  recurrencePattern String?
+  recurrenceEndDate DateTime?
+
+  discordLink String? // Discord link to the original post, if applicable
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  firstPaymentAt DateTime?
+  isPublished    Boolean   @default(false)
+  isFeatured     Boolean   @default(false)
+  isDeleted      Boolean   @default(false)
+
+  slug   String @unique @default(uuid())
+  userId Int
+  user   User   @relation(fields: [userId], references: [id])
+
+  reactions Reaction[]
+
+  // earnings associated with this post
+  earnings ContentEarnings[]
+
+  payments Payment[] @relation(name: "EventPayments")
 }
