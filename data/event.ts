@@ -4,6 +4,7 @@ import { Message } from "discord.js";
 import { replaceAuthorLinks } from "@/utils/replace-author-links";
 import { slugify } from "@/handlers/util";
 import { PolkadotEvent } from "@prisma/client";
+import { prisma } from "@/utils/prisma";
 
 export async function findOrCreateEvent(
   eventData: EventType & { message: Message },
