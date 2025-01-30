@@ -24,7 +24,7 @@ import {
 import { PaymentRule } from "@prisma/client";
 import { findFirstPayment } from "@/data/payment";
 
-export function determineContentType(message: Message): {
+export function determineContentType(message: Message | PartialMessage): {
   contentType: ContentType;
   parentId?: string;
 } {

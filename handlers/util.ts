@@ -89,41 +89,6 @@ export function shouldIgnoreMessage(message: Message | PartialMessage) {
   return false;
 }
 
-/**
- *
- * @param message classify
- * @returns
- */
-export function classifyMessage(message: Message | PartialMessage) {
-  let parentChannel, parentId;
-  let messageChannelType: "post" | "oddjob" | undefined;
-
-  if (message.channel.isThread()) {
-    parentChannel = message.channel.parent;
-    parentId = message.channelId;
-  }
-
-  if (parentId) {
-    if (
-      isCategoryMonitoredForPosts(parentChannel) ||
-      isChannelMonitoredForPosts(parentChannel)
-    ) {
-      messageChannelType = "post";
-    }
-  } else {
-    if (isChannelMonitoredForPosts(message.channel)) {
-      messageChannelType = "post";
-    } else if (isChannelMonitoredForOddJobs(message.channel)) {
-      messageChannelType = "oddjob";
-    }
-  }
-
-  return {
-    messageChannelType,
-    parentId,
-  };
-}
-
 export async function classifyReaction(dbEmoji: Emoji): Promise<EmojiType> {
   // 1. Check for Feature Rule
   if (dbEmoji.name === config.FEATURE_EMOJI) {

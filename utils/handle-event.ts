@@ -89,3 +89,7 @@ function validateEvent(event: EventType): string[] {
 
   return missingFields;
 }
+
+export function isEventValid(event: EventType): boolean {
+  return validateEvent(event).length === 0;
+}

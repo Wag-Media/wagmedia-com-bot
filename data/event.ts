@@ -8,22 +8,7 @@ import { PolkadotEvent } from "@prisma/client";
 export async function findOrCreateEvent(
   eventData: EventType & { message: Message },
 ) {
-  const {
-    message,
-    title,
-    description,
-    startsAt,
-    endsAt,
-    isAllDay,
-    location,
-    link,
-    image,
-    discordLink,
-    recurrenceRule,
-    recurrenceEndDate,
-    embeds,
-    tags,
-  } = eventData;
+  const { message, title, description, startsAt, tags } = eventData;
 
   if (!message) {
     throw new Error("Message must be defined");
@@ -38,10 +23,6 @@ export async function findOrCreateEvent(
   if (!startsAt) {
     throw new Error("Starts at must be defined");
   }
-  if (!endsAt) {
-    throw new Error("Ends at must be defined");
-  }
-
   const user = await findOrCreateUser(message);
 
   const messageLink = `https://discord.com/channels/${message.guild?.id}/${message.channel.id}/${message.id}`;
@@ -144,4 +125,11 @@ export async function eventHasEarnings(eventId: string): Promise<boolean> {
   });
 
   return earnings.length > 0 && earnings[0].totalAmount > 0;
+}
+
+export async function flagDeleteEvent(eventId: string) {
+  await prisma.polkadotEvent.update({
+    where: { id: eventId },
+    data: { isDeleted: true },
+  });
 }

@@ -6,11 +6,7 @@ import {
   getPost,
   getPostWithEarnings,
 } from "@/data/post";
-import {
-  classifyMessage,
-  ensureFullMessage,
-  shouldIgnoreMessage,
-} from "@/handlers/util";
+import { ensureFullMessage, shouldIgnoreMessage } from "@/handlers/util";
 import {
   ContentType,
   OddjobWithEarnings,
@@ -24,12 +20,14 @@ import {
   parseOddjob,
 } from "@/utils/handle-odd-job";
 import { handlePost, isPostValid, parseMessage } from "@/utils/handle-post";
-import { handleEvent, isEventValid, parseEvent } from "@/utils/handle-event";
+import { handleEvent, isEventValid } from "@/utils/handle-event";
 import { prisma } from "@/utils/prisma";
 import { OddJob } from "@prisma/client";
 import { Message, PartialMessage } from "discord.js";
 import { determineContentType } from "./utils";
 import { handleNewsletter } from "@/utils/handle-newsletter";
+import { findOrCreateEvent, flagDeleteEvent, getEvent } from "@/data/event";
+import { parseEventFromDiscord } from "@/utils/parse-event";
 
 /**
  * A message curator handles bot internal message logic, e.g. parsing a message, deciding its type (post / oddjob)
@@ -86,8 +84,8 @@ export class MessageCurator {
 
     this.messageLink = `https://discord.com/channels/${newFullMessage.guild?.id}/${newFullMessage.channel.id}/${newFullMessage.id}`;
 
-    const oldClassifiedMessage = classifyMessage(oldMessage);
-    this.messageChannelType = oldClassifiedMessage.messageChannelType;
+    const oldClassifiedMessage = determineContentType(oldMessage);
+    this.messageChannelType = oldClassifiedMessage.contentType;
     this.parentId = oldClassifiedMessage.parentId;
 
     // 1. post updates
@@ -148,8 +146,6 @@ export class MessageCurator {
       const oldOddJobValid = isOddJobValid(oldOddJob);
       const newOddJobValid = isOddJobValid(newOddJob);
 
-      console.log("old + new", oldOddJob, newOddJob);
-
       const oldOddJobHasEarnings = await oddJobHasEarnings(oldFullMessage.id);
 
       console.warn("oldOddJobHasEarnings", oldOddJobHasEarnings);
@@ -203,6 +199,44 @@ export class MessageCurator {
       );
 
       // 4. the message is not from a monitored channel or category
+    } else if (this.messageChannelType === "event") {
+      const { message: oldFullMessage } = await ensureFullMessage(oldMessage);
+      const oldEvent = await parseEventFromDiscord(oldFullMessage);
+      const newEvent = await parseEventFromDiscord(newFullMessage);
+
+      const oldEventValid = isEventValid(oldEvent);
+      const newEventValid = isEventValid(newEvent);
+
+      console.log("oldEventValid", oldEventValid);
+      console.log("newEventValid", newEventValid);
+
+      const oldDbEvent = await getEvent(oldFullMessage.id);
+      if (oldDbEvent) {
+        logger.log(`[event] Event updated: ${this.messageLink}`);
+      }
+
+      if (oldDbEvent?.isPublished) {
+        logger.logAndSend(
+          `The event ${this.messageLink} is already published and cannot be edited. If you want to change it, unpublish it first.`,
+          newFullMessage.author,
+        );
+      } else if (oldEventValid && newEventValid) {
+        await findOrCreateEvent({ message: newFullMessage, ...newEvent });
+        logger.log(`[event] Event updated: ${this.messageLink}`);
+      } else if (oldEventValid && !newEventValid) {
+        await flagDeleteEvent(newFullMessage.id);
+        logger.logAndSend(
+          `Your event in ${this.messageLink} is invalid and is unpublished until it is corrected.`,
+          newFullMessage.author,
+        );
+      } else if (!oldEventValid && newEventValid) {
+        await findOrCreateEvent({ message: newFullMessage, ...newEvent });
+        logger.log(
+          `Event is now valid and added to the db / updated: ${this.messageLink}`,
+        );
+      } else if (!oldEventValid && !newEventValid) {
+        return;
+      }
     } else {
       return;
     }

@@ -200,9 +200,10 @@ export function parseEventFromDiscord(message: Message<boolean>): EventType {
   // Process the hashtags string: split, remove leading '#', and filter empty strings
   if (matches.tags) {
     // Normalize the tags string to remove '#' and split by non-word characters except for '-'
+    // also make lowercase
     tags = matches.tags
       .split(/[\s,]+/)
-      .map((tag) => tag.replace(/^#/, "").trim())
+      .map((tag) => tag.replace(/^#/, "").trim().toLowerCase())
       .filter((tag) => tag.length > 0);
   }
 
@@ -229,6 +230,8 @@ export function parseEventFromDiscord(message: Message<boolean>): EventType {
   const { rule: recurrenceRule, endDate: recurrenceEndDate } =
     parseRecurrenceRule(matches.recurrence ?? null);
 
+  console.log("embedDataImage", embedData?.[0]?.imageUrl);
+
   return {
     title: matches.title || null,
     description: matches.description || null,
@@ -237,8 +240,8 @@ export function parseEventFromDiscord(message: Message<boolean>): EventType {
     isAllDay,
     location: matches.location || null,
     link: matches.link || null,
-    image: null, // Set by Discord embed handling
-    discordLink: null, // Set by handleEvent
+    image: embedData?.[0]?.imageUrl || null,
+    discordLink: null,
     recurrenceRule,
     recurrenceEndDate,
     timezone,
