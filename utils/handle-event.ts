@@ -54,10 +54,12 @@ export async function handleEvent(
     };
 
     // Validate required fields
-    const missingFields = validateEvent(eventWithDiscordData);
-    if (missingFields.length > 0) {
-      logger.warn(
-        `[event] Event ${messageLink} is missing required fields: ${missingFields.join(", ")}`,
+    const validationErrors = validateEvent(eventWithDiscordData);
+    if (validationErrors.length > 0) {
+      logger.logAndSend(
+        `[event] Please fix the following errors in your event ${messageLink}:\n${validationErrors.map((error) => `• ${error}`).join("\n")}`,
+        message.author,
+        "warn",
       );
       return;
     }
@@ -79,16 +81,32 @@ export async function handleEvent(
 }
 
 function validateEvent(event: EventType): string[] {
-  const missingFields: string[] = [];
+  const errors: string[] = [];
 
-  if (!event.title) missingFields.push("title");
-  if (!event.description) missingFields.push("description");
-  if (!event.startsAt) missingFields.push("date");
-  if (!event.location) missingFields.push("location");
-  if (!event.tags) missingFields.push("tags");
-  if (!event.link) missingFields.push("link");
+  if (!event.title?.trim()) errors.push("title is required");
 
-  return missingFields;
+  if (!event.description?.trim()) errors.push("description is required");
+
+  if (!event.startsAt) errors.push("start date is required");
+
+  if (!event.location?.trim()) errors.push("location is required");
+
+  if (!event.tags?.length) errors.push("at least one tag is required");
+
+  if (!event.link?.trim()) errors.push("link is required");
+  else {
+    try {
+      new URL(event.link);
+    } catch {
+      errors.push("link must be a valid URL");
+    }
+  }
+
+  // Optional: Validate date relationships
+  if (event.startsAt && event.endsAt && event.startsAt > event.endsAt)
+    errors.push("end date must be after start date");
+
+  return errors;
 }
 
 export function isEventValid(event: EventType): boolean {
