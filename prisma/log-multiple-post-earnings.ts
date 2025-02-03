@@ -1,6 +1,4 @@
-const { PrismaClient } = require("@prisma/client");
-
-const prisma = new PrismaClient();
+import { prisma } from "../utils/prisma";
 
 main()
   .catch(async (e) => {
@@ -24,11 +22,11 @@ async function main() {
 
   console.log("Posts with multiple contentEarnings:", posts);
 
-  const postIds = posts.map((post) => post.id);
+  const postIds = posts as { id: string }[];
   const duplicateEarnings = await prisma.contentEarnings.findMany({
     where: {
       postId: {
-        in: postIds,
+        in: postIds.map((post) => post.id),
       },
     },
   });

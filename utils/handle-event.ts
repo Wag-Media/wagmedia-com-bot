@@ -3,7 +3,6 @@ import { Message } from "discord.js";
 import { parseEventFromDiscord } from "./parse-event";
 import { PostEmbed } from "@/types";
 import { PolkadotEventWithTagsEmbeds } from "@/types";
-import { PrismaClient } from "@prisma/client";
 import { findOrCreateEvent } from "@/data/event";
 
 export interface EventType {
@@ -86,6 +85,8 @@ function validateEvent(event: EventType): string[] {
   if (!event.description) missingFields.push("description");
   if (!event.startsAt) missingFields.push("date");
   if (!event.location) missingFields.push("location");
+  if (!event.tags) missingFields.push("tags");
+  if (!event.link) missingFields.push("link");
 
   return missingFields;
 }

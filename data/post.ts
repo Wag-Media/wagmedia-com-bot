@@ -5,7 +5,6 @@ import {
   OddJob,
   Post,
   PrismaClient,
-  Tag,
 } from "@prisma/client";
 import { Message, MessageReaction, PartialMessage } from "discord.js";
 import { findOrCreateUser } from "@/data/user";
@@ -17,12 +16,10 @@ import {
   PostEmbed,
   PostFull,
   PostWithCategories,
-  PostWithCategoriesEarnings,
-  PostWithCategoriesTagsEmbeds,
   PostWithEarnings,
 } from "@/types";
 import { replaceAuthorLinks } from "@/utils/replace-author-links";
-const prisma = new PrismaClient();
+import { prisma } from "../utils/prisma";
 
 export type PostCreateType = {
   message: Message<boolean> | PartialMessage;

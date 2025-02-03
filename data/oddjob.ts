@@ -9,21 +9,7 @@ import { Message, MessageReaction, PartialMessage, User } from "discord.js";
 import { findOrCreateUser, findOrCreateUserFromDiscordUser } from "@/data/user";
 import { logger } from "@/client";
 import { OddjobWithEarnings } from "@/types";
-const prisma = new PrismaClient();
-
-// id              String    @id
-// role            String
-// description     String
-// timeline        String
-// requestedAmount Float
-// requestedUnit   String
-// payments        Payment[]
-// manager         String
-
-// discordLink String? // Discord link to the original post, if applicable
-
-// createdAt DateTime @default(now())
-// updatedAt DateTime @updatedAt
+import { prisma } from "../utils/prisma";
 
 export async function findOrCreateOddJob(
   message: Message<boolean> | PartialMessage,

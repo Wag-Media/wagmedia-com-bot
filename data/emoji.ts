@@ -6,7 +6,7 @@ import {
   Emoji,
 } from "@prisma/client";
 import { GuildEmoji, MessageReaction, ReactionEmoji } from "discord.js";
-const prisma = new PrismaClient();
+import { prisma } from "../utils/prisma";
 
 export const findEmoji = async (
   emoji: GuildEmoji | ReactionEmoji,

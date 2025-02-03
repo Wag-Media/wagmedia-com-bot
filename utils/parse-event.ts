@@ -2,25 +2,8 @@ import { parse, startOfDay, endOfDay } from "date-fns";
 import { toDate as zonedTimeToUtc } from "date-fns-tz";
 import type { EventType } from "./handle-event";
 import { Message } from "discord.js";
-
-interface ParsedEvent {
-  title: string | null;
-  description: string | null;
-  startsAt: Date | null;
-  endsAt: Date | null;
-  isAllDay: boolean;
-  location: string | null;
-  link: string | null;
-  recurrenceRule: string | null;
-  recurrenceEndDate: Date | null;
-  tags: string[];
-  timezone: string | null; // Store the original timezone
-}
-
-interface TimeComponents {
-  time: string;
-  timezone: string | null;
-}
+import * as chrono from "chrono-node";
+import { DateTime } from "luxon";
 
 interface DateTimeParams {
   date: string | undefined;
@@ -29,45 +12,8 @@ interface DateTimeParams {
   endTime: string | undefined;
 }
 
-function parseTimeString(timeStr: string): TimeComponents {
-  // Common timezone abbreviations mapping
-  const tzAbbreviations: Record<string, string> = {
-    EST: "America/New_York",
-    EDT: "America/New_York",
-    CST: "America/Chicago",
-    CDT: "America/Chicago",
-    MST: "America/Denver",
-    MDT: "America/Denver",
-    PST: "America/Los_Angeles",
-    PDT: "America/Los_Angeles",
-    UTC: "UTC",
-    GMT: "UTC",
-  };
-
-  // Match time and optional timezone
-  // Matches formats like:
-  // 15:00
-  // 3:00 PM
-  // 15:00 EST
-  // 3:00 PM America/New_York
-  const timePattern = /^(\d{1,2}(?::\d{2})?\s*(?:[AaPp][Mm])?)\s*(.+)?$/;
-  const match = timeStr.trim().match(timePattern);
-
-  if (!match) return { time: timeStr, timezone: null };
-
-  const [, timeComponent, timezoneComponent] = match;
-
-  if (!timezoneComponent) return { time: timeComponent, timezone: null };
-
-  // Check if it's a known abbreviation
-  const timezone =
-    tzAbbreviations[timezoneComponent.toUpperCase()] || timezoneComponent;
-
-  return { time: timeComponent, timezone };
-}
-
 function parseDatesAndTimes({ date, time, endDate, endTime }: DateTimeParams) {
-  console.log("Parsing dates:", { date, time, endDate, endTime }); // Debug log
+  console.log("Parsing dates:", { date, time, endDate, endTime });
 
   if (!date)
     return {
@@ -75,75 +21,54 @@ function parseDatesAndTimes({ date, time, endDate, endTime }: DateTimeParams) {
       endsAt: null,
       isAllDay: false,
       timezone: null,
+      recurrenceEndDate: null,
     };
 
   const isAllDay = !time;
-  let startsAt: Date | null = null;
-  let endsAt: Date | null = null;
-  let timezone: string | null = null;
+  const parsedStartDateTime = parseDateTimeToUTC(date, time);
 
-  try {
-    if (isAllDay) {
-      startsAt = parse(date, "yyyy-MM-dd", new Date());
-      startsAt = startOfDay(startsAt);
+  // Always parse endDateTime using the start date for recurring events
+  const parsedEndDateTime = parseDateTimeToUTC(date, endTime);
 
-      if (endDate) {
-        endsAt = parse(endDate, "yyyy-MM-dd", new Date());
-        endsAt = endOfDay(endsAt);
-      }
-    } else {
-      const startTime = parseTimeString(time!);
-      timezone = startTime.timezone || "UTC";
+  // Parse recurrence end date separately
+  const parsedRecurrenceEndDate = endDate
+    ? parseDateTimeToUTC(endDate, time || "23:59:59")
+    : null;
 
-      console.log("Parsed start time:", startTime); // Debug log
+  // Extract timezone from time string if present
+  const timezoneMatch = time?.match(
+    /\b(?:UTC|GMT|EST|EDT|CST|CDT|MST|MDT|PST|PDT)(?:[+-]\d{1,2}(?::\d{2})?)?|\b[+-]\d{1,2}(?::\d{2})?\b/,
+  );
+  const timezone = timezoneMatch ? timezoneMatch[0] : "UTC";
 
-      const localDate = parse(
-        `${date} ${startTime.time}`,
-        startTime.time.toLowerCase().includes("m")
-          ? "yyyy-MM-dd hh:mm a"
-          : "yyyy-MM-dd HH:mm",
-        new Date(),
-      );
-
-      console.log("Parsed local date:", localDate); // Debug log
-
-      startsAt = zonedTimeToUtc(localDate, { timeZone: timezone });
-
-      if (endDate || endTime) {
-        const actualEndDate = endDate || date;
-        const endTimeComponents = endTime
-          ? parseTimeString(endTime)
-          : startTime;
-
-        console.log("End time components:", endTimeComponents); // Debug log
-
-        const localEndDate = parse(
-          `${actualEndDate} ${endTimeComponents.time}`,
-          endTimeComponents.time.toLowerCase().includes("m")
-            ? "yyyy-MM-dd hh:mm a"
-            : "yyyy-MM-dd HH:mm",
-          new Date(),
-        );
-
-        console.log("Parsed local end date:", localEndDate); // Debug log
-
-        endsAt = zonedTimeToUtc(localEndDate, {
-          timeZone: endTimeComponents.timezone || timezone,
-        });
-      }
-    }
-  } catch (error) {
-    console.error("Error parsing dates:", error);
+  if (!parsedStartDateTime)
     return {
       startsAt: null,
       endsAt: null,
       isAllDay: false,
       timezone: null,
+      recurrenceEndDate: null,
+    };
+
+  const startsAt = new Date(parsedStartDateTime);
+  const endsAt = parsedEndDateTime ? new Date(parsedEndDateTime) : null;
+  const recurrenceEndDate = parsedRecurrenceEndDate
+    ? new Date(parsedRecurrenceEndDate)
+    : null;
+
+  // Final validation of dates
+  if (isNaN(startsAt.getTime()) || (endsAt && isNaN(endsAt.getTime()))) {
+    return {
+      startsAt: null,
+      endsAt: null,
+      isAllDay: false,
+      timezone: null,
+      recurrenceEndDate: null,
     };
   }
 
-  console.log("Final dates:", { startsAt, endsAt, isAllDay, timezone }); // Debug log
-  return { startsAt, endsAt, isAllDay, timezone };
+  console.log("Final dates:", { startsAt, endsAt, isAllDay, timezone });
+  return { startsAt, endsAt, isAllDay, timezone, recurrenceEndDate };
 }
 
 function parseRecurrenceRule(rule: string | null): {
@@ -152,17 +77,12 @@ function parseRecurrenceRule(rule: string | null): {
 } {
   if (!rule) return { rule: null, endDate: null };
 
-  const pattern =
-    /^(weekly|monthly|daily|yearly)(?:\s+until\s+(\d{4}-\d{2}-\d{2}))?$/i;
-  const matches = rule.trim().match(pattern);
-
-  if (!matches) return { rule: null, endDate: null };
-
-  const [, recurrenceType, endDateStr] = matches;
+  const validRules = ["weekly", "monthly", "daily"];
+  const normalizedRule = rule.trim().toLowerCase();
 
   return {
-    rule: recurrenceType.toLowerCase(),
-    endDate: endDateStr ? parse(endDateStr, "yyyy-MM-dd", new Date()) : null,
+    rule: validRules.includes(normalizedRule) ? normalizedRule : null,
+    endDate: null,
   };
 }
 
@@ -178,7 +98,8 @@ export function parseEventFromDiscord(message: Message<boolean>): EventType {
     endTime: /(?<=^|\n)\*{0,2}end[- ]?time\*{0,2}\s*:\s*(.*?)(?=\n|$)/i,
     location: /(?<=^|\n)\*{0,2}location\*{0,2}\s*:\s*(.*?)(?=\n|$)/i,
     link: /(?<=^|\n)\*{0,2}link\*{0,2}\s*:\s*(.*?)(?=\n|$)/i,
-    recurrence: /(?<=^|\n)\*{0,2}repeats?\*{0,2}\s*:\s*(.*?)(?=\n|$)/i,
+    recurrence:
+      /(?<=^|\n)\*{0,2}recurrence\*{0,2}\s*:\s*(daily|weekly|monthly)(?=\n|$)/i,
     tags: /(?<=^|\n)\*{0,2}tags?\*{0,2}\s*:\s*(.*?)(?=\n|$)/i,
   };
 
@@ -220,15 +141,26 @@ export function parseEventFromDiscord(message: Message<boolean>): EventType {
     color: embed.color || null,
   }));
 
-  const { startsAt, endsAt, isAllDay, timezone } = parseDatesAndTimes({
-    date: matches.date,
-    time: matches.time,
-    endDate: matches.endDate,
-    endTime: matches.endTime,
-  });
+  const { startsAt, endsAt, isAllDay, timezone, recurrenceEndDate } =
+    parseDatesAndTimes({
+      date: matches.date,
+      time: matches.time,
+      endDate: matches.endDate,
+      endTime: matches.endTime,
+    });
 
-  const { rule: recurrenceRule, endDate: recurrenceEndDate } =
-    parseRecurrenceRule(matches.recurrence ?? null);
+  // Only allow recurrence if an end date is specified
+  const { rule: recurrenceRule } = parseRecurrenceRule(
+    matches.recurrence && matches.endDate ? matches.recurrence : null,
+  );
+
+  // For recurring events: always use the end time on the same day as start
+  // For non-recurring events: use the full end date and time
+  const finalEndsAt = recurrenceRule
+    ? parseDateTimeToUTC(matches.date, matches.endTime)
+      ? new Date(parseDateTimeToUTC(matches.date, matches.endTime)!)
+      : null
+    : endsAt;
 
   console.log("embedDataImage", embedData?.[0]?.imageUrl);
 
@@ -236,16 +168,38 @@ export function parseEventFromDiscord(message: Message<boolean>): EventType {
     title: matches.title || null,
     description: matches.description || null,
     startsAt,
-    endsAt,
+    endsAt: finalEndsAt,
     isAllDay,
     location: matches.location || null,
     link: matches.link || null,
     image: embedData?.[0]?.imageUrl || null,
     discordLink: null,
     recurrenceRule,
-    recurrenceEndDate,
+    recurrenceEndDate: recurrenceRule ? recurrenceEndDate : null,
     timezone,
     embeds: embedData,
     tags,
   };
+}
+
+export function parseDateTimeToUTC(
+  dateInput: string | undefined,
+  timeInput: string | undefined,
+): string | null {
+  if (!dateInput) return null;
+
+  // Check for common formats with 4-digit years
+  const validFormats = [
+    /^\d{4}-\d{1,2}-\d{1,2}$/, // YYYY-MM-DD
+    /^\d{1,2}[.-]\d{1,2}[.-]\d{4}$/, // DD.MM.YYYY or DD-MM-YYYY
+    /^\d{1,2}\/\d{1,2}\/\d{4}$/, // DD/MM/YYYY
+  ];
+
+  if (!validFormats.some((format) => format.test(dateInput))) return null;
+
+  const combinedInput = timeInput ? `${dateInput} ${timeInput}` : dateInput;
+  const parsed = chrono.parseDate(combinedInput, { timezone: "UTC" });
+  if (!parsed) return null;
+
+  return DateTime.fromJSDate(parsed).toUTC().toISO();
 }
