@@ -141,3 +141,17 @@ export async function flagDeleteEvent(eventId: string) {
     data: { isDeleted: true },
   });
 }
+
+export async function featureEvent(eventId: string) {
+  await prisma.polkadotEvent.update({
+    where: { id: eventId },
+    data: { isFeatured: true },
+  });
+}
+
+export async function unfeatureEvent(eventId: string) {
+  await prisma.polkadotEvent.update({
+    where: { id: eventId },
+    data: { isFeatured: false },
+  });
+}

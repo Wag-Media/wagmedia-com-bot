@@ -121,7 +121,7 @@ export class ReactionHandlerFactory {
       userRole === "superuser" &&
       eventType === "reactionAdd" &&
       emojiType === "feature" &&
-      ["post", "newsletter"].includes(contentType)
+      ["post", "newsletter", "event"].includes(contentType)
     ) {
       return new FeatureAddReactionHandler(contentType);
     } else if (
@@ -144,7 +144,7 @@ export class ReactionHandlerFactory {
       userRole === "superuser" &&
       eventType === "reactionRemove" &&
       emojiType === "feature" &&
-      contentType === "post"
+      ["post", "event"].includes(contentType)
     ) {
       return new FeatureRemoveReactionHandler();
     } else if (
