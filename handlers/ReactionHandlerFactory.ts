@@ -21,6 +21,7 @@ import { NoopReactionHandler } from "./reaction-handlers/NoopReactionHandler";
 import { FeatureAddReactionHandler } from "./reaction-handlers/add/FeatureAddReactionHandler";
 import { FeatureRemoveReactionHandler } from "./reaction-handlers/remove/FeatureRemoveReactionHandler";
 import {
+  EventPaymentReactionRemoveHandler,
   OddJobPaymentReactionRemoveHandler,
   PostPaymentReactionRemoveHandler,
   ThreadPaymentReactionRemoveHandler,
@@ -182,6 +183,13 @@ export class ReactionHandlerFactory {
       contentType === "thread"
     ) {
       return new ThreadPaymentReactionRemoveHandler();
+    } else if (
+      userRole === "superuser" &&
+      eventType === "reactionRemove" &&
+      emojiType === "payment" &&
+      contentType === "event"
+    ) {
+      return new EventPaymentReactionRemoveHandler();
     } else if (
       // ---- Regular user -----
       userRole === "regular" &&

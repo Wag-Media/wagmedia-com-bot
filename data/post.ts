@@ -3,6 +3,7 @@ import {
   ContentEarnings,
   Embed,
   OddJob,
+  PolkadotEvent,
   Post,
   PrismaClient,
 } from "@prisma/client";
@@ -536,13 +537,28 @@ export async function getPostOrOddjob(
 export async function getPostOrOddjobWithEarnings(
   entityId: string,
   entityType: ContentType,
-): Promise<PostWithEarnings | OddjobWithEarnings | null | undefined> {
+): Promise<
+  | PostWithEarnings
+  | OddjobWithEarnings
+  | (PolkadotEvent & { earnings: ContentEarnings[] })
+  | null
+  | undefined
+> {
   if (!entityType) {
     return;
   }
 
   if (entityType === "post" || entityType === "thread") {
     return prisma.post.findUnique({
+      where: {
+        id: entityId,
+      },
+      include: {
+        earnings: true,
+      },
+    });
+  } else if (entityType === "event") {
+    return prisma.polkadotEvent.findUnique({
       where: {
         id: entityId,
       },

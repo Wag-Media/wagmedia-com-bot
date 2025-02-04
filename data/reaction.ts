@@ -117,7 +117,7 @@ export async function upsertEntityReaction(
 }
 
 export async function deleteEntityReaction(
-  entity: Post | OddJob | undefined | null,
+  entity: Post | OddJob | PolkadotEvent | undefined | null,
   contentType: ContentType,
   userId: string,
   emojiId: string,
@@ -129,7 +129,11 @@ export async function deleteEntityReaction(
     return;
   }
 
-  if (![contentType, "post", "thread", "newsletter"].includes(contentType)) {
+  if (
+    ![contentType, "post", "thread", "newsletter", "event"].includes(
+      contentType,
+    )
+  ) {
     throw new Error(
       `Invalid contentType ${contentType} in deleteEntityReaction. Skipping.`,
     );
@@ -146,13 +150,21 @@ export async function deleteEntityReaction(
             userDiscordId: userId,
           },
         }
-      : {
-          oddJobId_userDiscordId_emojiId: {
-            oddJobId: entity.id,
-            emojiId,
-            userDiscordId: userId,
-          },
-        };
+      : contentType === "event"
+        ? {
+            eventId_userDiscordId_emojiId: {
+              eventId: entity.id,
+              emojiId,
+              userDiscordId: userId,
+            },
+          }
+        : {
+            oddJobId_userDiscordId_emojiId: {
+              oddJobId: entity.id,
+              emojiId,
+              userDiscordId: userId,
+            },
+          };
   await prisma.reaction.delete({
     where: whereCondition,
   });
