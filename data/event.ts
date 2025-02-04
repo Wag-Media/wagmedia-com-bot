@@ -91,6 +91,7 @@ export async function findOrCreateEvent(
       recurrenceEndDate: eventData.recurrenceEndDate,
       userId: user.id,
       embeds: {
+        deleteMany: {},
         create: eventData.embeds.map((embed) => ({
           embedUrl: embed.url,
           embedImage: embed.imageUrl,
