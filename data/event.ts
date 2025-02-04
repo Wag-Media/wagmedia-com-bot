@@ -28,91 +28,97 @@ export async function findOrCreateEvent(
 
   const messageLink = `https://discord.com/channels/${message.guild?.id}/${message.channel.id}/${message.id}`;
 
-  const tagInstances = await Promise.all(
-    tags.map(async (tag) => {
-      return prisma.tag.upsert({
-        where: { name: tag },
-        update: {},
+  try {
+    const event = await prisma.$transaction(async (tx) => {
+      // Handle tags within transaction
+      const tagInstances = await Promise.all(
+        tags.map((tag) =>
+          tx.tag.upsert({
+            where: { name: tag },
+            update: {},
+            create: { name: tag },
+          }),
+        ),
+      );
+
+      let slug = await replaceAuthorLinks(title, false);
+      slug = slugify(slug);
+
+      return tx.polkadotEvent.upsert({
+        where: { id: message.id },
         create: {
-          name: tag,
+          id: message.id,
+          title: eventData.title!,
+          description: eventData.description!,
+          startsAt: eventData.startsAt,
+          endsAt: eventData.endsAt,
+          startDate: eventData.startsAt,
+          endDate: eventData.endsAt,
+          isAllDay: eventData.isAllDay,
+          location: eventData.location,
+          link: eventData.link,
+          image: eventData.image,
+          discordLink: messageLink,
+          recurrencePattern: eventData.recurrenceRule,
+          recurrenceEndDate: eventData.recurrenceEndDate,
+          isPublished: false,
+          userId: user.id,
+          tags: {
+            connect: tagInstances.map((tag) => ({ id: tag.id })),
+          },
+          embeds: {
+            create: eventData.embeds.map((embed) => ({
+              embedUrl: embed.url,
+              embedImage: embed.imageUrl,
+              width: embed.width,
+              height: embed.height,
+              embedColor: embed.color,
+            })),
+          },
+        },
+        update: {
+          title: eventData.title!,
+          description: eventData.description!,
+          startsAt: eventData.startsAt,
+          endsAt: eventData.endsAt,
+          startDate: eventData.startsAt,
+          endDate: eventData.endsAt,
+          isAllDay: eventData.isAllDay,
+          location: eventData.location,
+          link: eventData.link,
+          image: eventData.image,
+          discordLink: messageLink,
+          recurrencePattern: eventData.recurrenceRule,
+          recurrenceEndDate: eventData.recurrenceEndDate,
+          userId: user.id,
+          embeds: {
+            deleteMany: {},
+            create: eventData.embeds.map((embed) => ({
+              embedUrl: embed.url,
+              embedImage: embed.imageUrl,
+              width: embed.width,
+              height: embed.height,
+              embedColor: embed.color,
+            })),
+          },
+          tags: {
+            set: [], // Disconnect existing tags
+            connect: tagInstances.map((tag) => ({ id: tag.id })),
+          },
+        },
+        include: {
+          embeds: true,
+          tags: true,
+          earnings: true,
         },
       });
-    }),
-  );
+    });
 
-  let slug = await replaceAuthorLinks(title, false);
-  slug = slugify(slug);
-
-  const event = await prisma.polkadotEvent.upsert({
-    where: { id: message.id },
-    create: {
-      id: message.id,
-      title: eventData.title!,
-      description: eventData.description!,
-      startsAt: eventData.startsAt,
-      endsAt: eventData.endsAt,
-      startDate: eventData.startsAt,
-      endDate: eventData.endsAt,
-      isAllDay: eventData.isAllDay,
-      location: eventData.location,
-      link: eventData.link,
-      image: eventData.image,
-      discordLink: eventData.discordLink,
-      recurrencePattern: eventData.recurrenceRule,
-      recurrenceEndDate: eventData.recurrenceEndDate,
-      isPublished: false,
-      userId: user.id,
-      tags: {
-        connect: tagInstances.map((tag) => ({ id: tag.id })),
-      },
-      embeds: {
-        create: eventData.embeds.map((embed) => ({
-          embedUrl: embed.url,
-          embedImage: embed.imageUrl,
-          width: embed.width,
-          height: embed.height,
-          embedColor: embed.color,
-        })),
-      },
-    },
-    update: {
-      title: eventData.title!,
-      description: eventData.description!,
-      startsAt: eventData.startsAt,
-      endsAt: eventData.endsAt,
-      startDate: eventData.startsAt,
-      endDate: eventData.endsAt,
-      isAllDay: eventData.isAllDay,
-      location: eventData.location,
-      link: eventData.link,
-      image: eventData.image,
-      discordLink: eventData.discordLink,
-      recurrencePattern: eventData.recurrenceRule,
-      recurrenceEndDate: eventData.recurrenceEndDate,
-      userId: user.id,
-      embeds: {
-        deleteMany: {},
-        create: eventData.embeds.map((embed) => ({
-          embedUrl: embed.url,
-          embedImage: embed.imageUrl,
-          width: embed.width,
-          height: embed.height,
-          embedColor: embed.color,
-        })),
-      },
-      tags: {
-        set: [], // Disconnect any existing tags
-        connect: tagInstances.map((tag) => ({ id: tag.id })), // Connect new tags
-      },
-    },
-    include: {
-      embeds: true,
-      tags: true,
-      earnings: true,
-    },
-  });
-
-  return event;
+    return event;
+  } catch (error) {
+    console.error("Error in findOrCreateEvent:", error);
+    throw error;
+  }
 }
 
 export async function getEvent(id: string): Promise<PolkadotEvent | null> {
