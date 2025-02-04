@@ -135,10 +135,10 @@ export class ReactionHandlerFactory {
       userRole === "superuser" &&
       eventType === "reactionAdd" &&
       emojiType === "feature" &&
-      !["post", "newsletter"].includes(contentType)
+      !["post", "newsletter", "event"].includes(contentType)
     ) {
       return new NotAllowedReactionHandler(
-        `Feature emojis can only be added to posts`,
+        `Feature emojis can only be added to posts or newsletters or events`,
       );
     } else if (
       userRole === "superuser" &&
