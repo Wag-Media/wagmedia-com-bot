@@ -6,6 +6,30 @@ import { slugify } from "@/handlers/util";
 import { PolkadotEvent } from "@prisma/client";
 import { prisma } from "@/utils/prisma";
 
+async function retryTransaction<T>(
+  operation: () => Promise<T>,
+  maxRetries = 3,
+  delay = 100,
+): Promise<T> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (
+        attempt === maxRetries ||
+        !(
+          error?.name === "PrismaClientKnownRequestError" &&
+          error?.code === "P2002"
+        )
+      ) {
+        throw error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, delay * attempt));
+    }
+  }
+  throw new Error("Max retries reached");
+}
+
 export async function findOrCreateEvent(
   eventData: EventType & { message: Message },
 ) {
@@ -29,88 +53,90 @@ export async function findOrCreateEvent(
   const messageLink = `https://discord.com/channels/${message.guild?.id}/${message.channel.id}/${message.id}`;
 
   try {
-    const event = await prisma.$transaction(async (tx) => {
-      // Handle tags within transaction
-      const tagInstances = await Promise.all(
-        tags.map((tag) =>
-          tx.tag.upsert({
-            where: { name: tag },
-            update: {},
-            create: { name: tag },
-          }),
-        ),
-      );
+    const event = await retryTransaction(async () => {
+      return prisma.$transaction(async (tx) => {
+        // Handle tags within transaction
+        const tagInstances = await Promise.all(
+          tags.map((tag) =>
+            tx.tag.upsert({
+              where: { name: tag },
+              update: {},
+              create: { name: tag },
+            }),
+          ),
+        );
 
-      let slug = await replaceAuthorLinks(title, false);
-      slug = slugify(slug);
+        let slug = await replaceAuthorLinks(title, false);
+        slug = slugify(slug);
 
-      return tx.polkadotEvent.upsert({
-        where: { id: message.id },
-        create: {
-          id: message.id,
-          title: eventData.title!,
-          description: eventData.description!,
-          startsAt: eventData.startsAt,
-          endsAt: eventData.endsAt,
-          startDate: eventData.startsAt,
-          endDate: eventData.endsAt,
-          isAllDay: eventData.isAllDay,
-          location: eventData.location,
-          link: eventData.link,
-          image: eventData.image,
-          discordLink: messageLink,
-          recurrencePattern: eventData.recurrenceRule,
-          recurrenceEndDate: eventData.recurrenceEndDate,
-          isPublished: false,
-          userId: user.id,
-          tags: {
-            connect: tagInstances.map((tag) => ({ id: tag.id })),
+        return tx.polkadotEvent.upsert({
+          where: { id: message.id },
+          create: {
+            id: message.id,
+            title: eventData.title!,
+            description: eventData.description!,
+            startsAt: eventData.startsAt,
+            endsAt: eventData.endsAt,
+            startDate: eventData.startsAt,
+            endDate: eventData.endsAt,
+            isAllDay: eventData.isAllDay,
+            location: eventData.location,
+            link: eventData.link,
+            image: eventData.image,
+            discordLink: messageLink,
+            recurrencePattern: eventData.recurrenceRule,
+            recurrenceEndDate: eventData.recurrenceEndDate,
+            isPublished: false,
+            userId: user.id,
+            tags: {
+              connect: tagInstances.map((tag) => ({ id: tag.id })),
+            },
+            embeds: {
+              create: eventData.embeds.map((embed) => ({
+                embedUrl: embed.url,
+                embedImage: embed.imageUrl,
+                width: embed.width,
+                height: embed.height,
+                embedColor: embed.color,
+              })),
+            },
           },
-          embeds: {
-            create: eventData.embeds.map((embed) => ({
-              embedUrl: embed.url,
-              embedImage: embed.imageUrl,
-              width: embed.width,
-              height: embed.height,
-              embedColor: embed.color,
-            })),
+          update: {
+            title: eventData.title!,
+            description: eventData.description!,
+            startsAt: eventData.startsAt,
+            endsAt: eventData.endsAt,
+            startDate: eventData.startsAt,
+            endDate: eventData.endsAt,
+            isAllDay: eventData.isAllDay,
+            location: eventData.location,
+            link: eventData.link,
+            image: eventData.image,
+            discordLink: messageLink,
+            recurrencePattern: eventData.recurrenceRule,
+            recurrenceEndDate: eventData.recurrenceEndDate,
+            userId: user.id,
+            embeds: {
+              deleteMany: {},
+              create: eventData.embeds.map((embed) => ({
+                embedUrl: embed.url,
+                embedImage: embed.imageUrl,
+                width: embed.width,
+                height: embed.height,
+                embedColor: embed.color,
+              })),
+            },
+            tags: {
+              set: [], // Disconnect existing tags
+              connect: tagInstances.map((tag) => ({ id: tag.id })),
+            },
           },
-        },
-        update: {
-          title: eventData.title!,
-          description: eventData.description!,
-          startsAt: eventData.startsAt,
-          endsAt: eventData.endsAt,
-          startDate: eventData.startsAt,
-          endDate: eventData.endsAt,
-          isAllDay: eventData.isAllDay,
-          location: eventData.location,
-          link: eventData.link,
-          image: eventData.image,
-          discordLink: messageLink,
-          recurrencePattern: eventData.recurrenceRule,
-          recurrenceEndDate: eventData.recurrenceEndDate,
-          userId: user.id,
-          embeds: {
-            deleteMany: {},
-            create: eventData.embeds.map((embed) => ({
-              embedUrl: embed.url,
-              embedImage: embed.imageUrl,
-              width: embed.width,
-              height: embed.height,
-              embedColor: embed.color,
-            })),
+          include: {
+            embeds: true,
+            tags: true,
+            earnings: true,
           },
-          tags: {
-            set: [], // Disconnect existing tags
-            connect: tagInstances.map((tag) => ({ id: tag.id })),
-          },
-        },
-        include: {
-          embeds: true,
-          tags: true,
-          earnings: true,
-        },
+        });
       });
     });
 
