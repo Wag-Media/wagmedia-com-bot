@@ -181,3 +181,17 @@ export async function unfeatureEvent(eventId: string) {
     data: { isFeatured: false },
   });
 }
+
+export async function publishEvent(eventId: string) {
+  await prisma.polkadotEvent.update({
+    where: { id: eventId },
+    data: { isPublished: true, firstPaymentAt: new Date() },
+  });
+}
+
+export async function unpublishEvent(eventId: string) {
+  await prisma.polkadotEvent.update({
+    where: { id: eventId },
+    data: { isPublished: false },
+  });
+}

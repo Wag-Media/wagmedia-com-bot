@@ -4,14 +4,15 @@ import { unpublishPost } from "@/data/post";
 import { logger } from "@/client";
 import { MessageReaction } from "discord.js";
 import { prisma } from "@/utils/prisma";
-
+import { PolkadotEvent } from "@prisma/client";
+import { unpublishEvent } from "@/data/event";
 /**
  * This class is responsible for handling regular reaction removes
  * it is just no oping as the BaseReactionRemoveHandler already takes care of removing
  * the reaction from the database and discord
  */
 export class UPERemoveReactionHandler extends BaseReactionRemoveHandler {
-  contentType: ContentType = "post";
+  contentType: ContentType;
 
   constructor(contentType: ContentType) {
     super();
@@ -20,33 +21,46 @@ export class UPERemoveReactionHandler extends BaseReactionRemoveHandler {
 
   protected async getDbContent(
     reaction: MessageReaction,
-  ): Promise<PostWithPaymentsAndCategories | null> {
-    const post = await prisma.post.findUnique({
-      where: {
-        id: reaction.message.id,
-      },
-      include: {
-        payments: true,
-        categories: true,
-      },
-    });
+  ): Promise<PostWithPaymentsAndCategories | PolkadotEvent | null> {
+    if (this.contentType === "post") {
+      const post = await prisma.post.findUnique({
+        where: {
+          id: reaction.message.id,
+        },
+        include: {
+          payments: true,
+          categories: true,
+        },
+      });
 
-    return post;
+      return post;
+    } else if (this.contentType === "event") {
+      const event = await prisma.polkadotEvent.findUnique({
+        where: { id: reaction.message.id },
+      });
+      return event;
+    }
+
+    return null;
   }
 
-  protected async isReactionPermitted(): Promise<boolean> {
+  protected async isReactionPermitted(_, user): Promise<boolean> {
     return true;
   }
 
   protected async processReaction(reaction, user): Promise<void> {
-    // can only add UPE if post was not paid before
     if (
       (this.dbContent as PostWithPaymentsAndCategories).payments?.length > 0
     ) {
       return;
     }
 
-    await unpublishPost(reaction.message.id);
+    if (this.contentType === "post") {
+      await unpublishPost(reaction.message.id);
+    } else if (this.contentType === "event") {
+      await unpublishEvent(reaction.message.id);
+    }
+
     logger.log(
       `[${this.contentType}] ${this.contentType} ${this.messageLink} is now unpublished.`,
     );

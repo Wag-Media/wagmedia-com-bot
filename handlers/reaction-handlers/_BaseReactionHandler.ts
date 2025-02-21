@@ -3,6 +3,9 @@ import {
   MessageReaction,
   User as DiscordUser,
   Message,
+  GuildEmoji,
+  ReactionEmoji,
+  ApplicationEmoji,
 } from "discord.js";
 import { IReactionHandler } from "./_IReactionHandler";
 import { getGuildFromMessage } from "@/handlers/util";
@@ -44,10 +47,11 @@ export abstract class BaseReactionHandler implements IReactionHandler {
   }
 
   protected async baseInitialize(reaction: MessageReaction, user: DiscordUser) {
-    // Shared logic before processing payment, e.g., logging, validation
     this.guild = await getGuildFromMessage(reaction.message);
     this.messageLink = `https://discord.com/channels/${this.guild.id}/${reaction.message.channel.id}/${reaction.message.id}`;
-    this.dbEmoji = await findOrCreateEmoji(reaction.emoji);
+
+    const emoji = reaction.emoji as GuildEmoji | ReactionEmoji;
+    this.dbEmoji = await findOrCreateEmoji(emoji);
     this.dbUser = await findOrCreateUserFromDiscordUser(user);
     this.dbContent = await this.getDbContent(reaction);
 

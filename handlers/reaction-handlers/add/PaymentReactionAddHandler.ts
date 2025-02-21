@@ -17,7 +17,7 @@ import { isCountryFlag } from "@/utils/is-country-flag";
 import { getOddJob } from "@/data/oddjob";
 import { findOrCreateUser } from "@/data/user";
 import * as config from "@/config";
-import { getEvent } from "@/data/event";
+import { getEvent, publishEvent } from "@/data/event";
 
 abstract class BasePaymentReactionAddHandler extends BaseReactionAddHandler {
   protected paymentRule: PaymentRule | null;
@@ -340,10 +340,7 @@ export class EventPaymentReactionAddHandler extends BasePaymentReactionAddHandle
       this.contentType === "event" &&
       !(this.dbContent as PolkadotEvent).isPublished
     ) {
-      await prisma.polkadotEvent.update({
-        where: { id: this.dbContent!.id },
-        data: { isPublished: true, firstPaymentAt: new Date() },
-      });
+      await publishEvent(this.dbContent!.id);
     }
   }
 

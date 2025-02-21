@@ -29,6 +29,7 @@ import {
 import { CategoryRemoveReactionHandler } from "./reaction-handlers/remove/CategoryRemoveReactionHandler";
 import { UPEAddReactionHandler } from "./reaction-handlers/add/UPEAddReactionHandler";
 import { UPERemoveReactionHandler } from "./reaction-handlers/remove/UPEReactionRemoveHandler";
+import { UPEEventAddReactionHandler } from "./reaction-handlers/add/UPEEventAddReactionHandler";
 
 export class ReactionHandlerFactory {
   static async getHandler(
@@ -135,6 +136,13 @@ export class ReactionHandlerFactory {
     } else if (
       userRole === "superuser" &&
       eventType === "reactionAdd" &&
+      emojiType === "universalPublish" &&
+      contentType === "event"
+    ) {
+      return new UPEEventAddReactionHandler(contentType);
+    } else if (
+      userRole === "superuser" &&
+      eventType === "reactionAdd" &&
       emojiType === "feature" &&
       !["post", "newsletter", "event"].includes(contentType)
     ) {
@@ -152,7 +160,7 @@ export class ReactionHandlerFactory {
       userRole === "superuser" &&
       eventType === "reactionRemove" &&
       emojiType === "universalPublish" &&
-      ["post", "newsletter"].includes(contentType)
+      ["post", "newsletter", "event"].includes(contentType)
     ) {
       return new UPERemoveReactionHandler(contentType);
     } else if (

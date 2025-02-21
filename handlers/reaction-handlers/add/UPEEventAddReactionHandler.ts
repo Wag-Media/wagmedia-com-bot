@@ -1,18 +1,16 @@
 import { featurePost, publishPost } from "@/data/post";
 import { logger } from "@/client";
 import { BaseReactionAddHandler } from "./_BaseReactionAddHandler";
-import {
-  ContentType,
-  PostWithCategories,
-  PostWithEarnings,
-  PostWithPayments,
-  PostWithPaymentsAndCategories,
-} from "@/types";
+import { ContentType, EventWithOptions } from "@/types";
 import { Payment } from "@prisma/client";
-import { PostPaymentReactionAddHandler } from "./PaymentReactionAddHandler";
+import {
+  EventPaymentReactionAddHandler,
+  PostPaymentReactionAddHandler,
+} from "./PaymentReactionAddHandler";
 import { MessageReaction, User } from "discord.js";
 import { upsertEntityReaction } from "@/data/reaction";
 import { prisma } from "@/utils/prisma";
+import { publishEvent } from "@/data/event";
 
 /**
  * superusers🦹 can add universal payment emojis (UPE) to posts
@@ -22,7 +20,7 @@ import { prisma } from "@/utils/prisma";
  * reacting with the universal publish emoji will publish a (valid) post
   even if it has no payments
  */
-export class UPEAddReactionHandler extends PostPaymentReactionAddHandler {
+export class UPEEventAddReactionHandler extends EventPaymentReactionAddHandler {
   contentType: ContentType;
 
   constructor(contentType: ContentType) {
@@ -32,18 +30,17 @@ export class UPEAddReactionHandler extends PostPaymentReactionAddHandler {
 
   protected async getDbContent(
     reaction: MessageReaction,
-  ): Promise<PostWithPaymentsAndCategories | null> {
-    const post = await prisma.post.findUnique({
+  ): Promise<EventWithOptions | null> {
+    const event = await prisma.polkadotEvent.findUnique({
       where: {
         id: reaction.message.id,
       },
       include: {
         payments: true,
-        categories: true,
       },
     });
 
-    return post;
+    return event;
   }
 
   protected async initialize(
@@ -64,26 +61,27 @@ export class UPEAddReactionHandler extends PostPaymentReactionAddHandler {
     logger.log(
       `[${this.contentType}] Reaction ${reaction.emoji} added to ${this.messageLink} by ${user.username}#${user.discriminator}.`,
     );
-    await publishPost(reaction.message.id);
+    await publishEvent(reaction.message.id);
     logger.log(
       `[${this.contentType}] ${this.contentType} ${this.messageLink} is now published without any payments.`,
     );
   }
 
   protected async isReactionPermitted(_, user): Promise<boolean> {
-    // can only add UPE if post was not paid before
-    if (
-      (this.dbContent as PostWithPaymentsAndCategories).payments?.length > 0
-    ) {
+    if (!this.dbContent) {
+      throw new Error("Event not found");
+    }
+
+    const event = this.dbContent as EventWithOptions;
+    if (event.payments?.length && event.payments.length > 0) {
       logger.logAndSend(
-        `You can't add the universal payment emoji to a post that already has payments.`,
+        `You can't add the universal payment emoji to a event that already has payments.`,
         user,
       );
-      throw new Error("Post already has payments");
+      throw new Error("Event already has payments");
     }
 
     await super.isReactionPermitted(_, user);
-
     return true;
   }
 
