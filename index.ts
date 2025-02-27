@@ -1,5 +1,4 @@
 import "dotenv/config";
-import { dfp } from "./utils/dfp.js";
 import { discordClient, logger } from "./client";
 import { Events } from "discord.js";
 import { logIntroMessage } from "./handlers/log-utils.js";

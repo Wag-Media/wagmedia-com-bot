@@ -3,7 +3,7 @@ import {
   User as DiscordUser,
   ThreadChannel,
 } from "discord.js";
-import { PaymentRule, Post } from "@prisma/client";
+import { PaymentRule, PolkadotEvent, Post } from "@prisma/client";
 import { findEmojiPaymentRule } from "@/data/emoji";
 import { ContentType, OddJobWithOptions, PostWithCategories } from "@/types";
 import { prisma } from "@/utils/prisma";
@@ -17,6 +17,7 @@ import { isCountryFlag } from "@/utils/is-country-flag";
 import { getOddJob } from "@/data/oddjob";
 import { findOrCreateUser } from "@/data/user";
 import * as config from "@/config";
+import { getEvent, publishEvent } from "@/data/event";
 
 abstract class BasePaymentReactionAddHandler extends BaseReactionAddHandler {
   protected paymentRule: PaymentRule | null;
@@ -237,8 +238,6 @@ export class OddJobPaymentReactionAddHandler extends BasePaymentReactionAddHandl
     reaction: MessageReaction,
     user: DiscordUser,
   ) {
-    console.log("Handling payment reaction for oddjob");
-
     const { paymentAmount, paymentUnit, fundingSource } = this.paymentRule!;
 
     const dbReaction = await upsertEntityReaction(
@@ -290,6 +289,69 @@ export class OddJobPaymentReactionAddHandler extends BasePaymentReactionAddHandl
   }
 }
 
+export class EventPaymentReactionAddHandler extends BasePaymentReactionAddHandler {
+  contentType: ContentType = "event";
+
+  protected getDbContent(
+    reaction: MessageReaction,
+  ): Promise<PolkadotEvent | null> {
+    return getEvent(reaction.message.id);
+  }
+
+  protected async processReaction(
+    reaction: MessageReaction,
+    user: DiscordUser,
+  ) {
+    const { paymentAmount, paymentUnit, fundingSource } = this.paymentRule!;
+
+    await prisma.contentEarnings.upsert({
+      where: {
+        eventId_unit: {
+          eventId: this.dbContent!.id,
+          unit: paymentUnit,
+        },
+      },
+      update: {
+        totalAmount: {
+          increment: +paymentAmount.toFixed(3),
+        },
+      },
+      create: {
+        eventId: this.dbContent!.id,
+        unit: paymentUnit,
+        totalAmount: +paymentAmount.toFixed(3),
+      },
+    });
+
+    await prisma.payment.create({
+      data: {
+        amount: +paymentAmount.toFixed(3),
+        unit: paymentUnit,
+        eventId: this.dbContent!.id,
+        userId: this.dbUser!.id,
+        reactionId: this.dbReaction!.id,
+        status: "unknown",
+        fundingSource,
+        threadParentId: this.parentId,
+      },
+    });
+
+    if (
+      this.contentType === "event" &&
+      !(this.dbContent as PolkadotEvent).isPublished
+    ) {
+      await publishEvent(this.dbContent!.id);
+    }
+  }
+
+  protected async isReactionPermitted(
+    reaction: MessageReaction,
+    user: DiscordUser,
+  ): Promise<boolean> {
+    return true;
+  }
+}
+
 export class ThreadPaymentReactionAddHandler extends PostPaymentReactionAddHandler {
   contentType: ContentType = "thread";
 
@@ -297,10 +359,7 @@ export class ThreadPaymentReactionAddHandler extends PostPaymentReactionAddHandl
     reaction: MessageReaction,
     user: DiscordUser,
   ): Promise<void> {
-    console.log("Initializing payment reaction for a thread");
     await super.initialize(reaction, user);
-
-    // If the message is a thread, set the parentId
     this.parentId = reaction.message.channelId;
   }
 
@@ -313,8 +372,6 @@ export class ThreadPaymentReactionAddHandler extends PostPaymentReactionAddHandl
     reaction: MessageReaction,
     user: DiscordUser,
   ) {
-    console.log("Handling payment reaction for a thread");
-
     // 1. if the thread is not in the database, create it on payment
     if (!this.dbContent) {
       this.dbContent = await findOrCreateThreadPost({

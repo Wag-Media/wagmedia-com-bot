@@ -10,6 +10,7 @@ import {
   Embed,
   Payment,
   Reaction,
+  PolkadotEvent,
 } from "@prisma/client";
 import {
   MessageReaction,
@@ -42,6 +43,8 @@ export type PostEmbed = {
   url: string | null;
   imageUrl: string | null;
   color: number | null;
+  width: number | null;
+  height: number | null;
 };
 
 export type PostWithOptions = Post & {
@@ -77,8 +80,19 @@ export type OddjobWithEarnings = OddJob & {
   earnings: ContentEarnings[];
 };
 
+export type EventWithOptions = PolkadotEvent & {
+  payments?: Payment[];
+  earnings?: ContentEarnings[];
+  embeds?: Embed[];
+};
+
 export type PostWithCategoriesTagsEmbeds = Post & {
   categories: Category[];
+  tags: Tag[];
+  embeds: Embed[];
+};
+
+export type PolkadotEventWithTagsEmbeds = PolkadotEvent & {
   tags: Tag[];
   embeds: Embed[];
 };
@@ -89,6 +103,7 @@ export type ContentType =
   | "post"
   | "thread"
   | "newsletter"
+  | "event"
   | undefined;
 export type EmojiType =
   | "regular"

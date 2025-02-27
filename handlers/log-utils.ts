@@ -1,6 +1,6 @@
 import { logger } from "@/client";
 import { prisma } from "@/utils/prisma";
-import { Emoji, OddJob, Post } from "@prisma/client";
+import { Emoji, OddJob, PolkadotEvent, Post } from "@prisma/client";
 import {
   MessageReaction,
   User as DiscordUser,
@@ -47,7 +47,7 @@ export function logEmojiRemoved(
 }
 
 export async function logContentEarnings(
-  entity: Post | OddJob,
+  entity: Post | OddJob | PolkadotEvent,
   contentType: ContentType,
   messageLink: string,
 ) {
@@ -56,9 +56,19 @@ export async function logContentEarnings(
     return;
   }
 
-  const earningsCondition = ["post", "thread"].includes(contentType)
-    ? { postId: entity.id }
-    : { oddJobId: entity.id };
+  let earningsCondition: {
+    postId?: string;
+    oddJobId?: string;
+    eventId?: string;
+  } = {};
+
+  if (["post", "thread"].includes(contentType)) {
+    earningsCondition = { postId: entity.id };
+  } else if (contentType === "oddjob") {
+    earningsCondition = { oddJobId: entity.id };
+  } else if (contentType === "event") {
+    earningsCondition = { eventId: entity.id };
+  }
 
   // Fetch all earnings for the post after the update
   const allPostEarnings = await prisma.contentEarnings.findMany({
@@ -155,6 +165,14 @@ export async function logIntroMessage(guild, discordClient) {
     `🦻 Listening for newsletters and newsletter reactions in ${config.CHANNELS_NEWSLETTER.length} channels in guild ${guild.name}:`,
   );
   config.CHANNELS_NEWSLETTER.map((channelId) => {
+    const channel = guild.channels.cache.get(channelId);
+    logger.info(`${space}↪ #${channel?.name} (${channel?.id})`);
+  });
+
+  logger.info(
+    `🦻 Listening for events and event reactions in ${config.CHANNELS_EVENTS.length} channels in guild ${guild.name}:`,
+  );
+  config.CHANNELS_EVENTS.map((channelId) => {
     const channel = guild.channels.cache.get(channelId);
     logger.info(`${space}↪ #${channel?.name} (${channel?.id})`);
   });

@@ -1,11 +1,12 @@
 import { logger } from "@/client";
 import { prisma } from "@/utils/prisma";
 import { Emoji, OddJob, Post, User } from "@prisma/client";
-import { MessageReaction } from "discord.js";
+import { GuildEmoji, MessageReaction } from "discord.js";
 import { findEmoji } from "./emoji";
 import { findOrCreateUserFromDiscordUser, findUserById } from "./user";
 import { ContentType, ReactionWithEmoji } from "@/types";
 import { DiscordReaction } from "../types";
+import { PolkadotEvent } from "@prisma/client";
 
 export async function findReaction(postId, userId, emojiId) {
   const dbReaction = await prisma.reaction.findUnique({
@@ -36,12 +37,19 @@ export async function getPostOrOddjobReactions(
   contentId: string,
   contentType: ContentType,
 ): Promise<ReactionWithEmoji[]> {
-  const whereCondition =
+  let whereCondition;
+
+  if (
     contentType === "post" ||
     contentType === "thread" ||
     contentType === "newsletter"
-      ? { postId: contentId }
-      : { oddJobId: contentId };
+  ) {
+    whereCondition = { postId: contentId };
+  } else if (contentType === "event") {
+    whereCondition = { eventId: contentId };
+  } else {
+    whereCondition = { oddJobId: contentId };
+  }
 
   const dbReactions = await prisma.reaction.findMany({
     where: whereCondition,
@@ -56,7 +64,7 @@ export async function getPostOrOddjobReactions(
 }
 
 export async function upsertEntityReaction(
-  entity: Post | OddJob | undefined | null,
+  entity: Post | OddJob | PolkadotEvent | undefined | null,
   entityType: ContentType,
   dbUser: User,
   dbEmoji: Emoji,
@@ -66,7 +74,15 @@ export async function upsertEntityReaction(
     return;
   }
 
-  if (!["post", "oddjob", "thread", "newsletter"].includes(entityType)) {
+  const validContentTypes = [
+    "post",
+    "oddjob",
+    "thread",
+    "newsletter",
+    "event",
+  ] as const;
+
+  if (!validContentTypes.includes(entityType)) {
     throw new Error(
       `Invalid entityType ${entityType} in upsertEntityReaction. Skipping.`,
     );
@@ -74,13 +90,19 @@ export async function upsertEntityReaction(
 
   let dbReaction;
 
-  if (
-    entityType == "post" ||
-    entityType == "thread" ||
-    entityType == "newsletter"
+  if (entityType === "event") {
+    dbReaction = await upsertEventReaction(
+      entity as PolkadotEvent,
+      dbUser,
+      dbEmoji,
+    );
+  } else if (
+    entityType === "post" ||
+    entityType === "thread" ||
+    entityType === "newsletter"
   ) {
     dbReaction = await upsertPostReaction(entity as Post, dbUser, dbEmoji);
-  } else if (entityType == "oddjob") {
+  } else if (entityType === "oddjob") {
     dbReaction = await upsertOddjobReaction(entity as OddJob, dbUser, dbEmoji);
   } else {
     logger.warn(
@@ -95,7 +117,7 @@ export async function upsertEntityReaction(
 }
 
 export async function deleteEntityReaction(
-  entity: Post | OddJob | undefined | null,
+  entity: Post | OddJob | PolkadotEvent | undefined | null,
   contentType: ContentType,
   userId: string,
   emojiId: string,
@@ -107,7 +129,11 @@ export async function deleteEntityReaction(
     return;
   }
 
-  if (![contentType, "post", "thread", "newsletter"].includes(contentType)) {
+  if (
+    ![contentType, "post", "thread", "newsletter", "event"].includes(
+      contentType,
+    )
+  ) {
     throw new Error(
       `Invalid contentType ${contentType} in deleteEntityReaction. Skipping.`,
     );
@@ -124,13 +150,21 @@ export async function deleteEntityReaction(
             userDiscordId: userId,
           },
         }
-      : {
-          oddJobId_userDiscordId_emojiId: {
-            oddJobId: entity.id,
-            emojiId,
-            userDiscordId: userId,
-          },
-        };
+      : contentType === "event"
+        ? {
+            eventId_userDiscordId_emojiId: {
+              eventId: entity.id,
+              emojiId,
+              userDiscordId: userId,
+            },
+          }
+        : {
+            oddJobId_userDiscordId_emojiId: {
+              oddJobId: entity.id,
+              emojiId,
+              userDiscordId: userId,
+            },
+          };
   await prisma.reaction.delete({
     where: whereCondition,
   });
@@ -205,6 +239,33 @@ export async function upsertOddjobReaction(
   return dbReaction;
 }
 
+export async function upsertEventReaction(
+  event: PolkadotEvent,
+  dbUser: User,
+  dbEmoji: Emoji,
+) {
+  const dbReaction = await prisma.reaction.upsert({
+    where: {
+      eventId_userDiscordId_emojiId: {
+        eventId: event.id,
+        emojiId: dbEmoji.id,
+        userDiscordId: dbUser.discordId,
+      },
+    },
+    update: {},
+    create: {
+      eventId: event.id,
+      emojiId: dbEmoji.id,
+      userDiscordId: dbUser.discordId,
+    },
+  });
+
+  if (!dbReaction) {
+    throw new Error("Reaction could not be upserted");
+  }
+  return dbReaction;
+}
+
 export async function deleteReaction(
   postId: string,
   userId: string,
@@ -226,9 +287,9 @@ export async function removeReactions(
   reactions: DiscordReaction[],
 ) {
   const emojiIds = reactions
-    .map((r) => r.emojiId)
+    .map((r) => r.emoji.name || r.emoji.id)
     .filter((id): id is string => id !== null);
-  const userDiscordIds = reactions.map((r) => r.userDiscordId);
+  const userDiscordIds = reactions.map((r) => r.user.id);
 
   if (
     emojiIds.length === 0 ||
@@ -243,13 +304,17 @@ export async function removeReactions(
     where: {
       userDiscordId: { in: userDiscordIds },
       emojiId: { in: emojiIds },
-      OR: [{ postId: messageId }, { oddJobId: messageId }],
+      OR: [
+        { postId: messageId },
+        { oddJobId: messageId },
+        { eventId: messageId },
+      ],
     },
   });
 
   logger.log(
     `removed ${deletedReactions.count} reactions from message ${messageId}: 
-    ${reactions.map((r) => `${r.userDiscordId}-${r.emojiId} `)}`,
+    ${reactions.map((r) => `${r.user.id}-${r.emoji.name || r.emoji.id} `)}`,
   );
 }
 
@@ -286,7 +351,7 @@ export async function getPostUserEmojiFromReaction(
     throw new Error(`User  not found in the database. Skipping.`);
   }
 
-  const dbEmoji = await findEmoji(reaction.emoji);
+  const dbEmoji = await findEmoji(reaction.emoji as GuildEmoji);
   if (!dbEmoji) {
     logger.warn(
       `[emoji] Emoji ${reaction.emoji.name} not found in the database. Skipping.`,

@@ -1,6 +1,7 @@
 import { MessageReaction, User as DiscordUser } from "discord.js";
 import { IReactionHandler } from "./reaction-handlers/_IReactionHandler";
 import {
+  EventPaymentReactionAddHandler,
   OddJobPaymentReactionAddHandler,
   PostPaymentReactionAddHandler,
   ThreadPaymentReactionAddHandler,
@@ -20,6 +21,7 @@ import { NoopReactionHandler } from "./reaction-handlers/NoopReactionHandler";
 import { FeatureAddReactionHandler } from "./reaction-handlers/add/FeatureAddReactionHandler";
 import { FeatureRemoveReactionHandler } from "./reaction-handlers/remove/FeatureRemoveReactionHandler";
 import {
+  EventPaymentReactionRemoveHandler,
   OddJobPaymentReactionRemoveHandler,
   PostPaymentReactionRemoveHandler,
   ThreadPaymentReactionRemoveHandler,
@@ -27,6 +29,7 @@ import {
 import { CategoryRemoveReactionHandler } from "./reaction-handlers/remove/CategoryRemoveReactionHandler";
 import { UPEAddReactionHandler } from "./reaction-handlers/add/UPEAddReactionHandler";
 import { UPERemoveReactionHandler } from "./reaction-handlers/remove/UPEReactionRemoveHandler";
+import { UPEEventAddReactionHandler } from "./reaction-handlers/add/UPEEventAddReactionHandler";
 
 export class ReactionHandlerFactory {
   static async getHandler(
@@ -38,6 +41,8 @@ export class ReactionHandlerFactory {
 
     // Determine the type of content (e.g., post, oddjob, thread)
     const { contentType } = determineContentType(message);
+
+    console.log(`reactionHandlerFactory: contentType: ${contentType}`);
     // and the user role (e.g., poweruser, regularuser)
     const userRole = await determineUserRole(message, user);
 
@@ -75,7 +80,7 @@ export class ReactionHandlerFactory {
       !["post", "newsletter"].includes(contentType)
     ) {
       return new NotAllowedReactionHandler(
-        `You are not allowed to use category emojis in oddjobs or threads.`,
+        `You are not allowed to use category emojis in oddjobs, threads, or events.`,
       );
     } else if (
       userRole === "superuser" &&
@@ -100,6 +105,13 @@ export class ReactionHandlerFactory {
       return new ThreadPaymentReactionAddHandler();
     } else if (
       userRole === "superuser" &&
+      eventType === "reactionAdd" &&
+      emojiType === "payment" &&
+      contentType === "event"
+    ) {
+      return new EventPaymentReactionAddHandler();
+    } else if (
+      userRole === "superuser" &&
       ["reactionAdd", "reactionRemove"].includes(eventType) &&
       emojiType === "payment" &&
       contentType === "newsletter"
@@ -111,7 +123,7 @@ export class ReactionHandlerFactory {
       userRole === "superuser" &&
       eventType === "reactionAdd" &&
       emojiType === "feature" &&
-      ["post", "newsletter"].includes(contentType)
+      ["post", "newsletter", "event"].includes(contentType)
     ) {
       return new FeatureAddReactionHandler(contentType);
     } else if (
@@ -124,24 +136,31 @@ export class ReactionHandlerFactory {
     } else if (
       userRole === "superuser" &&
       eventType === "reactionAdd" &&
+      emojiType === "universalPublish" &&
+      contentType === "event"
+    ) {
+      return new UPEEventAddReactionHandler(contentType);
+    } else if (
+      userRole === "superuser" &&
+      eventType === "reactionAdd" &&
       emojiType === "feature" &&
-      !["post", "newsletter"].includes(contentType)
+      !["post", "newsletter", "event"].includes(contentType)
     ) {
       return new NotAllowedReactionHandler(
-        `Feature emojis can only be added to posts`,
+        `Feature emojis can only be added to posts or newsletters or events`,
       );
     } else if (
       userRole === "superuser" &&
       eventType === "reactionRemove" &&
       emojiType === "feature" &&
-      contentType === "post"
+      ["post", "event"].includes(contentType)
     ) {
       return new FeatureRemoveReactionHandler();
     } else if (
       userRole === "superuser" &&
       eventType === "reactionRemove" &&
       emojiType === "universalPublish" &&
-      ["post", "newsletter"].includes(contentType)
+      ["post", "newsletter", "event"].includes(contentType)
     ) {
       return new UPERemoveReactionHandler(contentType);
     } else if (
@@ -172,6 +191,13 @@ export class ReactionHandlerFactory {
       contentType === "thread"
     ) {
       return new ThreadPaymentReactionRemoveHandler();
+    } else if (
+      userRole === "superuser" &&
+      eventType === "reactionRemove" &&
+      emojiType === "payment" &&
+      contentType === "event"
+    ) {
+      return new EventPaymentReactionRemoveHandler();
     } else if (
       // ---- Regular user -----
       userRole === "regular" &&

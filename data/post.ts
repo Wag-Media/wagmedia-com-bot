@@ -3,9 +3,9 @@ import {
   ContentEarnings,
   Embed,
   OddJob,
+  PolkadotEvent,
   Post,
   PrismaClient,
-  Tag,
 } from "@prisma/client";
 import { Message, MessageReaction, PartialMessage } from "discord.js";
 import { findOrCreateUser } from "@/data/user";
@@ -17,12 +17,10 @@ import {
   PostEmbed,
   PostFull,
   PostWithCategories,
-  PostWithCategoriesEarnings,
-  PostWithCategoriesTagsEmbeds,
   PostWithEarnings,
 } from "@/types";
 import { replaceAuthorLinks } from "@/utils/replace-author-links";
-const prisma = new PrismaClient();
+import { prisma } from "../utils/prisma";
 
 export type PostCreateType = {
   message: Message<boolean> | PartialMessage;
@@ -51,8 +49,6 @@ export const findOrCreatePost = async (
   const messageLink = `https://discord.com/channels/${message.guild?.id}/${message.channel.id}/${message.id}`;
 
   const contentType = determinePostType(messageLink);
-
-  console.log("aaa contentType", contentType);
 
   const user = await findOrCreateUser(message);
 
@@ -139,6 +135,8 @@ async function _manageEmbedsForPost(
           embedImage: embed.imageUrl,
           embedColor: embed.color,
           postId: postId,
+          width: embed.width,
+          height: embed.height,
         },
       }),
     ),
@@ -161,10 +159,7 @@ export async function findOrCreateThreadPost(attributes: {
 }): Promise<PostWithEarnings> {
   const { message, content, url } = attributes;
 
-  const parentId = message.channel.isThread()
-    ? message.channel.parent!.id
-    : undefined;
-  console.log("findOrCreateThreadPost parentId", parentId);
+  const parentId = message.channel.isThread() ? message.channelId : undefined;
 
   const threadPost = findOrCreatePost({
     message,
@@ -542,13 +537,28 @@ export async function getPostOrOddjob(
 export async function getPostOrOddjobWithEarnings(
   entityId: string,
   entityType: ContentType,
-): Promise<PostWithEarnings | OddjobWithEarnings | null | undefined> {
+): Promise<
+  | PostWithEarnings
+  | OddjobWithEarnings
+  | (PolkadotEvent & { earnings: ContentEarnings[] })
+  | null
+  | undefined
+> {
   if (!entityType) {
     return;
   }
 
   if (entityType === "post" || entityType === "thread") {
     return prisma.post.findUnique({
+      where: {
+        id: entityId,
+      },
+      include: {
+        earnings: true,
+      },
+    });
+  } else if (entityType === "event") {
+    return prisma.polkadotEvent.findUnique({
       where: {
         id: entityId,
       },

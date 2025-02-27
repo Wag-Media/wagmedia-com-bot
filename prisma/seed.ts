@@ -1,6 +1,5 @@
-import { PrismaClient } from "@prisma/client";
 import * as config from "../config";
-const prisma = new PrismaClient();
+import { prisma } from "../utils/prisma";
 
 async function main() {
   // 1) Seed Categories and Emojis for Category Rules

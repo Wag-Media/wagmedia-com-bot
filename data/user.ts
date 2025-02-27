@@ -5,7 +5,7 @@ import {
   PartialMessage,
   User as DiscordUser,
 } from "discord.js";
-const prisma = new PrismaClient();
+import { prisma } from "../utils/prisma";
 
 export const findOrCreateUser = async (
   message: Message<boolean> | PartialMessage,

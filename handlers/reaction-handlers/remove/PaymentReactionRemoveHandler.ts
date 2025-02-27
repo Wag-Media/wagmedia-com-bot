@@ -184,3 +184,75 @@ export class OddJobPaymentReactionRemoveHandler extends BasePaymentReactionRemov
 export class ThreadPaymentReactionRemoveHandler extends PostPaymentReactionRemoveHandler {
   contentType: ContentType = "thread";
 }
+
+export class EventPaymentReactionRemoveHandler extends BasePaymentReactionRemoveHandler {
+  contentType: ContentType = "event";
+
+  protected async processReaction(
+    reaction: MessageReaction,
+    user: DiscordUser,
+  ): Promise<void> {
+    const amount = this.paymentRule?.paymentAmount;
+    const unit = this.paymentRule?.paymentUnit;
+
+    if (!amount || !unit) {
+      throw new Error(`Payment rule for ${this.messageLink} is invalid.`);
+    }
+
+    const remainingEventReactions = await prisma.reaction.findMany({
+      where: {
+        eventId: this.dbContent!.id,
+      },
+      include: {
+        emoji: {
+          include: {
+            PaymentRule: true,
+          },
+        },
+      },
+    });
+
+    // Check if there are no remaining payment emojis
+    const remainingPaymentEmojis = remainingEventReactions.filter(
+      (r) => r.emoji.PaymentRule && r.emoji.PaymentRule.length > 0,
+    );
+
+    // If no payment emojis are left
+    if (this.contentType === "event" && remainingPaymentEmojis.length === 0) {
+      // and the post is not published via UPE
+      if (
+        !remainingEventReactions.some(
+          (r) => r.emoji.name === config.UNIVERSAL_PUBLISH_EMOJI,
+        )
+      ) {
+        // unpublish the event
+        await prisma.polkadotEvent.update({
+          where: { id: this.dbContent!.id },
+          data: { isPublished: false, firstPaymentAt: null },
+        });
+        logger.log(
+          `[event] Event ${this.messageLink} has been unpublished due to no remaining payment emojis.`,
+        );
+      }
+    }
+
+    // Aggregate the total payment amount for the specific unit
+    const updatedTotalEarnings = remainingPaymentEmojis.reduce((total, r) => {
+      const rule = r.emoji.PaymentRule.find((pr) => pr.paymentUnit === unit);
+      return total + (rule?.paymentAmount || 0);
+    }, 0);
+
+    // Update the post's total earnings for the specific unit
+    await prisma.contentEarnings.upsert({
+      where: { eventId_unit: { eventId: this.dbContent!.id, unit } },
+      update: {
+        totalAmount: updatedTotalEarnings,
+      },
+      create: {
+        eventId: this.dbContent!.id,
+        unit,
+        totalAmount: updatedTotalEarnings,
+      },
+    });
+  }
+}

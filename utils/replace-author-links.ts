@@ -1,3 +1,5 @@
+import { prisma } from "./prisma";
+
 export async function replaceAuthorLinks(
   text: string,
   withLink: boolean = true,

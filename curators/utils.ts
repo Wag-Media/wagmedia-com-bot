@@ -1,6 +1,7 @@
 import {
   getGuildFromMessage,
   isCategoryMonitoredForPosts,
+  isChannelMonitoredForEvents,
   isChannelMonitoredForNewsletter,
   isChannelMonitoredForOddJobs,
   isChannelMonitoredForPosts,
@@ -23,7 +24,7 @@ import {
 import { PaymentRule } from "@prisma/client";
 import { findFirstPayment } from "@/data/payment";
 
-export function determineContentType(message: Message): {
+export function determineContentType(message: Message | PartialMessage): {
   contentType: ContentType;
   parentId?: string;
 } {
@@ -53,6 +54,8 @@ export function determineContentType(message: Message): {
       contentType = "oddjob";
     } else if (isChannelMonitoredForNewsletter(message.channel)) {
       contentType = "newsletter";
+    } else if (isChannelMonitoredForEvents(message.channel)) {
+      contentType = "event";
     }
   }
 

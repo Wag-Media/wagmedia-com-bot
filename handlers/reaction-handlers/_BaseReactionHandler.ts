@@ -3,10 +3,18 @@ import {
   MessageReaction,
   User as DiscordUser,
   Message,
+  GuildEmoji,
+  ReactionEmoji,
+  ApplicationEmoji,
 } from "discord.js";
 import { IReactionHandler } from "./_IReactionHandler";
 import { getGuildFromMessage } from "@/handlers/util";
-import { ContentType, OddJobWithOptions, PostWithOptions } from "@/types";
+import {
+  ContentType,
+  EventWithOptions,
+  OddJobWithOptions,
+  PostWithOptions,
+} from "@/types";
 import { Emoji, Reaction, User } from "@prisma/client";
 import { findOrCreateEmoji } from "@/data/emoji";
 import { findOrCreateUserFromDiscordUser } from "@/data/user";
@@ -22,7 +30,12 @@ export abstract class BaseReactionHandler implements IReactionHandler {
   protected guild: Guild | null;
   protected dbEmoji: Emoji;
   protected dbUser: User | undefined;
-  protected dbContent: PostWithOptions | OddJobWithOptions | null | undefined;
+  protected dbContent:
+    | PostWithOptions
+    | OddJobWithOptions
+    | EventWithOptions
+    | null
+    | undefined;
   protected dbReaction: Reaction | null | undefined;
 
   async handle(reaction, user) {
@@ -34,10 +47,11 @@ export abstract class BaseReactionHandler implements IReactionHandler {
   }
 
   protected async baseInitialize(reaction: MessageReaction, user: DiscordUser) {
-    // Shared logic before processing payment, e.g., logging, validation
     this.guild = await getGuildFromMessage(reaction.message);
     this.messageLink = `https://discord.com/channels/${this.guild.id}/${reaction.message.channel.id}/${reaction.message.id}`;
-    this.dbEmoji = await findOrCreateEmoji(reaction.emoji);
+
+    const emoji = reaction.emoji as GuildEmoji | ReactionEmoji;
+    this.dbEmoji = await findOrCreateEmoji(emoji);
     this.dbUser = await findOrCreateUserFromDiscordUser(user);
     this.dbContent = await this.getDbContent(reaction);
 
@@ -66,7 +80,9 @@ export abstract class BaseReactionHandler implements IReactionHandler {
 
   protected getDbContent(
     reaction: MessageReaction,
-  ): Promise<PostWithOptions | OddJobWithOptions | null | undefined> {
+  ): Promise<
+    PostWithOptions | OddJobWithOptions | EventWithOptions | null | undefined
+  > {
     return getPostOrOddjobWithEarnings(reaction.message.id, this.contentType);
   }
 
